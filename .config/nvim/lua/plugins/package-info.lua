@@ -8,7 +8,11 @@ return {
       package_manager = "pnpm",
     },
     keys = function()
-      local packageInfo = require("package-info")
+      local status, packageInfo = pcall(require, "package-info")
+
+      if not status then
+        return
+      end
 
       return {
         {
