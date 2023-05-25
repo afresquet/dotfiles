@@ -9,6 +9,9 @@ bufferline = "multiple"
 idle-timeout = 0
 completion-trigger-len = 1
 
+[editor.statusline]
+left = ["mode", "spinner", "version-control", "file-name"]
+
 [editor.lsp]
 display-messages = true
 display-inlay-hints = true
