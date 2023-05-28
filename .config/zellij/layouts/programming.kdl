@@ -1,0 +1,13 @@
+layout {
+    pane split_direction="vertical" {
+        pane name="Editor" command="nu" size="75%" focus=true {
+            args "-e" "helix"
+        }
+        pane split_direction="horizontal" {
+            pane name="Pomodoro Timer" command="nu" size="15%" {
+                args "-e" "porsmo"
+            }
+            pane name="Terminal"
+        }
+    }
+}

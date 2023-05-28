@@ -544,3 +544,5 @@ let-env config = {
 source ~/.cache/starship/init.nu
 
 alias hx = helix
+
+alias code = zellij --layout programming
