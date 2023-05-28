@@ -86,5 +86,17 @@ let-env NU_PLUGIN_DIRS = [
 # To add entries to PATH (on Windows you might use Path), you can use the following pattern:
 # let-env PATH = ($env.PATH | split row (char esep) | prepend '/some/path')
 
+# starship
 mkdir ~/.cache/starship
 starship init nu | save -f ~/.cache/starship/init.nu
+
+# fnm
+load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace -a '"' '' | split column = | rename name value | where name != "FNM_ARCH" and name != "PATH" | reduce -f {} {|it, acc| $acc | upsert $it.name $it.value })
+let-env PATH = $"($env.FNM_MULTISHELL_PATH)/bin:($env.PATH)"
+
+# pnpm
+let-env PNPM_HOME = $"($env.HOME)/Library/pnpm"
+let-env PATH = ($env.PATH | append $env.PNPM_HOME)
+
+# Go
+let-env PATH = ($env.PATH | append "/usr/local/go/bin")
