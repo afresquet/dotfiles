@@ -541,8 +541,21 @@ let-env config = {
   ]
 }
 
+# Safe aliases
+alias cp = cp -i
+alias mv = mv -i
+alias rm = rm -i
+
+# Init Starship
 source ~/.cache/starship/init.nu
 
+# Helix shorthand
 alias hx = helix
 
+# Start programming environment
 alias code = zellij --layout programming
+
+# pacman and yay
+alias pacsyu = sudo pacman -Syu
+alias yaysyu = yay -Syu --noconfirm
+alias pacunlock = sudo rm /var/lib/pacman/db.lck
