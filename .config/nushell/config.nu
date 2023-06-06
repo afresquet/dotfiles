@@ -559,3 +559,6 @@ alias code = zellij --layout programming
 alias pacsyu = sudo pacman -Syu
 alias yaysyu = yay -Syu --noconfirm
 alias pacunlock = sudo rm /var/lib/pacman/db.lck
+
+# Init zoxide
+source ~/.config/zoxide/config.nu

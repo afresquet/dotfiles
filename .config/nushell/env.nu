@@ -99,4 +99,4 @@ let-env PNPM_HOME = $"($env.HOME)/Library/pnpm"
 let-env PATH = ($env.PATH | append $env.PNPM_HOME)
 
 # Go
-let-env PATH = ($env.PATH | append "/usr/local/go/bin")
+let-env PATH = ($env.PATH | append $"($env.HOME)/go/bin")
