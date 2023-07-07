@@ -6,7 +6,14 @@ layout {
             }
             pane split_direction="horizontal" {
                 pane name="Pomodoro Timer" command="porsmo" size="20%" start_suspended=true
-                pane name="Terminal"
+                pane stacked=true {
+                    pane name="Tests" command="bacon" {
+                        args "test"
+                    }
+                    pane name="Clippy" command="bacon" {
+                        args "clippy"
+                    }
+                }
             }
         }
     }

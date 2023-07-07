@@ -553,7 +553,8 @@ source ~/.cache/starship/init.nu
 alias hx = helix
 
 # Start programming environment
-alias code = zellij --layout programming
+alias zp = zellij --layout programming
+alias zr = zellij --layout rust
 
 # pacman and yay
 alias pacsyu = sudo pacman -Syu
