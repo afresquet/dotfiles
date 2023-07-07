@@ -100,3 +100,5 @@ let-env PATH = ($env.PATH | append $env.PNPM_HOME)
 
 # Go
 let-env PATH = ($env.PATH | append $"($env.HOME)/go/bin")
+
+let-env EDITOR = "/usr/bin/helix"

@@ -562,3 +562,6 @@ alias pacunlock = sudo rm /var/lib/pacman/db.lck
 
 # Init zoxide
 source ~/.config/zoxide/config.nu
+
+# bat
+alias cat = bat
