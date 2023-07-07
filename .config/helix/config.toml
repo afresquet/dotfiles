@@ -5,13 +5,13 @@ true-color = true
 line-number = "relative"
 cursorline = true
 color-modes = true
-mouse = false
 bufferline = "multiple"
 idle-timeout = 0
 completion-trigger-len = 1
 
 [editor.statusline]
 left = ["mode", "spinner", "version-control", "file-name"]
+right = ["diagnostics", "selections", "position", "position-percentage", "file-encoding"]
 
 [editor.lsp]
 display-messages = true
