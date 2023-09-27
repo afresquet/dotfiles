@@ -13,7 +13,7 @@ def create_left_prompt [] {
     }
 
     let dir = ([
-        ($env.PWD | str substring 0..($home | str length) | str replace --string $home "~"),
+        ($env.PWD | str substring 0..($home | str length) | str replace $home "~"),
         ($env.PWD | str substring ($home | str length)..)
     ] | str join)
 
@@ -21,7 +21,7 @@ def create_left_prompt [] {
     let separator_color = (if (is-admin) { ansi light_red_bold } else { ansi light_green_bold })
     let path_segment = $"($path_color)($dir)"
 
-    $path_segment | str replace --all --string (char path_sep) $"($separator_color)/($path_color)"
+    $path_segment | str replace --all (char path_sep) $"($separator_color)/($path_color)"
 }
 
 def create_right_prompt [] {
@@ -92,7 +92,7 @@ starship init nu | save -f ~/.cache/starship/init.nu
 
 # fnm
 load-env (fnm env --shell bash | lines | str replace 'export ' '' | str replace -a '"' '' | split column = | rename name value | where name != "FNM_ARCH" and name != "PATH" | reduce -f {} {|it, acc| $acc | upsert $it.name $it.value })
-$env.PATH = $"($env.FNM_MULTISHELL_PATH)/bin:($env.PATH)"
+$env.PATH = ($env.PATH | append $"($env.FNM_MULTISHELL_PATH)/bin")
 
 # pnpm
 $env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
@@ -102,3 +102,10 @@ $env.PATH = ($env.PATH | append $env.PNPM_HOME)
 $env.PATH = ($env.PATH | append $"($env.HOME)/go/bin")
 
 $env.EDITOR = "/usr/bin/helix"
+
+# Nix
+$env.PATH = ($env.PATH | append $"/nix/var/nix/profiles/default/bin")
+
+# Bun
+$env.BUN_INSTALL = $"($env.HOME)/.bun"
+$env.PATH = ($env.PATH | append $"($env.BUN_INSTALL)/bin")
