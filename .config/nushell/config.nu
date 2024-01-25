@@ -193,9 +193,6 @@ $env.config = {
   rm: {
     always_trash: false # always act as if -t was given. Can be overridden with -p
   }
-  cd: {
-    abbreviations: false # allows `cd s/o/f` to expand to `cd some/other/folder`
-  }
   table: {
     mode: rounded # basic, compact, compact_double, light, thin, with_love, rounded, reinforced, heavy, none, other
     index_mode: always # "always" show indexes, "never" show indexes, "auto" = show indexes when a table has "index" column
@@ -572,3 +569,6 @@ source ~/.config/zoxide/config.nu
 
 # bat
 alias cat = bat
+
+# Cargo Watch
+alias cw = cargo watch -c -q -x "run -q"
