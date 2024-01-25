@@ -5,7 +5,6 @@ true-color = true
 line-number = "relative"
 cursorline = true
 color-modes = true
-bufferline = "multiple"
 idle-timeout = 0
 completion-trigger-len = 1
 
