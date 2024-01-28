@@ -5,10 +5,7 @@
     ./alacritty.nix
     ./git.nix
     ./helix.nix
-    ./nushell.nix
-    ./starship.nix
     ./wezterm.nix
-    ./zoxide.nix
   ];
 
   home.packages = with pkgs; [
