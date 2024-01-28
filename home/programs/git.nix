@@ -8,7 +8,7 @@
     extraConfig = {
       init.defaultBranch = "main";
       core.editor = "hx";
-      user.signingkey = "/home/${username}/.ssh/id_rsa.pub";
+      user.signingkey = "/home/${username}/.ssh/id_ed25519.pub";
       gpg.format = "ssh";
       commit.gpgsign = true;
     };

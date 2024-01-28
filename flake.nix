@@ -29,7 +29,7 @@
           inherit system;
           specialArgs = args;
           modules = [
-            ./nixos/configuration.nix
+            ./system
 
             home-manager.nixosModules.home-manager
             {

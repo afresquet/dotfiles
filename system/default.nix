@@ -91,7 +91,7 @@
     homeMode = "755";
     isNormalUser = true;
     description = "Alvaro";
-    extraGroups = [ "networkmanager" "wheel" ];
+    extraGroups = [ "networkmanager" "wheel" "vboxsf" ]; # TODO: remove vboxsf
     packages = [ ];
     shell = pkgs.nushell;
   };
@@ -150,4 +150,6 @@
       options = "--delete-older-than 7d";
     };
   };
+
+  virtualisation.virtualbox.guest.enable = true;
 }
