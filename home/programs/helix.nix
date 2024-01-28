@@ -5,6 +5,7 @@ let
       command = "prettier";
       args = [ "--parser" parser ];
     };
+    auto-format = true;
   }; 
 in
 {
@@ -66,6 +67,11 @@ in
       typescript = prettier "typescript";
       tsx = prettier "typescript";
 
+      go = {
+        auto-format = true;
+        formatter.command = "goimports";
+      };
+
       toml = {
         formatter = {
           command = "taplo";
@@ -101,6 +107,7 @@ in
     nixpkgs-fmt
     # html css json
     vscode-langservers-extracted
+    nodePackages.prettier
     # javascript typescript
     typescript
     nodePackages.typescript-language-server
@@ -108,6 +115,10 @@ in
     nodePackages.bash-language-server
     # docker
     dockerfile-language-server-nodejs
+    # go
+    gopls
+    delve
+    gotools
     # haskell
     haskell-language-server
     #lua

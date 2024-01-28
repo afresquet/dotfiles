@@ -25,6 +25,7 @@
     ffmpeg
     fzf
     gimp
+    go
     htop
     insomnia
     just
