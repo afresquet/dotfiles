@@ -5,7 +5,7 @@
     ./alacritty.nix
     ./git.nix
     ./helix.nix
-    ./wezterm.nix
+    ./wezterm
   ];
 
   home.packages = with pkgs; [
