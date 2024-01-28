@@ -43,7 +43,7 @@
     steam
     tokei
     vlc
-    # warpinator # doesn't exist in branch
+    cinnamon.warpinator
     wget
     wiki-tui
     youtube-dl
