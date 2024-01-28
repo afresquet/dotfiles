@@ -2,6 +2,7 @@
 
 {
   imports = [
+    ./alacritty.nix
     ./git.nix
     ./helix.nix
     ./nushell.nix
@@ -33,6 +34,7 @@
     lutris
     mullvad-vpn
     neofetch
+    nerdfonts
     obs-studio
     # obsidian # electron vulnerability
     prismlauncher
