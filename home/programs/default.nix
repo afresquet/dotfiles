@@ -11,12 +11,21 @@
 
   home.packages = with pkgs; [
     _1password
+    bacon
     bat
     blender
     bottles
     brave
+    cargo-binstall
+    cargo-espflash
+    cargo-expand
+    cargo-generate
+    cargo-info
+    cargo-show-asm
     cargo-shuttle
-    uutils-coreutils
+    cargo-watch
+    cura
+    espup
     discord
     docker
     dropbox
@@ -36,6 +45,7 @@
     obs-studio
     # obsidian # electron vulnerability
     prismlauncher
+    probe-rs
     prusa-slicer
     ripgrep
     rpi-imager
@@ -43,6 +53,8 @@
     sniffnet
     steam
     tokei
+    trunk
+    uutils-coreutils
     vlc
     cinnamon.warpinator
     wget

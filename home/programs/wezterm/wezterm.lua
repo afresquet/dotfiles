@@ -3,13 +3,15 @@ local wezterm = require 'wezterm'
 local xcursor_size = nil
 local xcursor_theme = nil
 
-local cursor_theme_success, cursor_theme_stdout, _ = wezterm.run_child_process({ "gsettings", "get", "org.gnome.desktop.interface",
+local cursor_theme_success, cursor_theme_stdout, _ = wezterm.run_child_process({ "gsettings", "get",
+  "org.gnome.desktop.interface",
   "cursor-theme" })
 if cursor_theme_success then
   xcursor_theme = cursor_theme_stdout:gsub("'(.+)'\n", "%1")
 end
 
-local cursor_size_success, cursor_size_stdout, _ = wezterm.run_child_process({ "gsettings", "get", "org.gnome.desktop.interface",
+local cursor_size_success, cursor_size_stdout, _ = wezterm.run_child_process({ "gsettings", "get",
+  "org.gnome.desktop.interface",
   "cursor-size" })
 if cursor_size_success then
   xcursor_size = tonumber(cursor_size_stdout)
