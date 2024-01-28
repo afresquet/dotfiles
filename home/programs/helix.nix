@@ -1,5 +1,12 @@
 { pkgs, ... }:
-
+let 
+  prettier = parser: {
+    formatter = {
+      command = "prettier";
+      args = [ "--parser" parser ];
+    };
+  }; 
+in
 {
   programs.helix = {
     enable = true;
@@ -52,45 +59,27 @@
         auto-format = true;
       };
 
-      html = {
+      html = prettier "html";
+      json = prettier "json";
+      css = prettier "css";
+      javascript = prettier "typescript";
+      typescript = prettier "typescript";
+      tsx = prettier "typescript";
+
+      toml = {
         formatter = {
-          command = "prettier";
-          args = [ "--parser" "html" ];
+          command = "taplo";
+          args = [ "fmt" "-" ];
         };
       };
 
-      json = {
-        formatter = {
-          command = "prettier";
-          args = [ "--parser" "json" ];
-        };
-      };
-
-      css = {
-        formatter = {
-          command = "prettier";
-          args = [ "--parser" "css" ];
-        };
-      };
-
-      javascript = {
-        formatter = {
-          command = "prettier";
-          args = [ "--parser" "typescript" ];
-        };
-      };
-
-      typescript = {
-        formatter = {
-          command = "prettier";
-          args = [ "--parser" "typescript" ];
-        };
-      };
-
-      tsx = {
-        formatter = {
-          command = "prettier";
-          args = [ "--parser" "typescript" ];
+      yaml = {
+        language-server.yaml-language-server.config.yaml = {
+          format.enable = true;
+          validation = true;
+          schemas = {
+            "https://json.schemastore.org/github-workflow.json" = ".github/workflows/*.{yml,yaml}";
+          };
         };
       };
     };
@@ -103,8 +92,33 @@
     };
   };
 
+  # lsp packages
   home.packages = with pkgs; [
+    # rust
+    rustup
+    # nix
     nil
     nixpkgs-fmt
+    # html css json
+    vscode-langservers-extracted
+    # javascript typescript
+    typescript
+    nodePackages.typescript-language-server
+    # bash
+    nodePackages.bash-language-server
+    # docker
+    dockerfile-language-server-nodejs
+    # haskell
+    haskell-language-server
+    #lua
+    lua-language-server
+    # markdown
+    marksman
+    # svelte
+    nodePackages.svelte-language-server
+    # toml
+    taplo
+    # yaml
+    yaml-language-server
   ];
 }
