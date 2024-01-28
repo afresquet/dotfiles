@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 {
   programs.nushell = {
@@ -7,6 +7,9 @@
       $env.config = {
         show_banner: false,
       }
+
+      # run neofetch on launch
+      ${pkgs.neofetch}/bin/neofetch
     '';
   };
 }
