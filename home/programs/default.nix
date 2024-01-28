@@ -4,6 +4,7 @@
   imports = [
     ./alacritty.nix
     ./git.nix
+    ./gitui
     ./helix.nix
     ./wezterm
   ];
