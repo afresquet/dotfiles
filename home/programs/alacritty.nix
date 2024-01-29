@@ -4,7 +4,7 @@
   programs.alacritty = {
     enable = true;
     settings = {
-      window.opacity = 0.95;
+      window.opacity = 0.85;
       font.normal = {
         family = "Hack Nerd Font Mono";
         style = "Regular";

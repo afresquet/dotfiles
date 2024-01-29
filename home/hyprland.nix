@@ -13,36 +13,25 @@ in {
       "DP-1, 1920x1080@59.96, 0x0, 1"
       "HDMI-1, 1920x1080@59.96, 1920x0, 1"
     ];
-    input = {
-      kb_layout = "us";
-      # kb_options = "caps:super";
-      follow_mouse = 1;
-      sensitivity = 0; # -1.0 - 1.0, 0 means no modification.
-    };
     general = {
-      # See https://wiki.hyprland.org/Configuring/Variables/ for more
-      gaps_in = 6;
-      gaps_out = 8;
       border_size = 2;
-      "col.active_border" = "rgba(33ccffee) rgba(00ff99ee) 45deg";
+      gaps_in = 8;
+      gaps_out = 16;
       "col.inactive_border" = "rgba(595959aa)";
-      layout = "dwindle";
-      # resize_on_border = true;
+      "col.active_border" = "rgba(33ccffee) rgba(00ff99ee) 45deg";
+      layout = "master";
+      resize_on_border = true;
     };
     decoration = {
-      # See https://wiki.hyprland.org/Configuring/Variables/ for more
       rounding = 10;
       blur = {
           enabled = true;
           size = 5;
           passes = 3;
-          vibrancy = 0.1696;
       };
-      drop_shadow = true;
     };
     animations = {
       enabled = true;
-      # Some default animations, see https://wiki.hyprland.org/Configuring/Animations/ for more
       bezier = "myBezier, 0.05, 0.9, 0.1, 1.05";
       animation = [
         "windows, 1, 7, myBezier"
@@ -53,18 +42,12 @@ in {
         "workspaces, 1, 6, default"
       ];
     };
-    dwindle = {
-      # See https://wiki.hyprland.org/Configuring/Dwindle-Layout/ for more
-      pseudotile = true; # master switch for pseudotiling. Enabling is bound to mainMod + P in the keybinds section below
-      preserve_split = true; # you probably want this
+    misc = {
+      disable_hyprland_logo = true;
+      disable_splash_rendering = true;
     };
     master = {
-      # See https://wiki.hyprland.org/Configuring/Master-Layout/ for more
-      new_is_master = true;
-    };
-    misc = {
-      # See https://wiki.hyprland.org/Configuring/Variables/ for more
-      force_default_wallpaper = 0; # Set to 0 to disable the anime mascot wallpapers
+      new_is_master = false;
     };
     env = [
       "XCURSOR_SIZE, 24"
@@ -73,22 +56,31 @@ in {
       waybar
     ];
     bind = [
-      # Example binds, see https://wiki.hyprland.org/Configuring/Binds/ for more
       "${mainMod}, P, exec, ${terminal}"
       "${mainMod}, C, killactive,"
-      # "${mainMod}, M, exit,"
       "${mainMod}, F, exec, ${fileManager}"
       "${mainMod}, V, togglefloating,"
       "${mainMod}, R, exec, ${menu}"
       "${mainMod}, B, exec, ${browser}"
-      # "${mainMod}, P, pseudo, # dwindle"
-      # "${mainMod}, J, togglesplit, # dwindle"
 
-      # Move focus with mainMod + arrow keys
+      # Move focus
+      "${mainMod}, left, movefocus, l"
+      "${mainMod}, right, movefocus, r"
+      "${mainMod}, up, movefocus, u"
+      "${mainMod}, down, movefocus, d"
       "${mainMod}, H, movefocus, l"
       "${mainMod}, L, movefocus, r"
-      "${mainMod}, J, movefocus, u"
-      "${mainMod}, K, movefocus, d"
+      "${mainMod}, K, movefocus, u"
+      "${mainMod}, J, movefocus, d"
+      # Move window
+      "${mainMod}_SHIFT, left, movewindow, l"
+      "${mainMod}_SHIFT, right, movewindow, r"
+      "${mainMod}_SHIFT, up, movewindow, u"
+      "${mainMod}_SHIFT, down, movewindow, d"
+      "${mainMod}_SHIFT, H, movewindow, l"
+      "${mainMod}_SHIFT, L, movewindow, r"
+      "${mainMod}_SHIFT, K, movewindow, u"
+      "${mainMod}_SHIFT, J, movewindow, d"
 
       # Switch workspaces with mainMod + [0-9]
       "${mainMod}, 1, workspace, 1"
@@ -114,17 +106,13 @@ in {
       "${mainMod}_SHIFT, 9, movetoworkspace, 9"
       "${mainMod}_SHIFT, 0, movetoworkspace, 10"
 
-      # Example special workspace (scratchpad)
-      "${mainMod}, S, togglespecialworkspace, magic"
-      "${mainMod}_SHIFT, S, movetoworkspace, special:magic"
-
       # Scroll through existing workspaces with mainMod + scroll
       "${mainMod}, mouse_down, workspace, e+1"
       "${mainMod}, mouse_up, workspace, e-1"
 
       # Move/resize windows with mainMod + LMB/RMB and dragging
-      # "${mainMod}, mouse:272, movewindow"
-      # "${mainMod}, mouse:273, resizewindow"
+      "${mainMod}, mouse:272, movewindow"
+      "${mainMod}, mouse:273, resizewindowpixel"
     ];
   };
 }
