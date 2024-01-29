@@ -9,7 +9,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # hyprland.url = "github:hyprwm/Hyprland";
+    hyprland.url = "github:hyprwm/Hyprland";
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs:
@@ -19,7 +19,7 @@
 
         system = "x86_64-linux";
 
-        hostname = "afresquet-pc";
+        hostname = "nixos";
         username = "afresquet";
       };
     in

@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ pkgs, username, hostname, ... }:
+{ pkgs, inputs, username, hostname, ... }:
 
 {
   imports =
@@ -12,9 +12,8 @@
     ];
 
   # Bootloader.
-  boot.loader.grub.enable = true;
-  boot.loader.grub.device = "/dev/sda";
-  boot.loader.grub.useOSProber = true;
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
 
   networking.hostName = hostname; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -48,7 +47,7 @@
   services.xserver.enable = true;
 
   # Enable the GNOME Desktop Environment.
-  services.xserver.displayManager.gdm.enable = true;
+  services.xserver.displayManager.sddm.enable = true;
   services.xserver.desktopManager.gnome.enable = true;
 
   # Configure keymap in X11
@@ -58,10 +57,10 @@
   };
 
   # Enable Hyprland
-  # programs.hyprland = {
-  #   enable = true;
-  #   package = inputs.hyprland.packages."${pkgs.system}".hyprland;
-  # };
+  programs.hyprland = {
+    enable = true;
+    package = inputs.hyprland.packages."${pkgs.system}".hyprland;
+  };
 
   # Enable CUPS to print documents.
   # services.printing.enable = true;
@@ -91,7 +90,7 @@
     homeMode = "755";
     isNormalUser = true;
     description = "Alvaro";
-    extraGroups = [ "networkmanager" "wheel" "vboxsf" ]; # TODO: remove vboxsf
+    extraGroups = [ "networkmanager" "wheel" ];
     packages = [ ];
     shell = pkgs.nushell;
   };
@@ -150,6 +149,4 @@
       options = "--delete-older-than 7d";
     };
   };
-
-  virtualisation.virtualbox.guest.enable = true;
 }
