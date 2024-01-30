@@ -10,15 +10,15 @@
     };
 
     hyprland.url = "github:hyprwm/Hyprland";
+
+    nix-colors.url = "github:misterio77/nix-colors";
   };
 
   outputs = { self, nixpkgs, home-manager, ... }@inputs:
     let
       args = {
         inherit inputs;
-
         system = "x86_64-linux";
-
         hostname = "nixos";
         username = "afresquet";
       };

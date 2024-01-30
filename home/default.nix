@@ -1,11 +1,16 @@
-{ username, pkgs, ... }:
+{ pkgs, inputs, username, ... }:
 
 {
   imports = [
+    # https://github.com/tinted-theming/schemes
+    inputs.nix-colors.homeManagerModules.default
+
     ./hyprland.nix
     ./programs
     ./shells
   ];
+
+  colorScheme = inputs.nix-colors.colorSchemes.catppuccin-mocha;
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.

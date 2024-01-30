@@ -6,6 +6,7 @@
     ./git.nix
     ./gitui
     ./helix.nix
+    ./mako.nix
     ./wezterm
   ];
 
