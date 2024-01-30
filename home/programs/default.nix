@@ -8,6 +8,7 @@
     ./helix.nix
     ./mako.nix
     ./wezterm
+    ./wpaperd.nix
   ];
 
   home.packages = with pkgs; [
