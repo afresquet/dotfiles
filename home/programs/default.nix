@@ -31,6 +31,7 @@
     dropbox
     fd
     ffmpeg
+    font-awesome
     fzf
     gimp
     go
@@ -57,6 +58,7 @@
     uutils-coreutils
     vlc
     cinnamon.warpinator
+    wayland-logout
     wget
     wiki-tui
     youtube-dl
