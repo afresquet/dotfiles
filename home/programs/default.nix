@@ -44,6 +44,7 @@
     jq
     lutris
     mullvad-vpn
+    gnome.nautilus
     neofetch
     nerdfonts
     obs-studio

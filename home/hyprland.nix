@@ -3,7 +3,7 @@ let
   mainMod = "SUPER";
   terminal = "${pkgs.alacritty}/bin/alacritty";
   menu = "${pkgs.wofi}/bin/wofi --show drun";
-  fileManager = "${pkgs.dolphin}/bin/dolphin";
+  fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
   browser = "${pkgs.brave}/bin/brave";
   waybar = "${pkgs.waybar}/bin/waybar";
   wpaperd = "${pkgs.wpaperd}/bin/wpaperd";
@@ -58,10 +58,11 @@ in {
       wpaperd
     ];
     bind = [
-      "${mainMod}, T, exec, ${terminal}"
       "${mainMod}, C, killactive,"
-      "${mainMod}, F, exec, ${fileManager}"
       "${mainMod}, V, togglefloating,"
+      "${mainMod}, P, fullscreen, 1"
+      "${mainMod}, T, exec, ${terminal}"
+      "${mainMod}, F, exec, ${fileManager}"
       "${mainMod}, R, exec, ${menu}"
       "${mainMod}, B, exec, ${browser}"
       "${mainMod}, W, exec, pkill waybar || ${waybar}"
