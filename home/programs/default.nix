@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, font-awesome-bump,  ... }:
 
 {
   imports = [
@@ -12,7 +12,7 @@
   ];
 
   home.packages = with pkgs; [
-    _1password
+    _1password-gui
     bacon
     bat
     blender
@@ -33,7 +33,7 @@
     dropbox
     fd
     ffmpeg
-    font-awesome
+    font-awesome-bump.font-awesome
     fzf
     gimp
     go
