@@ -5,6 +5,7 @@ let
   menu = "${pkgs.wofi}/bin/wofi --show drun";
   fileManager = "${pkgs.dolphin}/bin/dolphin";
   browser = "${pkgs.brave}/bin/brave";
+  waybar = "${pkgs.waybar}/bin/waybar";
   wpaperd = "${pkgs.wpaperd}/bin/wpaperd";
 in {
   wayland.windowManager.hyprland.enable = true;
@@ -53,10 +54,11 @@ in {
       "XCURSOR_SIZE, 24"
     ];
     exec-once = [
+      waybar
       wpaperd
     ];
     bind = [
-      "${mainMod}, P, exec, ${terminal}"
+      "${mainMod}, T, exec, ${terminal}"
       "${mainMod}, C, killactive,"
       "${mainMod}, F, exec, ${fileManager}"
       "${mainMod}, V, togglefloating,"

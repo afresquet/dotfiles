@@ -7,6 +7,7 @@
     ./gitui
     ./helix.nix
     ./mako.nix
+    ./waybar.nix
     ./wezterm
     ./wpaperd.nix
   ];
