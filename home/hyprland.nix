@@ -64,6 +64,7 @@ in {
       "${mainMod}, V, togglefloating,"
       "${mainMod}, R, exec, ${menu}"
       "${mainMod}, B, exec, ${browser}"
+      "${mainMod}, W, exec, pkill waybar || ${waybar}"
 
       # Move focus
       "${mainMod}, left, movefocus, l"

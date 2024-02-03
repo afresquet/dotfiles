@@ -1,6 +1,7 @@
-{ ... }:
-
-{
+{ pkgs, ... }:
+let
+  pavucontrol = "${pkgs.pavucontrol}/bin/pavucontrol";
+in {
   programs.waybar.enable = true;
   programs.waybar.settings.mainBar = {
     layer = "top";
@@ -84,7 +85,7 @@
           ""
         ];
       };
-      on-click-left = "pavucontrol";
+      on-click = pavucontrol;
       input = true;
     };
     tray = {
