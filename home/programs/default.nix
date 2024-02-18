@@ -57,7 +57,6 @@
     rpi-imager
     rustup
     sniffnet
-    steam
     tokei
     trunk
     uutils-coreutils
