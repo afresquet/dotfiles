@@ -6,7 +6,7 @@ in {
   programs.waybar.enable = true;
   programs.waybar.settings.mainBar = {
     layer = "top";
-    margin = "16 16 0 16";
+    margin = "8 8 0 8";
     modules-left = [
       "clock"
     ];

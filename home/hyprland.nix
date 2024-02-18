@@ -1,12 +1,12 @@
 { pkgs, ... }:
 let 
-  mainMod = "SUPER";
+  main-modifier = "SUPER";
   terminal = "${pkgs.alacritty}/bin/alacritty";
-  menu = "${pkgs.wofi}/bin/wofi --show drun";
+  launcher = "${pkgs.wofi}/bin/wofi --show drun";
   fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
   browser = "${pkgs.brave}/bin/brave";
-  waybar = "${pkgs.waybar}/bin/waybar";
-  wpaperd = "${pkgs.wpaperd}/bin/wpaperd";
+  menu-bar = "${pkgs.waybar}/bin/waybar";
+  wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
 in {
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.settings = {
@@ -16,19 +16,18 @@ in {
     ];
     general = {
       border_size = 2;
-      gaps_in = 8;
-      gaps_out = 16;
+      gaps_in = 4;
+      gaps_out = 8;
       "col.inactive_border" = "rgba(595959aa)";
       "col.active_border" = "rgba(33ccffee) rgba(00ff99ee) 45deg";
-      layout = "master";
+      layout = "dwindle";
       resize_on_border = true;
     };
     decoration = {
       rounding = 10;
       blur = {
           enabled = true;
-          size = 5;
-          passes = 3;
+          xray = true;
       };
     };
     animations = {
@@ -47,6 +46,11 @@ in {
       disable_hyprland_logo = true;
       disable_splash_rendering = true;
     };
+    dwindle = {
+      pseudotile = true;
+      preserve_split = true;
+      force_split = 2;
+    };
     master = {
       new_is_master = false;
     };
@@ -54,69 +58,69 @@ in {
       "XCURSOR_SIZE, 24"
     ];
     exec-once = [
-      waybar
-      wpaperd
+      menu-bar
+      wallpaper-daemon
     ];
     bind = [
-      "${mainMod}, C, killactive,"
-      "${mainMod}, V, togglefloating,"
-      "${mainMod}, P, fullscreen, 1"
-      "${mainMod}, T, exec, ${terminal}"
-      "${mainMod}, F, exec, ${fileManager}"
-      "${mainMod}, R, exec, ${menu}"
-      "${mainMod}, B, exec, ${browser}"
-      "${mainMod}, W, exec, pkill waybar || ${waybar}"
+      "${main-modifier}, C, killactive,"
+      "${main-modifier}, V, togglefloating,"
+      "${main-modifier}, P, fullscreen, 1"
+      "${main-modifier}, T, exec, ${terminal}"
+      "${main-modifier}, F, exec, ${fileManager}"
+      "${main-modifier}, R, exec, ${launcher}"
+      "${main-modifier}, B, exec, ${browser}"
+      "${main-modifier}, W, exec, pkill waybar || ${menu-bar}"
 
       # Move focus
-      "${mainMod}, left, movefocus, l"
-      "${mainMod}, right, movefocus, r"
-      "${mainMod}, up, movefocus, u"
-      "${mainMod}, down, movefocus, d"
-      "${mainMod}, H, movefocus, l"
-      "${mainMod}, L, movefocus, r"
-      "${mainMod}, K, movefocus, u"
-      "${mainMod}, J, movefocus, d"
+      "${main-modifier}, left, movefocus, l"
+      "${main-modifier}, right, movefocus, r"
+      "${main-modifier}, up, movefocus, u"
+      "${main-modifier}, down, movefocus, d"
+      "${main-modifier}, H, movefocus, l"
+      "${main-modifier}, L, movefocus, r"
+      "${main-modifier}, K, movefocus, u"
+      "${main-modifier}, J, movefocus, d"
       # Move window
-      "${mainMod}_SHIFT, left, movewindow, l"
-      "${mainMod}_SHIFT, right, movewindow, r"
-      "${mainMod}_SHIFT, up, movewindow, u"
-      "${mainMod}_SHIFT, down, movewindow, d"
-      "${mainMod}_SHIFT, H, movewindow, l"
-      "${mainMod}_SHIFT, L, movewindow, r"
-      "${mainMod}_SHIFT, K, movewindow, u"
-      "${mainMod}_SHIFT, J, movewindow, d"
+      "${main-modifier}_SHIFT, left, movewindow, l"
+      "${main-modifier}_SHIFT, right, movewindow, r"
+      "${main-modifier}_SHIFT, up, movewindow, u"
+      "${main-modifier}_SHIFT, down, movewindow, d"
+      "${main-modifier}_SHIFT, H, movewindow, l"
+      "${main-modifier}_SHIFT, L, movewindow, r"
+      "${main-modifier}_SHIFT, K, movewindow, u"
+      "${main-modifier}_SHIFT, J, movewindow, d"
 
       # Switch workspaces with mainMod + [0-9]
-      "${mainMod}, 1, workspace, 1"
-      "${mainMod}, 2, workspace, 2"
-      "${mainMod}, 3, workspace, 3"
-      "${mainMod}, 4, workspace, 4"
-      "${mainMod}, 5, workspace, 5"
-      "${mainMod}, 6, workspace, 6"
-      "${mainMod}, 7, workspace, 7"
-      "${mainMod}, 8, workspace, 8"
-      "${mainMod}, 9, workspace, 9"
-      "${mainMod}, 0, workspace, 10"
+      "${main-modifier}, 1, workspace, 1"
+      "${main-modifier}, 2, workspace, 2"
+      "${main-modifier}, 3, workspace, 3"
+      "${main-modifier}, 4, workspace, 4"
+      "${main-modifier}, 5, workspace, 5"
+      "${main-modifier}, 6, workspace, 6"
+      "${main-modifier}, 7, workspace, 7"
+      "${main-modifier}, 8, workspace, 8"
+      "${main-modifier}, 9, workspace, 9"
+      "${main-modifier}, 0, workspace, 10"
 
       # Move active window to a workspace with mainMod + SHIFT + [0-9]
-      "${mainMod}_SHIFT, 1, movetoworkspace, 1"
-      "${mainMod}_SHIFT, 2, movetoworkspace, 2"
-      "${mainMod}_SHIFT, 3, movetoworkspace, 3"
-      "${mainMod}_SHIFT, 4, movetoworkspace, 4"
-      "${mainMod}_SHIFT, 5, movetoworkspace, 5"
-      "${mainMod}_SHIFT, 6, movetoworkspace, 6"
-      "${mainMod}_SHIFT, 7, movetoworkspace, 7"
-      "${mainMod}_SHIFT, 8, movetoworkspace, 8"
-      "${mainMod}_SHIFT, 9, movetoworkspace, 9"
-      "${mainMod}_SHIFT, 0, movetoworkspace, 10"
+      "${main-modifier}_SHIFT, 1, movetoworkspace, 1"
+      "${main-modifier}_SHIFT, 2, movetoworkspace, 2"
+      "${main-modifier}_SHIFT, 3, movetoworkspace, 3"
+      "${main-modifier}_SHIFT, 4, movetoworkspace, 4"
+      "${main-modifier}_SHIFT, 5, movetoworkspace, 5"
+      "${main-modifier}_SHIFT, 6, movetoworkspace, 6"
+      "${main-modifier}_SHIFT, 7, movetoworkspace, 7"
+      "${main-modifier}_SHIFT, 8, movetoworkspace, 8"
+      "${main-modifier}_SHIFT, 9, movetoworkspace, 9"
+      "${main-modifier}_SHIFT, 0, movetoworkspace, 10"
 
       # Scroll through existing workspaces with mainMod + scroll
-      "${mainMod}, mouse_down, workspace, e+1"
-      "${mainMod}, mouse_up, workspace, e-1"
-
-      # Move/resize windows with mainMod + LMB/RMB and dragging
-      "${mainMod}, mouse:272, movewindow"
-      "${mainMod}, mouse:273, resizewindowpixel"
+      "${main-modifier}, mouse_down, workspace, e+1"
+      "${main-modifier}, mouse_up, workspace, e-1"
+    ];
+    bindm = [
+      # Move windows with mainMod + LMB and dragging
+      "${main-modifier}, mouse:272, movewindow"
     ];
   };
 }
