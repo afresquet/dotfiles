@@ -9,6 +9,7 @@
     ./mako.nix
     ./waybar.nix
     ./wezterm
+    ./wlogout.nix
     ./wpaperd.nix
   ];
 
@@ -62,7 +63,6 @@
     uutils-coreutils
     vlc
     cinnamon.warpinator
-    wayland-logout
     wget
     wiki-tui
     youtube-dl

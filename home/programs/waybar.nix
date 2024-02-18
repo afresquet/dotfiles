@@ -1,6 +1,7 @@
 { pkgs, ... }:
 let
   pavucontrol = "${pkgs.pavucontrol}/bin/pavucontrol";
+  wlogout = "${pkgs.wlogout}/bin/wlogout -b 2";
 in {
   programs.waybar.enable = true;
   programs.waybar.settings.mainBar = {
@@ -17,6 +18,7 @@ in {
       "pulseaudio"
       "bluetooth"
       "network"
+      "custom/session"
     ];
     "hyprland/window" = {
       format = "{title}";
@@ -103,6 +105,10 @@ in {
         connected = "";
       };
       tooltip-format = "{device_alias} {status}";
+    };
+    "custom/session" = {
+      format = "";
+      on-click = wlogout;
     };
   };
   programs.waybar.style = ''
@@ -210,7 +216,8 @@ in {
       border: solid transparent;
     }
 
-    #tray {
+    #tray,
+    #custom-session {
       margin: 5px 5px 2px 5px;
       border-radius: 7px;
       padding-left: 10px;
