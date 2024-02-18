@@ -38,17 +38,18 @@
     fzf
     gimp
     go
-    htop
+    btop
     insomnia
     just
     jq
     lutris
+    maestral
     mullvad-vpn
     gnome.nautilus
     neofetch
     nerdfonts
     obs-studio
-    # obsidian # electron vulnerability
+    obsidian # electron vulnerability
     prismlauncher
     probe-rs
     prusa-slicer
