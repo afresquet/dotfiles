@@ -3,6 +3,7 @@
 {
   imports = [
     ./alacritty.nix
+    ./direnv.nix
     ./git.nix
     ./gitui
     ./helix.nix
@@ -15,24 +16,13 @@
 
   home.packages = with pkgs; [
     _1password-gui
-    bacon
     bat
     blender
     bottles
     brave
-    cargo-binstall
-    cargo-espflash
-    cargo-expand
-    cargo-generate
-    cargo-info
-    cargo-show-asm
-    cargo-shuttle
-    cargo-watch
     cura
-    espup
     discord
     docker
-    dropbox
     fd
     ffmpeg
     font-awesome-bump.font-awesome
@@ -56,7 +46,6 @@
     prusa-slicer
     ripgrep
     rpi-imager
-    rustup
     sniffnet
     tokei
     trunk
