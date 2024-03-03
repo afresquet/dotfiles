@@ -96,40 +96,27 @@ in
         "ui.background" = {};
       };
     };
-  };
 
-  # lsp packages
-  home.packages = with pkgs; [
-    # rust
-    rustup
-    # nix
-    nil
-    nixpkgs-fmt
-    # html css json
-    vscode-langservers-extracted
-    nodePackages.prettier
-    # javascript typescript
-    typescript
-    nodePackages.typescript-language-server
-    # bash
-    nodePackages.bash-language-server
-    # docker
-    dockerfile-language-server-nodejs
-    # go
-    gopls
-    delve
-    gotools
-    # haskell
-    haskell-language-server
-    #lua
-    lua-language-server
-    # markdown
-    marksman
-    # svelte
-    nodePackages.svelte-language-server
-    # toml
-    taplo
-    # yaml
-    yaml-language-server
-  ];
+    extraPackages = with pkgs; [
+      # nix
+      nil
+      nixpkgs-fmt
+      # html css json
+      vscode-langservers-extracted
+      nodePackages.prettier
+      # javascript typescript
+      typescript
+      nodePackages.typescript-language-server
+      # bash
+      nodePackages.bash-language-server
+      # docker
+      dockerfile-language-server-nodejs
+      # markdown
+      marksman
+      # toml
+      taplo
+      # yaml
+      yaml-language-server      
+    ];
+  };
 }

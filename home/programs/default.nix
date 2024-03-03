@@ -17,7 +17,6 @@
   home.packages = with pkgs; [
     _1password-gui
     bat
-    blender
     bottles
     brave
     cura
@@ -28,7 +27,6 @@
     font-awesome-bump.font-awesome
     fzf
     gimp
-    go
     btop
     insomnia
     just
@@ -40,7 +38,7 @@
     neofetch
     nerdfonts
     obs-studio
-    obsidian # electron vulnerability
+    obsidian
     prismlauncher
     probe-rs
     prusa-slicer
