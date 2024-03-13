@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ pkgs, inputs, username, hostname, ... }:
+{ lib, pkgs, inputs, username, hostname, ... }:
 
 {
   imports =
@@ -99,7 +99,15 @@
   };
 
   # Allow unfree packages
-  nixpkgs.config.allowUnfree = true;
+  nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
+    "1password-gui"
+    "1password"
+    "discord"
+    "obsidian"
+    "steam"
+    "steam-original"
+    "steam-run"
+  ];
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
