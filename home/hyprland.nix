@@ -7,6 +7,8 @@ let
   browser = "${pkgs.brave}/bin/brave";
   menu-bar = "${pkgs.waybar}/bin/waybar";
   wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
+  # Screenshot
+  grimshot = "${pkgs.sway-contrib.grimshot}/bin/grimshot";
 in {
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.settings = {
@@ -117,6 +119,9 @@ in {
       # Scroll through existing workspaces with mainMod + scroll
       "${main-modifier}, mouse_down, workspace, e+1"
       "${main-modifier}, mouse_up, workspace, e-1"
+
+      # Screenshot
+      ", Print, exec, ${grimshot} --notify copy area"
     ];
     bindm = [
       # Move windows with mainMod + LMB and dragging
