@@ -26,7 +26,10 @@
   networking.networkmanager.enable = true;
 
   # Enable bluetooth
-  hardware.bluetooth.enable = true;
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
 
   # Set your time zone.
   time.timeZone = "Europe/Madrid";
@@ -49,7 +52,7 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  services.xserver.displayManager.sddm.enable = true;
+  services.displayManager.sddm.enable = true;
 
   # Configure keymap in X11
   services.xserver = {
@@ -63,6 +66,12 @@
   programs.hyprland = {
     enable = true;
     package = inputs.hyprland.packages."${pkgs.system}".hyprland;
+    xwayland.enable = true;
+  };
+
+  xdg.portal = {
+    enable = true;
+    extraPortals = with pkgs; [ xdg-desktop-portal-gtk ];
   };
 
   # Enable CUPS to print documents.
@@ -107,12 +116,15 @@
     "steam"
     "steam-original"
     "steam-run"
+    "surrealdb"
+    "vscode"
   ];
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
-  environment.systemPackages = [
+  environment.systemPackages = with pkgs; [
     # vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    xdg-desktop-portal-gtk
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -139,6 +151,9 @@
 
   services.mullvad-vpn.enable = true;
 
+  services.gvfs.enable = true;
+  services.udisks2.enable = true;
+
   # Open ports in the firewall.
   # networking.firewall.allowedTCPPorts = [ ... ];
   # networking.firewall.allowedUDPPorts = [ ... ];
@@ -163,6 +178,10 @@
       ];
       trusted-public-keys = [
         "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+      ];
+      trusted-users = [
+        "root"
+        "afresquet"
       ];
     };
     gc = {

@@ -101,6 +101,8 @@ in
       # nix
       nil
       nixpkgs-fmt
+      # rust
+      rust-analyzer
       # html css json
       vscode-langservers-extracted
       nodePackages.prettier
