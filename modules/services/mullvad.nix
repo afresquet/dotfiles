@@ -4,6 +4,8 @@
   };
 
   config = {
+    mullvad.enable = lib.mkDefault true;
+
     services.mullvad-vpn.enable = config.mullvad.enable;
   };
 }

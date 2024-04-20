@@ -13,13 +13,6 @@
     ./polyfills
   ];
 
-  steam.enable = lib.mkDefault false;
-
-  ssh.enable = lib.mkDefault true;
-  mullvad.enable = lib.mkDefault true;
-  bluetooth.enable = lib.mkDefault true;
-  internet.enable = lib.mkDefault true;
-
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${username} = {
     homeMode = "755";
