@@ -23,12 +23,6 @@
     inherit shell;
   };
 
-
-  # Enable device mounting daemon
-  services.devmon.enable = true;
-  services.gvfs.enable = true;
-  services.udisks2.enable = true;
-
   # Allow unfree packages
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) config.allowedUnfree;
 
