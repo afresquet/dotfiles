@@ -23,6 +23,7 @@
     cura
     discord
     docker
+    fastfetch
     fd
     ffmpeg
     font-awesome-bump.font-awesome
@@ -36,7 +37,6 @@
     maestral
     mullvad-vpn
     gnome.nautilus
-    neofetch
     nerdfonts
     obs-studio
     obsidian

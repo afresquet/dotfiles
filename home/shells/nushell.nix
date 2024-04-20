@@ -8,8 +8,8 @@
         show_banner: false,
       }
 
-      # run neofetch on launch
-      ${pkgs.neofetch}/bin/neofetch
+      # run fastfetch on launch
+      ${pkgs.fastfetch}/bin/fastfetch
     '';
   };
 }
