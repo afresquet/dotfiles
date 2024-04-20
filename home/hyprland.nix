@@ -1,5 +1,5 @@
 { pkgs, ... }:
-let 
+let
   main-modifier = "SUPER";
   terminal = "${pkgs.alacritty}/bin/alacritty";
   launcher = "${pkgs.wofi}/bin/wofi --show drun";
@@ -9,7 +9,8 @@ let
   wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
   # Screenshot
   grimshot = "${pkgs.sway-contrib.grimshot}/bin/grimshot";
-in {
+in
+{
   wayland.windowManager.hyprland.enable = true;
   wayland.windowManager.hyprland.settings = {
     monitor = [
@@ -28,8 +29,8 @@ in {
     decoration = {
       rounding = 10;
       blur = {
-          enabled = true;
-          xray = true;
+        enabled = true;
+        xray = true;
       };
     };
     animations = {

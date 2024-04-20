@@ -2,7 +2,8 @@
 let
   pavucontrol = "${pkgs.pavucontrol}/bin/pavucontrol";
   wlogout = "${pkgs.wlogout}/bin/wlogout -b 2";
-in {
+in
+{
   programs.waybar.enable = true;
   programs.waybar.settings.mainBar = {
     layer = "top";

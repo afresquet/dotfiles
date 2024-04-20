@@ -1,46 +1,41 @@
 {
   description = "My NixOS flake";
 
-  outputs = { nixpkgs, home-manager, flake-parts, nixpkgs-font-awesome-bump, ... }@inputs:
+  outputs = { nixpkgs, home-manager, ... }@inputs:
     let
       system = "x86_64-linux";
-      font-awesome-bump = nixpkgs-font-awesome-bump.legacyPackages.${system};
+      pkgs = nixpkgs.legacyPackages.${system};
+      font-awesome-bump = inputs.nixpkgs-font-awesome-bump.legacyPackages.${system};
       args = {
         inherit inputs;
         inherit system;
         hostname = "nixos";
         username = "afresquet";
         inherit font-awesome-bump;
+
+        shell = pkgs.nushell;
       };
     in
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      flake = {
-        nixosConfigurations = with args; {
-          "${hostname}" = nixpkgs.lib.nixosSystem {
-            inherit system;
-            specialArgs = args;
-            modules = [
-              ./system
+    {
+      nixosConfigurations = with args; {
+        "${hostname}" = nixpkgs.lib.nixosSystem {
+          inherit system;
+          specialArgs = args;
+          modules = [
+            ./hosts/desktop/configuration.nix
 
-              home-manager.nixosModules.home-manager
-              {
-                home-manager = {
-                  useGlobalPkgs = true;
-                  useUserPackages = true;
-                  users.${username} = import ./home;
-                  extraSpecialArgs = args;
-                };
-              }
-            ];
-          };
+            home-manager.nixosModules.home-manager
+            {
+              home-manager = {
+                useGlobalPkgs = true;
+                useUserPackages = true;
+                users.${username} = import ./home;
+                extraSpecialArgs = args;
+              };
+            }
+          ];
         };
       };
-
-      systems = [
-        "x86_64-linux"
-      ];
-
-      perSystem = { config, ... }: {};
     };
 
   inputs = {
@@ -51,8 +46,6 @@
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    flake-parts.url = "github:hercules-ci/flake-parts";
 
     hyprland.url = "github:hyprwm/Hyprland";
 

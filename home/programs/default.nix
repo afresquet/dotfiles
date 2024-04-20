@@ -1,4 +1,4 @@
-{ pkgs, font-awesome-bump,  ... }:
+{ pkgs, font-awesome-bump, ... }:
 
 {
   imports = [
@@ -57,5 +57,5 @@
     wget
     wiki-tui
     youtube-dl
-  ]; 
+  ];
 }

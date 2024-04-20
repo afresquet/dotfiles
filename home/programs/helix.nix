@@ -1,12 +1,12 @@
 { pkgs, ... }:
-let 
+let
   prettier = parser: {
     formatter = {
       command = "prettier";
       args = [ "--parser" parser ];
     };
     auto-format = true;
-  }; 
+  };
 in
 {
   programs.helix = {
@@ -56,7 +56,7 @@ in
       };
 
       nix = {
-        formatter.command = "nixpkgs-fmt";
+        formatter.command = "nixpkgs-fmt .";
         auto-format = true;
       };
 
@@ -93,7 +93,7 @@ in
     themes = {
       catppuccin_mocha = {
         inherits = "catppuccin_mocha";
-        "ui.background" = {};
+        "ui.background" = { };
       };
     };
 
@@ -118,7 +118,7 @@ in
       # toml
       taplo
       # yaml
-      yaml-language-server      
+      yaml-language-server
     ];
   };
 }

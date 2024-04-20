@@ -1,7 +1,8 @@
 { ... }:
 let
   path = ./assets/wallpaper.png;
-in {
+in
+{
   programs.wpaperd = {
     enable = true;
     # https://github.com/danyspin97/wpaperd#wallpaper-configuration
