@@ -1,12 +1,16 @@
 { pkgs, ... }:
 
 {
-  programs.nushell.extraConfig = ''
-    $env.config = {
-      show_banner: false,
-    }
+  programs.nushell = {
+    enable = true;
 
-    # run fastfetch on launch
-    ${pkgs.fastfetch}/bin/fastfetch
-  '';
+    extraConfig = ''
+      $env.config = {
+        show_banner: false,
+      }
+
+      # run fastfetch on launch
+      ${pkgs.fastfetch}/bin/fastfetch
+    '';
+  };
 }
