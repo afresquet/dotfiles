@@ -15,7 +15,10 @@ in
         extraSpecialArgs = {
           inherit inputs;
 
-          args = { inherit username; };
+          args = {
+            inherit username;
+            hyprland.enable = config.hyprland.enable;
+          };
         };
       };
     }
