@@ -20,6 +20,11 @@
       wget
       wiki-tui
       youtube-dl
+      # archives
+      zip
+      xz
+      unzip
+      p7zip
     ];
   };
 }
