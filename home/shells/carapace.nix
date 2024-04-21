@@ -4,8 +4,6 @@
   };
 
   config = {
-    carapace.enable = lib.mkDefault true;
-
     programs.carapace = {
       enable = config.carapace.enable;
       enableBashIntegration = true;

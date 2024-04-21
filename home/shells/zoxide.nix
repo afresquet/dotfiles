@@ -4,8 +4,6 @@
   };
 
   config = {
-    zoxide.enable = lib.mkDefault true;
-
     programs.zoxide = {
       enable = config.zoxide.enable;
 

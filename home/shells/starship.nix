@@ -4,8 +4,6 @@
   };
 
   config = {
-    starship.enable = lib.mkDefault true;
-
     programs.starship = {
       enable = config.starship.enable;
 

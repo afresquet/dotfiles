@@ -12,5 +12,10 @@
   waybar.enable = true;
   wlogout.enable = true;
   wpaperd.enable = true;
+
+  # Shells
+  carapace.enable = true;
+  starship.enable = true;
+  zoxide.enable = true;
 }
 
