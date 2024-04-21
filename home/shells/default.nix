@@ -11,12 +11,13 @@
   home.packages = with pkgs; [
     bash
     fish
+    nushell
     zsh
   ];
 
   home.sessionVariables = {
     EDITOR = "hx";
     BROWSER = "brave";
-    TERMINAL = "wezterm";
+    TERMINAL = "alacritty";
   };
 }

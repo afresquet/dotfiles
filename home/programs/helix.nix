@@ -1,14 +1,4 @@
-{ pkgs, ... }:
-let
-  prettier = parser: {
-    formatter = {
-      command = "prettier";
-      args = [ "--parser" parser ];
-    };
-    auto-format = true;
-  };
-in
-{
+{ pkgs, ... }: {
   programs.helix = {
     enable = true;
 
@@ -22,6 +12,7 @@ in
         color-modes = true;
         idle-timeout = 0;
         completion-trigger-len = 1;
+        auto-format = true;
 
         statusline = {
           left = [ "mode" "spinner" "version-control" "file-name" ];
@@ -49,38 +40,64 @@ in
     };
 
     languages = {
-      rust = {
-        language-server.rust-analyzer.config = {
+      language = [
+        {
+          name = "nix";
+          formatter = { command = "nixpkgs-fmt"; };
+          auto-format = true;
+        }
+
+        {
+          name = "html";
+          formatter = { command = "prettier"; args = [ "--parser" "html" ]; };
+        }
+
+        {
+          name = "css";
+          formatter = { command = "prettier"; args = [ "--parser" "css" ]; };
+        }
+
+        {
+          name = "json";
+          formatter = { command = "prettier"; args = [ "--parser" "json" ]; };
+        }
+
+        {
+          name = "javascript";
+          formatter = { command = "prettier"; args = [ "--parser" "typescript" ]; };
+          auto-format = true;
+        }
+
+        {
+          name = "typescript";
+          formatter = { command = "prettier"; args = [ "--parser" "typescript" ]; };
+          auto-format = true;
+        }
+
+        {
+          name = "tsx";
+          formatter = { command = "prettier"; args = [ "--parser" "typescript" ]; };
+          auto-format = true;
+        }
+
+        {
+          name = "go";
+          formatter = { command = "goimports"; };
+          auto-format = true;
+        }
+
+        {
+          name = "toml";
+          formatter = { command = "taplo"; args = [ "fmt" "-" ]; };
+        }
+      ];
+
+      language-server = {
+        rust-analyzer.config = {
           check.command = "clippy";
         };
-      };
 
-      nix = {
-        formatter.command = "nixpkgs-fmt .";
-        auto-format = true;
-      };
-
-      html = prettier "html";
-      json = prettier "json";
-      css = prettier "css";
-      javascript = prettier "typescript";
-      typescript = prettier "typescript";
-      tsx = prettier "typescript";
-
-      go = {
-        auto-format = true;
-        formatter.command = "goimports";
-      };
-
-      toml = {
-        formatter = {
-          command = "taplo";
-          args = [ "fmt" "-" ];
-        };
-      };
-
-      yaml = {
-        language-server.yaml-language-server.config.yaml = {
+        yaml-language-server.config.yaml = {
           format.enable = true;
           validation = true;
           schemas = {
