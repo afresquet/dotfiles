@@ -1,13 +1,17 @@
-{ ... }:
+{ lib, config, ... }: {
+  options = {
+    direnv.enable = lib.mkEnableOption "Direnv";
+  };
 
-{
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
+  config = {
+    programs.direnv = {
+      enable = config.direnv.enable;
+      nix-direnv.enable = config.direnv.enable;
 
-    enableBashIntegration = true;
-    enableFishIntegration = true;
-    enableNushellIntegration = true;
-    enableZshIntegration = true;
+      enableBashIntegration = true;
+      enableFishIntegration = true;
+      enableNushellIntegration = true;
+      enableZshIntegration = true;
+    };
   };
 }

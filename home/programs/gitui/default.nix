@@ -1,8 +1,6 @@
-{ ... }:
-
-{
+{ config, ... }: {
   programs.gitui = {
-    enable = true;
+    enable = config.git.enable;
     keyConfig = builtins.readFile ./key_bindings.ron;
   };
 }
