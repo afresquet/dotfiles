@@ -1,9 +1,18 @@
 {
   description = "My NixOS flake";
 
+  outputs = { nixpkgs, ... }@inputs: {
+    nixosConfigurations = {
+      desktop = nixpkgs.lib.nixosSystem {
+        specialArgs = { inherit inputs; };
+        modules = [ ./hosts/desktop ];
+      };
+    };
+  };
+
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-font-awesome-bump.url = "github:afresquet/nixpkgs/bump-font-awesome";
+    font-awesome-bump.url = "github:afresquet/nixpkgs/bump-font-awesome"; # https://github.com/NixOS/nixpkgs/pull/285394
 
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -14,38 +23,4 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
   };
-
-  outputs = { self, nixpkgs, home-manager, nixpkgs-font-awesome-bump, ... }@inputs:
-    let
-      system = "x86_64-linux";
-      font-awesome-bump = nixpkgs-font-awesome-bump.legacyPackages.${system};
-      args = {
-        inherit inputs;
-        inherit system;
-        hostname = "nixos";
-        username = "afresquet";
-        inherit font-awesome-bump;
-      };
-    in
-    {
-      nixosConfigurations = with args; {
-        "${hostname}" = nixpkgs.lib.nixosSystem {
-          inherit system;
-          specialArgs = args;
-          modules = [
-            ./system
-
-            home-manager.nixosModules.home-manager
-            {
-              home-manager = {
-                useGlobalPkgs = true;
-                useUserPackages = true;
-                users.${username} = import ./home;
-                extraSpecialArgs = args;
-              };
-            }
-          ];
-        };
-      };
-    };
 }

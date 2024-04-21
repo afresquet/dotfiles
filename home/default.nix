@@ -1,7 +1,9 @@
-{ pkgs, inputs, username, ... }:
+{ config, inputs, ... }:
 
 {
   imports = [
+    ./settings.nix
+
     # https://github.com/tinted-theming/schemes
     inputs.nix-colors.homeManagerModules.default
 
@@ -14,8 +16,8 @@
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "${username}";
-  home.homeDirectory = "/home/${username}";
+  home.username = "${config.username}";
+  home.homeDirectory = "/home/${config.username}";
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
@@ -28,7 +30,7 @@
 
   # The home.packages option allows you to install Nix packages into your
   # environment.
-  home.packages = with pkgs; [
+  home.packages = [
     # # Adds the 'hello' command to your environment. It prints a friendly
     # # "Hello, world!" when run.
     # pkgs.hello
@@ -45,12 +47,6 @@
     # (pkgs.writeShellScriptBin "my-hello" ''
     #   echo "Hello, ${config.home.username}!"
     # '')
-
-    # archives
-    zip
-    xz
-    unzip
-    p7zip
   ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage

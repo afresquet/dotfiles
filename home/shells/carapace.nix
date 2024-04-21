@@ -1,11 +1,15 @@
-{ ... }:
+{ lib, config, ... }: {
+  options = {
+    carapace.enable = lib.mkEnableOption "Carapace";
+  };
 
-{
-  programs.carapace = {
-    enable = true;
-    enableBashIntegration = true;
-    enableFishIntegration = true;
-    enableNushellIntegration = true;
-    enableZshIntegration = true;
+  config = {
+    programs.carapace = {
+      enable = config.carapace.enable;
+      enableBashIntegration = true;
+      enableFishIntegration = true;
+      enableNushellIntegration = true;
+      enableZshIntegration = true;
+    };
   };
 }
