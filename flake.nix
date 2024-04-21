@@ -7,11 +7,6 @@
         specialArgs = { inherit inputs; };
         modules = [ ./hosts/desktop ];
       };
-
-      # laptop = nixpkgs.lib.nixosSystem {
-      #   specialArgs = { inherit inputs; };
-      #   modules = [ ./hosts/laptop ];
-      # };
     };
   };
 
