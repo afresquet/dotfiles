@@ -4,8 +4,6 @@
   };
 
   config = {
-    mullvad.enable = lib.mkDefault true;
-
     packages = lib.mkIf config.mullvad.enable [
       pkgs.mullvad-vpn
     ];

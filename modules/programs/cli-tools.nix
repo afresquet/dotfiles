@@ -4,8 +4,6 @@
   };
 
   config = {
-    cli-tools.enable = lib.mkDefault true;
-
     packages = with pkgs; lib.mkIf config.cli-tools.enable [
       bat
       eza

@@ -13,6 +13,7 @@
   # Programs
   _1password.enable = true;
   brave.enable = true;
+  cli-tools.enable = true;
   discord.enable = true;
   docker.enable = true;
   dropbox.enable = true;
@@ -23,5 +24,10 @@
   vlc.enable = true;
 
   # Services
+  bluetooth.enable = true;
   hyprland.enable = true;
+  internet.enable = true;
+  mounting.enable = true;
+  mullvad.enable = true;
+  ssh.enable = true;
 }

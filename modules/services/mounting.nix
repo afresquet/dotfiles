@@ -8,8 +8,6 @@
       inherit (config.mounting) enable;
     in
     {
-      mounting.enable = lib.mkDefault true;
-
       # Enable device mounting daemon
       services.devmon.enable = enable;
       services.gvfs.enable = enable;

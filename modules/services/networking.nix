@@ -5,8 +5,6 @@
   };
 
   config = {
-    internet.enable = lib.mkDefault true;
-
     # Define your hostname.
     networking.hostName = config.hostname;
 

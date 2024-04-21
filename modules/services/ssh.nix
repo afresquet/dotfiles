@@ -4,8 +4,6 @@
   };
 
   config = {
-    ssh.enable = lib.mkDefault true;
-
     # Enable the OpenSSH daemon.
     services.openssh.enable = config.ssh.enable;
   };

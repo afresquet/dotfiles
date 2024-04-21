@@ -4,8 +4,6 @@
   };
 
   config = {
-    bluetooth.enable = lib.mkDefault true;
-
     # Enable bluetooth
     hardware.bluetooth = {
       enable = config.bluetooth.enable;
