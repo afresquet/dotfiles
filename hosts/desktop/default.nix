@@ -15,12 +15,7 @@ in
         extraSpecialArgs = {
           inherit inputs;
 
-          args = {
-            inherit username;
-
-            # https://github.com/NixOS/nixpkgs/pull/285394
-            inherit (inputs.font-awesome-bump.legacyPackages."x86_64-linux") font-awesome;
-          };
+          args = { inherit username; };
         };
       };
     }

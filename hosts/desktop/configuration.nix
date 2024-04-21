@@ -11,5 +11,6 @@
     ];
 
   hyprland.enable = true;
+  minecraft.enable = true;
   steam.enable = true;
 }

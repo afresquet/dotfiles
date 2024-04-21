@@ -8,6 +8,7 @@
   imports = [
     ./settings.nix
     ./main-user.nix
+    ./fonts.nix
     ./hyprland.nix
     ./locale.nix
     ./programs

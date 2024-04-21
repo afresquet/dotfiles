@@ -1,4 +1,4 @@
-{ pkgs, args, ... }: {
+{ ... }: {
   imports = [
     ./alacritty.nix
     ./direnv.nix
@@ -6,51 +6,10 @@
     ./gitui
     ./helix.nix
     ./mako.nix
+    ./obs-studio.nix
     ./waybar.nix
     ./wezterm
     ./wlogout.nix
     ./wpaperd.nix
-  ];
-
-  home.packages = with pkgs; [
-    bat
-    bluetuith
-    bottles
-    brave
-    cura
-    discord
-    docker
-    fastfetch
-    fd
-    ffmpeg
-    args.font-awesome
-    fzf
-    gimp
-    btop
-    insomnia
-    just
-    jq
-    lutris
-    maestral
-    mullvad-vpn
-    gnome.nautilus
-    nerdfonts
-    obs-studio
-    obsidian
-    prismlauncher
-    probe-rs
-    prusa-slicer
-    ripgrep
-    rpi-imager
-    sniffnet
-    surrealist
-    tokei
-    trunk
-    uutils-coreutils
-    vlc
-    cinnamon.warpinator
-    wget
-    wiki-tui
-    youtube-dl
   ];
 }
