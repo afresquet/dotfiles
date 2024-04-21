@@ -21,7 +21,5 @@
     "1password"
     "discord"
     "obsidian"
-    "surrealdb"
-    "vscode"
   ];
 }

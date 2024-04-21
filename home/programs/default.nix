@@ -46,13 +46,11 @@
     ripgrep
     rpi-imager
     sniffnet
-    surrealdb
     surrealist
     tokei
     trunk
     uutils-coreutils
     vlc
-    vscode
     cinnamon.warpinator
     wget
     wiki-tui
