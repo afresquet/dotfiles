@@ -8,7 +8,7 @@ let
   menu-bar = "${pkgs.waybar}/bin/waybar";
   wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
   # Screenshot
-  grimshot = "${pkgs.sway-contrib.grimshot}/bin/grimshot";
+  screenshot = "${pkgs.grimblast}/bin/grimblast";
 in
 {
   wayland.windowManager.hyprland = {
@@ -124,7 +124,7 @@ in
         "${main-modifier}, mouse_up, workspace, e-1"
 
         # Screenshot
-        ", Print, exec, ${grimshot} --notify copy area"
+        ", Print, exec, ${screenshot} --cursor copy area"
       ];
       bindm = [
         # Move windows with mainMod + LMB and dragging
