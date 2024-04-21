@@ -1,16 +1,22 @@
-{ ... }:
+{ lib, config, ... }: {
+  options = {
+    zoxide.enable = lib.mkEnableOption "zoxide";
+  };
 
-{
-  programs.zoxide = {
-    enable = true;
+  config = {
+    zoxide.enable = lib.mkDefault true;
 
-    enableBashIntegration = true;
-    enableFishIntegration = true;
-    enableNushellIntegration = true;
-    enableZshIntegration = true;
+    programs.zoxide = {
+      enable = config.zoxide.enable;
 
-    options = [
-      "--cmd cd"
-    ];
+      enableBashIntegration = true;
+      enableFishIntegration = true;
+      enableNushellIntegration = true;
+      enableZshIntegration = true;
+
+      options = [
+        "--cmd cd"
+      ];
+    };
   };
 }
