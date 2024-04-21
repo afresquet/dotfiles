@@ -4,8 +4,6 @@
   };
 
   config = {
-    steam.enable = lib.mkDefault false;
-
     programs.steam = {
       enable = config.steam.enable;
       remotePlay.openFirewall = true;

@@ -4,8 +4,6 @@
   };
 
   config = {
-    _1password.enable = lib.mkDefault true;
-
     packages = lib.mkIf config._1password.enable [
       pkgs._1password-gui
     ];

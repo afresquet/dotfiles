@@ -10,7 +10,18 @@
       ./../../modules
     ];
 
-  hyprland.enable = true;
+  # Programs
+  _1password.enable = true;
+  brave.enable = true;
+  discord.enable = true;
+  docker.enable = true;
+  dropbox.enable = true;
+  file-manager.enable = true;
   minecraft.enable = true;
+  obsidian.enable = true;
   steam.enable = true;
+  vlc.enable = true;
+
+  # Services
+  hyprland.enable = true;
 }

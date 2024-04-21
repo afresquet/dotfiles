@@ -4,8 +4,6 @@
   };
 
   config = {
-    dropbox.enable = lib.mkDefault true;
-
     packages = lib.mkIf config.dropbox.enable [
       pkgs.maestral
     ];

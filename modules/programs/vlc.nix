@@ -4,8 +4,6 @@
   };
 
   config = {
-    vlc.enable = lib.mkDefault true;
-
     packages = lib.mkIf config.vlc.enable [
       pkgs.vlc
     ];

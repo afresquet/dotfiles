@@ -4,8 +4,6 @@
   };
 
   config = {
-    brave.enable = lib.mkDefault true;
-
     packages = lib.mkIf config.brave.enable [
       pkgs.brave
     ];

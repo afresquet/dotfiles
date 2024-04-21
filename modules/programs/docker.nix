@@ -4,8 +4,6 @@
   };
 
   config = {
-    docker.enable = lib.mkDefault true;
-
     virtualisation.docker.enable = config.docker.enable;
 
     users.extraGroups.docker.members = [ config.username ];
