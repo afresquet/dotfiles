@@ -1,4 +1,4 @@
-{ lib, config, hostname, ... }: {
+{ lib, config, ... }: {
   options = {
     internet.enable = lib.mkEnableOption "Internet";
     internet.wifi.enable = lib.mkEnableOption "WiFi";
@@ -8,7 +8,7 @@
     internet.enable = lib.mkDefault true;
 
     # Define your hostname.
-    networking.hostName = hostname;
+    networking.hostName = config.hostname;
 
     # Enable networking
     networking.networkmanager.enable = config.internet.enable;

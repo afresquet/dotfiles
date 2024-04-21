@@ -1,6 +1,4 @@
-{ pkgs, font-awesome-bump, ... }:
-
-{
+{ pkgs, args, ... }: {
   imports = [
     ./alacritty.nix
     ./direnv.nix
@@ -15,7 +13,6 @@
   ];
 
   home.packages = with pkgs; [
-    _1password-gui
     bat
     bluetuith
     bottles
@@ -26,7 +23,7 @@
     fastfetch
     fd
     ffmpeg
-    font-awesome-bump.font-awesome
+    args.font-awesome
     fzf
     gimp
     btop

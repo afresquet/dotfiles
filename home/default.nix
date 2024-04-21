@@ -1,7 +1,9 @@
-{ pkgs, inputs, username, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   imports = [
+    ./settings.nix
+
     # https://github.com/tinted-theming/schemes
     inputs.nix-colors.homeManagerModules.default
 
@@ -14,8 +16,8 @@
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "${username}";
-  home.homeDirectory = "/home/${username}";
+  home.username = "${config.username}";
+  home.homeDirectory = "/home/${config.username}";
 
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release

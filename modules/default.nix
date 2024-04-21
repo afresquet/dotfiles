@@ -2,26 +2,18 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ lib, config, username, shell, ... }:
+{ lib, config, ... }:
 
 {
   imports = [
+    ./settings.nix
+    ./main-user.nix
     ./hyprland.nix
     ./locale.nix
     ./programs
     ./services
     ./polyfills
   ];
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
-  users.users.${username} = {
-    homeMode = "755";
-    isNormalUser = true;
-    description = "Alvaro";
-    extraGroups = [ "networkmanager" "wheel" ];
-    packages = [ ];
-    inherit shell;
-  };
 
   # Allow unfree packages
   nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) config.allowedUnfree;
@@ -47,7 +39,7 @@
       ];
       trusted-users = [
         "root"
-        username
+        config.username
       ];
     };
     gc = {
