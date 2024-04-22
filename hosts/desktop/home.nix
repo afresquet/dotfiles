@@ -16,6 +16,7 @@
   # Shells
   carapace.enable = true;
   starship.enable = true;
+  zellij.enable = true;
   zoxide.enable = true;
 }
 
