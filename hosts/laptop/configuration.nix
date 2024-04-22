@@ -43,4 +43,7 @@
 
   # Fingerprint scanner
   services.fprintd.enable = true;
+
+  # Power management
+  powerManagement.enable = true;
 }
