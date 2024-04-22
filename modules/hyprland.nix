@@ -27,8 +27,5 @@
     };
 
     environment.systemPackages = [ pkgs.xdg-desktop-portal-gtk ];
-
-    # Enable touchpad support (enabled default in most desktopManager).
-    # services.xserver.libinput.enable = true;
   };
 }

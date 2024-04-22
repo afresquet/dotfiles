@@ -45,6 +45,8 @@
       });
       default = [ ];
     };
+
+    touchpad.enable = lib.mkEnableOption "Touchpad";
   };
 
   config =
