@@ -25,8 +25,10 @@
   bluetooth.enable = true;
   hyprland.enable = true;
   internet.enable = true;
-  internet.wifi.enable = true;
   mounting.enable = true;
   mullvad.enable = true;
   ssh.enable = true;
+
+  # Firmware Update Manager
+  services.fwupd.enable = true;
 }
