@@ -3,12 +3,7 @@
     ./../../home
   ];
 
-  # Programs
-  alacritty.enable = true;
-  direnv.enable = true;
-  git.enable = true;
-  helix.enable = true;
-  hyprland.monitors = [
+  monitors = [
     {
       name = "eDP-1";
       width = 2256;
@@ -20,6 +15,12 @@
       enable = true;
     }
   ];
+
+  # Programs
+  alacritty.enable = true;
+  direnv.enable = true;
+  git.enable = true;
+  helix.enable = true;
   mako.enable = true;
   waybar.enable = true;
   wlogout.enable = true;

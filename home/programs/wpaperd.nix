@@ -6,19 +6,19 @@
   config =
     let
       path = ./assets/wallpaper.png;
+      submodules = map
+        (m:
+          {
+            ${m.name} = { inherit path; };
+          }
+        )
+        (config.monitors);
     in
     {
       programs.wpaperd = {
         enable = config.wpaperd.enable;
         # https://github.com/danyspin97/wpaperd#wallpaper-configuration
-        settings = {
-          DP-1 = {
-            inherit path;
-          };
-          HDMI-A-1 = {
-            inherit path;
-          };
-        };
+        settings = lib.attrsets.mergeAttrsList submodules;
       };
     };
 }

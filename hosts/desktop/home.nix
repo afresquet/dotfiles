@@ -3,12 +3,7 @@
     ./../../home
   ];
 
-  # Programs
-  alacritty.enable = true;
-  direnv.enable = true;
-  git.enable = true;
-  helix.enable = true;
-  hyprland.monitors = [
+  monitors = [
     {
       name = "DP-1";
       width = 1920;
@@ -20,7 +15,7 @@
     }
 
     {
-      name = "HDMI-1";
+      name = "HDMI-A-1";
       width = 1920;
       height = 1080;
       refreshRate = 59.96;
@@ -29,6 +24,12 @@
       enable = true;
     }
   ];
+
+  # Programs
+  alacritty.enable = true;
+  direnv.enable = true;
+  git.enable = true;
+  helix.enable = true;
   mako.enable = true;
   waybar.enable = true;
   wlogout.enable = true;
