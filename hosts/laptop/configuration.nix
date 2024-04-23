@@ -2,9 +2,11 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ pkgs, ... }: {
+{ inputs, ... }: {
   imports =
     [
+      inputs.nixos-hardware.nixosModules.framework-13-7040-amd
+
       # Include the results of the hardware scan.
       ./hardware-configuration.nix
       ./../../modules
@@ -31,19 +33,4 @@
 
   # Firmware Update Manager
   services.fwupd.enable = true;
-  # Downgrade fingerprint sensor
-  # services.fwupd.package = (import
-  #   (builtins.fetchTarball {
-  #     url = "https://github.com/NixOS/nixpkgs/archive/bb2009ca185d97813e75736c2b8d1d8bb81bde05.tar.gz";
-  #     sha256 = "sha256:003qcrsq5g5lggfrpq31gcvj82lb065xvr7bpfa8ddsw8x4dnysk";
-  #   })
-  #   {
-  #     inherit (pkgs) system;
-  #   }).fwupd;
-
-  # Fingerprint scanner
-  services.fprintd.enable = true;
-
-  # Power management
-  powerManagement.enable = true;
 }
