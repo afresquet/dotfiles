@@ -15,10 +15,4 @@
     nushell
     zsh
   ];
-
-  home.sessionVariables = {
-    EDITOR = "hx";
-    BROWSER = "brave";
-    TERMINAL = "alacritty";
-  };
 }

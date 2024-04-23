@@ -4,6 +4,10 @@
   programs.nushell = {
     enable = true;
 
+    environmentVariables = {
+      EDITOR = "${pkgs.helix}/bin/hx";
+    };
+
     extraConfig = ''
       $env.config = {
         show_banner: false,
