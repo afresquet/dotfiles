@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ inputs, ... }: {
+{ inputs, pkgs, ... }: {
   imports =
     [
       inputs.nixos-hardware.nixosModules.framework-13-7040-amd
@@ -33,4 +33,8 @@
 
   # Firmware Update Manager
   services.fwupd.enable = true;
+
+  packages = [
+    (import ../../modules/programs/rebuild.nix { inherit pkgs; module = "laptop"; })
+  ];
 }

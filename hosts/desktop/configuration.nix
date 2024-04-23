@@ -2,7 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ ... }: {
+{ pkgs, ... }: {
   imports =
     [
       # Include the results of the hardware scan.
@@ -30,4 +30,8 @@
   mounting.enable = true;
   mullvad.enable = true;
   ssh.enable = true;
+
+  packages = [
+    (import ../../modules/programs/rebuild.nix { inherit pkgs; module = "desktop"; })
+  ];
 }
