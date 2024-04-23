@@ -73,6 +73,9 @@ in
       master = {
         new_is_master = false;
       };
+      xwayland = {
+        force_zero_scaling = config.touchpad.enable;
+      };
       env = [
         "XCURSOR_SIZE, 24"
       ];
