@@ -5,7 +5,16 @@
 
   config = {
     packages = lib.mkIf config.discord.enable [
-      pkgs.discord
+      (pkgs.symlinkJoin {
+        name = "discord";
+        paths = [ pkgs.discord ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/discord \
+            --add-flags "--enable-features=UseOzonePlatform" \
+            --add-flags "--ozone-platform=wayland"
+        '';
+      })
     ];
 
     allowedUnfree = [
