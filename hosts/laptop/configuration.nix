@@ -31,9 +31,6 @@
   mullvad.enable = true;
   ssh.enable = true;
 
-  # Firmware Update Manager
-  services.fwupd.enable = true;
-
   packages = [
     (import ../../modules/programs/rebuild.nix { inherit pkgs; module = "laptop"; })
   ];

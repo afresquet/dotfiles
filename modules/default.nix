@@ -29,6 +29,9 @@
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  # Firmware Update Manager
+  services.fwupd.enable = true;
+
   nix = {
     settings = {
       auto-optimise-store = true;
