@@ -1,23 +1,30 @@
 {
   description = "My NixOS flake";
 
-  outputs = { nixpkgs, ... }@inputs: {
-    nixosConfigurations = {
-      desktop = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [ ./hosts/desktop ];
-      };
+  outputs = { nixpkgs, ... }@inputs:
+    let
+      nixosSystem = modules:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = modules ++ [
+            ./modules/overlays
+          ];
+        };
+    in
+    {
+      nixosConfigurations = {
+        desktop = nixosSystem [
+          ./hosts/desktop
+        ];
 
-      laptop = nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit inputs; };
-        modules = [ ./hosts/laptop ];
+        laptop = nixosSystem [
+          ./hosts/laptop
+        ];
       };
     };
-  };
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    font-awesome-bump.url = "github:afresquet/nixpkgs/bump-font-awesome"; # https://github.com/NixOS/nixpkgs/pull/285394
 
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
 

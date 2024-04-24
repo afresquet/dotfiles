@@ -16,22 +16,6 @@
         "type": "github"
       }
     },
-    "font-awesome-bump": {
-      "locked": {
-        "lastModified": 1712598827,
-        "narHash": "sha256-AX4m6M023viLLNn+aJd0ltKjG0Qecr40eHU/8z087iQ=",
-        "owner": "afresquet",
-        "repo": "nixpkgs",
-        "rev": "74465791d3609884fc882cf4f1548c6e8468474b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "afresquet",
-        "ref": "bump-font-awesome",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -265,7 +249,6 @@
     },
     "root": {
       "inputs": {
-        "font-awesome-bump": "font-awesome-bump",
         "home-manager": "home-manager",
         "hyprland": "hyprland",
         "nix-colors": "nix-colors",
