@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ config, pkgs, ... }:
 
 
 let
@@ -11,6 +11,8 @@ let
   wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
   # Screenshot
   screenshot = "${pkgs.grimblast}/bin/grimblast";
+  brightness = "${pkgs.brightnessctl}/bin/brightnessctl";
+  media = "${pkgs.playerctl}/bin/playerctl";
 in
 {
   wayland.windowManager.hyprland = {
@@ -143,9 +145,34 @@ in
         # Screenshot
         ", Print, exec, ${screenshot} --cursor copy area"
       ];
+      # Mouse
       bindm = [
         # Move windows with mainMod + LMB and dragging
         "${main-modifier}, mouse:272, movewindow"
+      ];
+      # Repeat - Locked
+      bindel = [
+        # Volume
+        ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0"
+        ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0"
+        "${main-modifier}, XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0"
+        "${main-modifier}, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0"
+
+        # Brightness
+        ", XF86MonBrightnessUp, exec, ${brightness} set 5%+"
+        ", XF86MonBrightnessDown, exec, ${brightness} set 5%-"
+      ];
+      # Locked
+      bindl = [
+        # Mute Volume        
+        ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+
+        # Media
+        ", XF86AudioPlay, exec, ${media} play-pause"
+        ", XF86AudioPrev, exec, ${media} previous"
+        ", XF86AudioNext, exec, ${media} next"
+        ", XF86AudioNext, exec, ${media} next"
+        ", XF86AudioStop, exec, ${media} stop"
       ];
     };
   };
