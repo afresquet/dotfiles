@@ -18,6 +18,7 @@
   docker.enable = true;
   dropbox.enable = true;
   file-manager.enable = true;
+  heroic.enable = true;
   minecraft.enable = true;
   obsidian.enable = true;
   steam.enable = true;

@@ -7,6 +7,7 @@
     ./docker.nix
     ./dropbox.nix
     ./file-manager.nix
+    ./heroic.nix
     ./minecraft.nix
     ./obsidian.nix
     ./slicers.nix
