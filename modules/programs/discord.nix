@@ -15,6 +15,7 @@
             --add-flags "--ozone-platform=wayland"
         '';
       })
+      pkgs.webcord
     ];
 
     allowedUnfree = [

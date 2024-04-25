@@ -10,6 +10,18 @@
       enable = config.wlogout.enable;
       layout = [
         {
+          "label" = "lock";
+          "action" = "loginctl lock-session";
+          "text" = "Lock";
+          "keybind" = "l";
+        }
+        {
+          "label" = "hibernate";
+          "action" = "systemctl hibernate";
+          "text" = "Hibernate";
+          "keybind" = "h";
+        }
+        {
           "label" = "logout";
           "action" = "loginctl kill-user $(whoami)";
           "text" = "Logout";
