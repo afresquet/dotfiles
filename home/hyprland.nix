@@ -125,6 +125,7 @@ in
         "${main-modifier}, 8, workspace, 8"
         "${main-modifier}, 9, workspace, 9"
         "${main-modifier}, 0, workspace, 10"
+        "${main-modifier}, S, togglespecialworkspace, special:scratchpad"
 
         # Move active window to a workspace with mainMod + SHIFT + [0-9]
         "${main-modifier}_SHIFT, 1, movetoworkspace, 1"
@@ -137,6 +138,7 @@ in
         "${main-modifier}_SHIFT, 8, movetoworkspace, 8"
         "${main-modifier}_SHIFT, 9, movetoworkspace, 9"
         "${main-modifier}_SHIFT, 0, movetoworkspace, 10"
+        "${main-modifier}_SHIFT, S, movetoworkspace, special:scratchpad"
 
         # Scroll through existing workspaces with mainMod + scroll
         "${main-modifier}, mouse_down, workspace, e+1"
