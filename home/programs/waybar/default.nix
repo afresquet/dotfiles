@@ -28,6 +28,7 @@
             "network"
             "bluetooth"
             "cpu"
+            "custom/gpu"
             "memory"
             "disk"
             "temperature"
@@ -84,9 +85,16 @@
           };
           cpu = {
             format = "{usage}% ";
+            interval = 1;
+          };
+          "custom/gpu" = {
+            exec = "cat /sys/class/hwmon/hwmon${if config.touchpad.enable then "0" else "3"}/device/gpu_busy_percent";
+            format = "{}% ";
+            interval = 1;
           };
           memory = {
-            format = "{}% ";
+            format = "{}% ";
+            interval = 1;
           };
           temperature = {
             critical-threshold = 80;
@@ -97,6 +105,7 @@
               ""
               ""
             ];
+            interval = 1;
           };
           backlight = {
             format = "{percent}% {icon}";
