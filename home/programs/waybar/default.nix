@@ -12,8 +12,6 @@
       programs.waybar = {
         enable = config.waybar.enable;
         settings.mainBar = {
-
-
           layer = "top";
           height = 30;
           spacing = 4;
@@ -27,11 +25,7 @@
             "pulseaudio"
             "network"
             "bluetooth"
-            "cpu"
-            "custom/gpu"
-            "memory"
-            "disk"
-            "temperature"
+            "group/stats"
             "backlight"
             "battery"
             "clock"
@@ -141,6 +135,25 @@
           };
           disk = {
             format = "{percentage_used}% ";
+          };
+          "group/stats" = {
+            modules = [
+              "custom/stats-icon"
+              "temperature"
+              "disk"
+              "memory"
+              "custom/gpu"
+              "cpu"
+            ];
+            orientation = "horizontal";
+            drawer = {
+              transition-left-to-right = false;
+              transition-duration = 500;
+            };
+          };
+          "custom/stats-icon" = {
+            format = if config.touchpad.enable then "" else "";
+            tooltip = false;
           };
           network = {
             format = "{ifname}";
