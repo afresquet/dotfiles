@@ -35,4 +35,7 @@
   packages = [
     (import ../../modules/programs/rebuild.nix { inherit pkgs; module = "desktop"; })
   ];
+
+  boot.initrd.kernelModules = [ "amdgpu" ];
+  services.xserver.videoDrivers = [ "amdgpu" ];
 }

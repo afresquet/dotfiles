@@ -82,7 +82,7 @@
             interval = 1;
           };
           "custom/gpu" = {
-            exec = "cat /sys/class/hwmon/hwmon${if config.touchpad.enable then "0" else "3"}/device/gpu_busy_percent";
+            exec = "cat /sys/class/hwmon/hwmon0/device/gpu_busy_percent";
             format = "{}% ";
             interval = 1;
           };
