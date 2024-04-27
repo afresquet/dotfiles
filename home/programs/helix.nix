@@ -95,6 +95,15 @@
             name = "toml";
             formatter = { command = "taplo"; args = [ "fmt" "-" ]; };
           }
+
+          {
+            name = "python";
+            language-servers = [ "pyright" "ruff" ];
+            formatter = {
+              command = "black";
+              args = [ "--line-length" "88" "--quiet" "-" ];
+            };
+          }
         ];
 
         language-server = {
@@ -108,6 +117,15 @@
             schemas = {
               "https://json.schemastore.org/github-workflow.json" = ".github/workflows/*.{yml,yaml}";
             };
+          };
+
+          pyright.config = {
+            python.analisis.typeCheckingMode = "basic";
+          };
+
+          ruff = {
+            command = "ruff-lsp";
+            config.settings.args = [ "--ignore" "E501" ];
           };
         };
       };
@@ -141,6 +159,10 @@
         taplo
         # yaml
         yaml-language-server
+        # python
+        pyright
+        ruff-lsp
+        black
       ];
     };
   };
