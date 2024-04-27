@@ -6,7 +6,7 @@ let
   terminal = "${pkgs.alacritty}/bin/alacritty";
   launcher = "${pkgs.wofi}/bin/wofi --show drun";
   fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
-  browser = "${pkgs.brave}/bin/brave";
+  browser = "brave";
   menu-bar = "${pkgs.waybar}/bin/waybar";
   wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
   # Screenshot

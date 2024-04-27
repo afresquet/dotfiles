@@ -1,19 +1,13 @@
-{ lib, config, pkgs, ... }: {
+{ lib, config, pkgs, commonUtils, ... }: {
   options = {
     discord.enable = lib.mkEnableOption "Discord";
   };
 
   config = {
     packages = lib.mkIf config.discord.enable [
-      (pkgs.symlinkJoin {
+      (commonUtils.waylandWrapper {
         name = "discord";
-        paths = [ pkgs.discord ];
-        buildInputs = [ pkgs.makeWrapper ];
-        postBuild = ''
-          wrapProgram $out/bin/discord \
-            --add-flags "--enable-features=UseOzonePlatform" \
-            --add-flags "--ozone-platform=wayland"
-        '';
+        inherit pkgs;
       })
       pkgs.webcord
     ];

@@ -1,11 +1,14 @@
-{ lib, config, pkgs, ... }: {
+{ lib, config, pkgs, commonUtils, ... }: {
   options = {
     brave.enable = lib.mkEnableOption "Brave Browser";
   };
 
   config = {
     packages = lib.mkIf config.brave.enable [
-      pkgs.brave
+      (commonUtils.waylandWrapper {
+        name = "brave";
+        inherit pkgs;
+      })
     ];
   };
 }
