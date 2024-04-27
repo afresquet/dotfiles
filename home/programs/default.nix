@@ -7,6 +7,7 @@
     ./helix.nix
     ./mako.nix
     ./obs-studio.nix
+    ./thefuck.nix
     ./waybar
     ./wezterm
     ./wlogout.nix

@@ -22,6 +22,7 @@
   git.enable = true;
   helix.enable = true;
   mako.enable = true;
+  thefuck.enable = true;
   waybar.enable = true;
   wlogout.enable = true;
   wpaperd.enable = true;
