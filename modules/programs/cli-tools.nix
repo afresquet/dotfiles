@@ -15,9 +15,11 @@
       ripgrep
       tokei
       uutils-coreutils
+      wl-clipboard-rs
       wget
       wiki-tui
       youtube-dl
+      grex
       # archives
       zip
       xz
