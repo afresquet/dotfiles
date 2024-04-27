@@ -9,7 +9,6 @@
       nix-direnv.enable = config.direnv.enable;
 
       enableBashIntegration = true;
-      enableFishIntegration = true;
       enableNushellIntegration = true;
       enableZshIntegration = true;
     };
