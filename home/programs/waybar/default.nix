@@ -25,9 +25,9 @@
             "pulseaudio"
             "network"
             "bluetooth"
-            "group/stats"
             "backlight"
             "battery"
+            "group/stats"
             "clock"
             "custom/session"
           ];
@@ -157,7 +157,7 @@
           };
           network = {
             format = "{ifname}";
-            format-wifi = "{signalStrength}% {icon}";
+            format-wifi = "{signalStrength}% ";
             format-ethernet = "";
             format-linked = "No IP ⚠";
             format-disconnected = "Disconnected ⚠";
