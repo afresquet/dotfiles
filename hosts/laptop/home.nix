@@ -11,7 +11,7 @@
       refreshRate = 59.93;
       x = 0;
       y = 0;
-      scale = 2;
+      scale = "auto";
       enable = true;
     }
   ];

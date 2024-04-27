@@ -45,9 +45,8 @@
             default = 0;
           };
           scale = lib.mkOption {
-            type = lib.types.int;
             example = 1;
-            default = 1;
+            default = "auto";
           };
           enable = lib.mkOption {
             type = lib.types.bool;

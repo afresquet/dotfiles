@@ -57,7 +57,10 @@ in
         ];
       };
       input = {
-        touchpad.natural_scroll = config.touchpad.enable;
+        touchpad = {
+          natural_scroll = config.touchpad.enable;
+          scroll_factor = 0.5;
+        };
       };
       gestures = {
         workspace_swipe = config.touchpad.enable;
