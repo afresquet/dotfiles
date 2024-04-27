@@ -14,6 +14,7 @@
         user.signingkey = "/home/${config.username}/.ssh/id_ed25519.pub";
         gpg.format = "ssh";
         commit.gpgsign = true;
+        push.autoSetupRemote = true;
       };
       delta = {
         enable = true;
