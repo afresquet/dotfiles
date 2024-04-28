@@ -7,7 +7,7 @@
     packages = lib.mkIf config.discord.enable [
       (commonUtils.waylandWrapper {
         name = "discord";
-        inherit pkgs;
+        inherit pkgs lib;
       })
       pkgs.webcord
     ];
