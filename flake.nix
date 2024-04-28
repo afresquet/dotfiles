@@ -5,10 +5,7 @@
     let
       nixosSystem = modules:
         nixpkgs.lib.nixosSystem {
-          specialArgs = {
-            inherit inputs;
-            commonUtils = import ./common/utils;
-          };
+          specialArgs = { inherit inputs; };
           modules = modules ++ [
             ./modules/overlays
           ];

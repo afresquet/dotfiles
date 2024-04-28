@@ -1,15 +1,12 @@
-{ lib, config, pkgs, commonUtils, ... }: {
+{ lib, config, pkgs, ... }: {
   options = {
     discord.enable = lib.mkEnableOption "Discord";
   };
 
   config = {
-    packages = lib.mkIf config.discord.enable [
-      (commonUtils.waylandWrapper {
-        name = "discord";
-        inherit pkgs lib;
-      })
-      pkgs.webcord
+    packages = with pkgs; lib.mkIf config.discord.enable [
+      discord
+      webcord
     ];
 
     allowedUnfree = [
