@@ -9,6 +9,7 @@
     ./file-manager.nix
     ./heroic.nix
     ./minecraft.nix
+    ./nh.nix
     ./obsidian.nix
     ./slicers.nix
     ./steam.nix

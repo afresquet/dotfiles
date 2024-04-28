@@ -1,28 +1,6 @@
 {
   description = "My NixOS flake";
 
-  outputs = { nixpkgs, ... }@inputs:
-    let
-      nixosSystem = modules:
-        nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = modules ++ [
-            ./modules/overlays
-          ];
-        };
-    in
-    {
-      nixosConfigurations = {
-        desktop = nixosSystem [
-          ./hosts/desktop
-        ];
-
-        laptop = nixosSystem [
-          ./hosts/laptop
-        ];
-      };
-    };
-
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
@@ -37,4 +15,26 @@
 
     nix-colors.url = "github:misterio77/nix-colors";
   };
+
+  outputs = { nixpkgs, ... }@inputs:
+    let
+      nixosSystem = modules:
+        nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs; };
+          modules = modules ++ [
+            ./modules/overlays
+          ];
+        };
+    in
+    {
+      nixosConfigurations = {
+        Alvaro-Desktop = nixosSystem [
+          ./hosts/desktop
+        ];
+
+        Alvaro-Laptop = nixosSystem [
+          ./hosts/laptop
+        ];
+      };
+    };
 }
