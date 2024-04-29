@@ -16,7 +16,6 @@
   # Programs
   _1password.enable = true;
   brave.enable = true;
-  cli-tools.enable = true;
   discord.enable = true;
   docker.enable = true;
   dropbox.enable = true;

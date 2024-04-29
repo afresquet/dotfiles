@@ -18,12 +18,12 @@
 
   # Programs
   alacritty.enable = true;
+  cli-tools.enable = true;
   direnv.enable = true;
   git.enable = true;
   helix.enable = true;
   hyprland.enable = true;
   mako.enable = true;
-  thefuck.enable = true;
   waybar.enable = true;
   wlogout.enable = true;
 

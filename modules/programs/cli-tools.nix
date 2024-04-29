@@ -1,30 +1,22 @@
-{ lib, config, pkgs, ... }: {
-  options = {
-    cli-tools.enable = lib.mkEnableOption "CLI tools";
-  };
-
-  config = {
-    packages = with pkgs; lib.mkIf config.cli-tools.enable [
-      bat
-      eza
-      fastfetch
-      fd
-      fzf
-      btop
-      jq
-      ripgrep
-      tokei
-      uutils-coreutils
-      wl-clipboard-rs
-      wget
-      wiki-tui
-      youtube-dl
-      grex
-      # archives
-      zip
-      xz
-      unzip
-      p7zip
-    ];
-  };
+{ lib, config, pkgs, ... }:
+let
+  enable = config.home-manager.users.${config.username}.cli-tools.enable;
+in
+{
+  packages = with pkgs; lib.mkIf enable [
+    fastfetch
+    fd
+    tokei
+    uutils-coreutils
+    wl-clipboard-rs
+    wget
+    wiki-tui
+    youtube-dl
+    grex
+    # archives
+    zip
+    xz
+    unzip
+    p7zip
+  ];
 }

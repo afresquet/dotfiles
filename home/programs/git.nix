@@ -1,7 +1,11 @@
-{ lib, config, pkgs, ... }: {
+{ lib, config, ... }: {
   options = {
     git.enable = lib.mkEnableOption "Git";
   };
+
+  imports = [
+    ./gitui
+  ];
 
   config = {
     programs.git = {
@@ -25,8 +29,6 @@
       };
     };
 
-    home.packages = with pkgs; lib.mkIf config.git.enable [
-      lazygit
-    ];
+    programs.lazygit.enable = config.git.enable;
   };
 }
