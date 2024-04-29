@@ -24,6 +24,7 @@
   helix.enable = true;
   hyprland.enable = true;
   mako.enable = true;
+  rofi.enable = true;
   waybar.enable = true;
   wlogout.enable = true;
 

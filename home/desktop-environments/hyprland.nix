@@ -7,7 +7,7 @@
     let
       main-modifier = "SUPER";
       terminal = "${pkgs.alacritty}/bin/alacritty";
-      launcher = "${pkgs.wofi}/bin/wofi --show drun";
+      launcher = "${pkgs.rofi-wayland}/bin/rofi -show drun";
       fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
       browser = "brave";
       menu-bar = "${pkgs.waybar}/bin/waybar";
