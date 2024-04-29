@@ -27,7 +27,6 @@
 
   # Services
   bluetooth.enable = true;
-  hyprland.enable = true;
   internet.enable = true;
   mounting.enable = true;
   mullvad.enable = true;

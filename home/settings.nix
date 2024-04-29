@@ -6,12 +6,6 @@
       description = "Home Manager Username";
     };
 
-    hyprland.enable = lib.mkOption {
-      default = args.hyprland.enable;
-      type = lib.types.bool;
-      description = "Hyprland";
-    };
-
     monitors = lib.mkOption {
       type = lib.types.listOf (lib.types.submodule {
         options = {

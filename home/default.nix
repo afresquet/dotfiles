@@ -1,6 +1,6 @@
 { config, ... }: {
   imports = [
-    ./hyprland.nix
+    ./desktop-environments
     ./programs
     ./settings.nix
     ./shells

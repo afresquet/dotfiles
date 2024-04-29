@@ -9,8 +9,8 @@
     ./settings.nix
     ./main-user.nix
     ./fonts.nix
-    ./hyprland.nix
     ./locale.nix
+    ./desktop-environments
     ./programs
     ./services
     ./polyfills
@@ -31,6 +31,16 @@
 
   # Firmware Update Manager
   services.fwupd.enable = true;
+
+  # Bootloader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  # Enable the X11 windowing system.
+  services.xserver.enable = true;
+
+  # Enable SDDM
+  services.displayManager.sddm.enable = true;
 
   nix = {
     settings = {
