@@ -11,6 +11,5 @@
     ./waybar
     ./wezterm
     ./wlogout.nix
-    ./wpaperd.nix
   ];
 }

@@ -1,18 +1,11 @@
-{ config, inputs, ... }:
-
-{
+{ config, ... }: {
   imports = [
-    ./settings.nix
-
-    # https://github.com/tinted-theming/schemes
-    inputs.nix-colors.homeManagerModules.default
-
     ./hyprland.nix
     ./programs
+    ./settings.nix
     ./shells
+    ./stylix.nix
   ];
-
-  colorScheme = inputs.nix-colors.colorSchemes.catppuccin-mocha;
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.

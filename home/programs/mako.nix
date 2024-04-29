@@ -4,13 +4,10 @@
   };
 
   config = {
-    services.mako = with config.colorScheme.palette; {
+    services.mako = {
       enable = config.mako.enable;
-      backgroundColor = "#${base01}";
-      borderColor = "#${base0E}";
       borderRadius = 5;
       borderSize = 2;
-      textColor = "#${base04}";
       layer = "overlay";
     };
   };

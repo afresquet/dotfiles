@@ -25,7 +25,6 @@
   thefuck.enable = true;
   waybar.enable = true;
   wlogout.enable = true;
-  wpaperd.enable = true;
 
   # Services
   touchpad.enable = true;

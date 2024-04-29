@@ -1,6 +1,4 @@
 { config, pkgs, ... }:
-
-
 let
   main-modifier = "SUPER";
   terminal = "${pkgs.alacritty}/bin/alacritty";
@@ -8,8 +6,6 @@ let
   fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
   browser = "brave";
   menu-bar = "${pkgs.waybar}/bin/waybar";
-  wallpaper-daemon = "${pkgs.wpaperd}/bin/wpaperd";
-  # Screenshot
   screenshot = "${pkgs.grimblast}/bin/grimblast";
   brightness = "${pkgs.brightnessctl}/bin/brightnessctl";
   media = "${pkgs.playerctl}/bin/playerctl";
@@ -32,8 +28,6 @@ in
         border_size = 2;
         gaps_in = 4;
         gaps_out = 8;
-        "col.inactive_border" = "rgba(595959aa)";
-        "col.active_border" = "rgba(33ccffee) rgba(00ff99ee) 45deg";
         layout = "dwindle";
         resize_on_border = true;
       };
@@ -85,8 +79,11 @@ in
         "XCURSOR_SIZE, 24"
       ];
       exec-once = [
+        # Wallpaper
+        "${pkgs.swww}/bin/swww-daemon"
+        "${pkgs.swww}/bin/swww img ${../assets/wallpaper.png}"
+
         menu-bar
-        wallpaper-daemon
       ];
       bind = [
         "${main-modifier}, C, killactive,"

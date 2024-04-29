@@ -4,12 +4,6 @@
   };
 
   config = {
-    programs.zellij = {
-      enable = config.zellij.enable;
-
-      settings = {
-        theme = "catppuccin-mocha";
-      };
-    };
+    programs.zellij.enable = config.zellij.enable;
   };
 }
