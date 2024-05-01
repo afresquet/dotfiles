@@ -4,9 +4,6 @@
   };
 
   config = {
-    programs.bat = {
-      enable = config.bat.enable;
-      config.theme = "base16-stylix";
-    };
+    programs.bat.enable = config.bat.enable;
   };
 }
