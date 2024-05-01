@@ -1,6 +1,7 @@
 { ... }: {
   imports = [
     ./1password.nix
+    ./bottles.nix
     ./brave.nix
     ./cli-tools.nix
     ./discord.nix
@@ -8,6 +9,7 @@
     ./dropbox.nix
     ./file-manager.nix
     ./heroic.nix
+    ./lutris.nix
     ./minecraft.nix
     ./nh.nix
     ./obsidian.nix
