@@ -86,7 +86,7 @@
           exec-once = [
             # Wallpaper
             "${pkgs.swww}/bin/swww-daemon"
-            "${pkgs.swww}/bin/swww img ${../../assets/wallpaper.png}"
+            "${pkgs.swww}/bin/swww img ${../../assets/wallpaper.png} -t none"
 
             menu-bar
           ];
