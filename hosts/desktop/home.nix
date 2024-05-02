@@ -1,9 +1,10 @@
-{ ... }: {
+{
   imports = [
-    ./../../home
+    ../home.nix
+    ./settings.nix
   ];
 
-  monitors = [
+  hyprland.monitors = [
     {
       name = "DP-1";
       width = 1920;
@@ -24,23 +25,4 @@
       enable = true;
     }
   ];
-
-  # Programs
-  alacritty.enable = true;
-  cli-tools.enable = true;
-  direnv.enable = true;
-  git.enable = true;
-  helix.enable = true;
-  hyprland.enable = true;
-  mako.enable = true;
-  rofi.enable = true;
-  waybar.enable = true;
-  wlogout.enable = true;
-
-  # Shells
-  carapace.enable = true;
-  starship.enable = true;
-  zellij.enable = true;
-  zoxide.enable = true;
 }
-
