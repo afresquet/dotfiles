@@ -1,6 +1,7 @@
 { config, ... }: {
   imports = [
     ./desktop-environments
+    ./polyfills
     ./programs
     ./settings.nix
     ./shells

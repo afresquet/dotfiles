@@ -7,6 +7,7 @@
     ./bat.nix
     ./btop.nix
     ./eza.nix
+    ./fastfetch.nix
     ./fzf.nix
     ./jq.nix
     ./ripgrep.nix
@@ -17,6 +18,7 @@
     bat.enable = true;
     btop.enable = true;
     eza.enable = true;
+    fastfetch.enable = true;
     fzf.enable = true;
     jq.enable = true;
     ripgrep.enable = true;
