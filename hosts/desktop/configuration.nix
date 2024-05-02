@@ -1,36 +1,17 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
+{ outputs, ... }:
 {
-  imports =
-    [
-      # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      ./../../modules
-    ];
+  imports = [
+    ../configuration.nix
 
-  hostname = "Alvaro-Desktop";
+    ./settings.nix
 
-  # Programs
-  _1password.enable = true;
-  brave.enable = true;
-  discord.enable = true;
-  docker.enable = true;
-  dropbox.enable = true;
-  file-manager.enable = true;
-  heroic.enable = true;
-  minecraft.enable = true;
-  nh.enable = true;
-  obsidian.enable = true;
-  steam.enable = true;
-  vlc.enable = true;
+    ./hardware-configuration.nix
 
-  # Services
-  bluetooth.enable = true;
-  internet.enable = true;
-  mounting.enable = true;
-  mullvad.enable = true;
-  ssh.enable = true;
+    outputs.nixosModules.gaming
+  ];
 
   boot.initrd.kernelModules = [ "amdgpu" ];
   services.xserver.videoDrivers = [ "amdgpu" ];

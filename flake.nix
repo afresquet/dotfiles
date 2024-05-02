@@ -4,6 +4,8 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
 
+    systems.url = "github:nix-systems/default";
+
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
 
     home-manager = {
@@ -16,25 +18,68 @@
     stylix.url = "github:danth/stylix";
   };
 
-  outputs = { nixpkgs, ... }@inputs:
+  outputs =
+    {
+      self,
+      nixpkgs,
+      systems,
+      ...
+    }@inputs:
     let
-      nixosSystem = modules:
+      inherit (self) outputs;
+
+      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+
+      utils = import ./utils.nix { inherit (nixpkgs) lib; };
+
+      libAndUtils = {
+        inherit (nixpkgs) lib;
+        inherit utils;
+      };
+
+      nixosSystem =
+        system: module:
         nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs; };
-          modules = modules ++ [
-            ./modules/overlays
-          ];
+          inherit system;
+          specialArgs = {
+            inherit inputs outputs;
+          };
+          modules = [ module ];
+        };
+
+      homeManagerConfiguration =
+        system: module:
+        inputs.home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.${system};
+          extraSpecialArgs = {
+            inherit inputs outputs;
+          };
+          modules = [ module ];
         };
     in
     {
-      nixosConfigurations = {
-        Alvaro-Desktop = nixosSystem [
-          ./hosts/desktop
-        ];
+      packages = forEachSystem (
+        system: import ./packages (libAndUtils // { pkgs = nixpkgs.legacyPackages.${system}; })
+      );
 
-        Alvaro-Laptop = nixosSystem [
-          ./hosts/laptop
-        ];
+      formatter = forEachSystem (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+
+      overlays = import ./overlays libAndUtils;
+
+      nixosModules = import ./modules/nixos libAndUtils;
+
+      homeManagerModules = import ./modules/home-manager libAndUtils;
+
+      nixosConfigurations = {
+        Alvaro-Desktop = nixosSystem "x86_64-linux" ./hosts/desktop/configuration.nix;
+
+        Alvaro-Laptop = nixosSystem "x86_64-linux" ./hosts/laptop/configuration.nix;
+      };
+
+      homeConfigurations = {
+        "afresquet@Alvaro-Desktop" = homeManagerConfiguration "x86_64-linux" ./hosts/desktop/home.nix;
+
+        "afresquet@Alvaro-Laptop" = homeManagerConfiguration "x86_64-linux" ./hosts/laptop/home.nix;
       };
     };
 }
