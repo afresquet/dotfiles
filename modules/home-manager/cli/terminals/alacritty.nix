@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.alacritty;
 in
@@ -14,11 +9,5 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    programs.alacritty = {
-      enable = true;
-
-      settings.shell.program = "${pkgs.nushell}/bin/nu";
-    };
-  };
+  config = lib.mkIf cfg.enable { programs.alacritty.enable = true; };
 }
