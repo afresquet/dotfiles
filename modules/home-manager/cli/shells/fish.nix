@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.fish;
 in
@@ -22,9 +17,7 @@ in
         set -g fish_greeting
       '';
 
-      shellInitLast = ''
-        ${pkgs.fastfetch}/bin/fastfetch
-      '';
+      shellInitLast = config.terminal.onInit;
     };
   };
 }

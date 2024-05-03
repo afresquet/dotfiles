@@ -4,8 +4,12 @@ let
 in
 {
   options = {
-    git.enable = lib.mkEnableOption "git" // {
-      default = true;
+    git = {
+      enable = lib.mkEnableOption "git" // {
+        default = true;
+      };
+      email = lib.mkOption { type = lib.types.str; };
+      signingKey = lib.mkOption { type = lib.types.str; };
     };
   };
 
@@ -13,11 +17,11 @@ in
     programs.git = {
       enable = true;
       userName = config.username;
-      userEmail = "29437693+afresquet@users.noreply.github.com";
+      userEmail = cfg.email;
       extraConfig = {
         init.defaultBranch = "main";
-        core.editor = "hx";
-        user.signingkey = "/home/${config.username}/.ssh/id_ed25519.pub";
+        core.editor = config.editor.path;
+        user.signingkey = cfg.signingKey;
         gpg.format = "ssh";
         commit.gpgsign = true;
         push.autoSetupRemote = true;

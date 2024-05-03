@@ -9,8 +9,14 @@ let
 in
 {
   options = {
-    waybar.enable = lib.mkEnableOption "Waybar" // {
-      default = true;
+    waybar = {
+      enable = lib.mkEnableOption "Waybar" // {
+        default = true;
+      };
+      statsIcon = lib.mkOption {
+        type = lib.types.str;
+        default = "";
+      };
     };
   };
 
@@ -158,7 +164,7 @@ in
           };
         };
         "custom/stats-icon" = {
-          format = if config.hostname == "Alvaro-Laptop" then "" else "";
+          format = cfg.statsIcon;
           tooltip = false;
         };
         network = {

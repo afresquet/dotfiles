@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.nushell;
 in
@@ -19,7 +14,7 @@ in
       enable = true;
 
       environmentVariables = {
-        EDITOR = "${pkgs.helix}/bin/hx";
+        EDITOR = config.editor.path;
       };
 
       extraConfig = ''
@@ -28,7 +23,7 @@ in
         }
 
         # run fastfetch on launch
-        ${pkgs.fastfetch}/bin/fastfetch
+        ${config.terminal.onInit}
       '';
     };
   };

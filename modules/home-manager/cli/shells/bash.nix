@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  pkgs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.bash;
 in
@@ -18,9 +13,7 @@ in
     programs.bash = {
       enable = true;
 
-      initExtra = ''
-        ${pkgs.fastfetch}/bin/fastfetch
-      '';
+      initExtra = config.terminal.onInit;
     };
   };
 }

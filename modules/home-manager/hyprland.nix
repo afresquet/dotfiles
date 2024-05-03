@@ -14,38 +14,6 @@ in
       enable = lib.mkEnableOption "Hyprland" // {
         default = true;
       };
-
-      monitors = lib.mkOption {
-        type = lib.types.listOf (
-          lib.types.submodule {
-            options = {
-              name = lib.mkOption { type = lib.types.str; };
-              width = lib.mkOption {
-                type = lib.types.int;
-                default = 1920;
-              };
-              height = lib.mkOption {
-                type = lib.types.int;
-                default = 1080;
-              };
-              refreshRate = lib.mkOption {
-                type = lib.types.float;
-                default = 60;
-              };
-              x = lib.mkOption {
-                type = lib.types.int;
-                default = 0;
-              };
-              y = lib.mkOption {
-                type = lib.types.int;
-                default = 0;
-              };
-              scale = lib.mkOption { default = "auto"; };
-              enable = lib.mkOption { type = lib.types.bool; };
-            };
-          }
-        );
-      };
     };
   };
 
@@ -56,10 +24,7 @@ in
       settings =
         let
           modKey = "SUPER";
-          terminal = "${pkgs.alacritty}/bin/alacritty";
           launcher = "${pkgs.rofi-wayland}/bin/rofi -show drun";
-          fileManager = "${pkgs.gnome.nautilus}/bin/nautilus";
-          browser = "${pkgs.brave}/bin/brave";
           menuBar = "${pkgs.waybar}/bin/waybar";
           screenshot = "${pkgs.grimblast}/bin/grimblast";
           brightness = "${pkgs.brightnessctl}/bin/brightnessctl";
@@ -72,7 +37,7 @@ in
               position = "${toString m.x}x${toString m.y}";
             in
             "${m.name}, ${if m.enable then "${resolution}, ${position}, ${toString m.scale}" else "disable"}"
-          ) (cfg.monitors);
+          ) (config.monitors);
         in
         {
           inherit monitor;
@@ -91,7 +56,7 @@ in
             };
           };
           animations = {
-            enabled = true;
+            enabled = false;
             bezier = "myBezier, 0.05, 0.9, 0.1, 1.05";
             animation = [
               "windows, 1, 7, myBezier"
@@ -139,10 +104,10 @@ in
             "${modKey}, C, killactive,"
             "${modKey}, V, togglefloating,"
             "${modKey}, P, fullscreen, 1"
-            "${modKey}, T, exec, ${terminal}"
-            "${modKey}, F, exec, ${fileManager}"
-            "${modKey}, R, exec, ${launcher}"
-            "${modKey}, B, exec, ${browser}"
+            "${modKey}, Return, exec, ${config.terminal.path}"
+            "${modKey}, F, exec, ${config.fileManager.path}"
+            "${modKey}, Space, exec, ${launcher}"
+            "${modKey}, B, exec, ${config.browser.path}"
             "${modKey}, W, exec, pkill waybar || ${menuBar}"
 
             # Move focus

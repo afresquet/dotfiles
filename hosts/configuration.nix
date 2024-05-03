@@ -33,7 +33,8 @@
       "networkmanager"
       "wheel"
     ];
-    inherit (config) description shell;
+    inherit (config) description;
+    shell = config.shell.package;
   };
 
   # This value determines the NixOS release from which the default

@@ -1,15 +1,41 @@
-{ config, outputs, ... }:
+{
+  config,
+  inputs,
+  outputs,
+  pkgs,
+  ...
+}:
 {
   imports = [
+    inputs.stylix.homeManagerModules.stylix
+
     outputs.homeManagerModules.cli.default
     outputs.homeManagerModules.hyprland
     outputs.homeManagerModules.programs.default
-    outputs.homeManagerModules.stylix
   ];
+
+  stylix = {
+    image = /home/${config.username}/dotfiles/assets/wallpaper.png;
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
+    polarity = "dark";
+    fonts.monospace = {
+      name = "Hack Nerd Font Mono";
+      package = pkgs.nerdfonts;
+    };
+    opacity.terminal = 0.85;
+    targets = {
+      helix.enable = false;
+    };
+  };
+
+  git = {
+    email = "29437693+afresquet@users.noreply.github.com";
+    signingKey = "/home/${config.username}/.ssh/id_ed25519.pub";
+  };
 
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
-  home.username = "${config.username}";
+  home.username = config.username;
   home.homeDirectory = "/home/${config.username}";
 
   # This value determines the Home Manager release that your configuration is

@@ -1,9 +1,18 @@
-{ pkgs, ... }:
 {
   imports = [ ../settings.nix ];
 
   hostname = "Alvaro-Laptop";
-  username = "afresquet";
-  description = "Alvaro";
-  shell = pkgs.nushell;
+
+  monitors = [
+    {
+      name = "eDP-1";
+      width = 2256;
+      height = 1504;
+      refreshRate = 59.93;
+      x = 0;
+      y = 0;
+      scale = "auto";
+      enable = true;
+    }
+  ];
 }
