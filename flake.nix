@@ -3,18 +3,13 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
     systems.url = "github:nix-systems/default";
-
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
-
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
     hyprland.url = "github:hyprwm/Hyprland";
-
     stylix.url = "github:danth/stylix";
   };
 
@@ -23,6 +18,7 @@
       self,
       nixpkgs,
       systems,
+      home-manager,
       ...
     }@inputs:
     let
@@ -49,7 +45,7 @@
 
       homeManagerConfiguration =
         system: module:
-        inputs.home-manager.lib.homeManagerConfiguration {
+        home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.${system};
           extraSpecialArgs = {
             inherit inputs outputs;
@@ -80,6 +76,8 @@
         "afresquet@Alvaro-Desktop" = homeManagerConfiguration "x86_64-linux" ./hosts/desktop/home.nix;
 
         "afresquet@Alvaro-Laptop" = homeManagerConfiguration "x86_64-linux" ./hosts/laptop/home.nix;
+
+        "afresquet@mac-afresquet" = homeManagerConfiguration "x86_64-darwin" ./hosts/work/home.nix;
       };
     };
 }

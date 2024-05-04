@@ -11,7 +11,6 @@ let
           fd
           tokei
           uutils-coreutils
-          wl-clipboard-rs
           wget
           wiki-tui
           youtube-dl

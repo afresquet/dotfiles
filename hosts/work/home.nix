@@ -10,8 +10,8 @@
     inputs.stylix.homeManagerModules.stylix
 
     outputs.homeManagerModules.cli.default
-    outputs.homeManagerModules.hyprland
-    outputs.homeManagerModules.programs.default
+
+    ./settings.nix
   ];
 
   stylix = {
@@ -22,27 +22,20 @@
       name = "Hack Nerd Font Mono";
       package = pkgs.nerdfonts;
     };
-    opacity.terminal = 0.85;
+    opacity.terminal = 0.95;
     targets = {
       helix.enable = false;
     };
   };
 
-  git = {
-    email = "29437693+afresquet@users.noreply.github.com";
-    signingKey = "/home/${config.username}/.ssh/id_ed25519.pub";
-  };
-
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home.username = config.username;
-  home.homeDirectory = "/home/${config.username}";
+  home.homeDirectory = "/Users/${config.username}";
 
   home.sessionVariables = {
-    TERM = config.terminal.path;
     SHELL = config.shell.path;
     EDITOR = config.editor.path;
-    BROWSER = config.browser.path;
   };
 
   # This value determines the Home Manager release that your configuration is

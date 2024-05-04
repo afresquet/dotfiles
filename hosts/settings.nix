@@ -56,7 +56,7 @@
     {
       username = "afresquet";
       description = "Alvaro";
-      shell = package "nushell";
+      shell = packageBin "nushell" "nu";
       terminal = terminalPackage // {
         run = program: "${terminalPackage.path} ${program}";
       };
