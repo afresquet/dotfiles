@@ -10,7 +10,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.eza.enable = true;
+    programs.eza = {
+      enable = true;
+      icons = true;
+      git = true;
+      extraOptions = [ "--group-directories-first" ];
+    };
 
     home.shellAliases =
       let
