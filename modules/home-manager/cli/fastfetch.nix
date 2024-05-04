@@ -16,5 +16,11 @@ in
 
   imports = [ outputs.homeManagerModules.polyfills.fastfetch ];
 
-  config = lib.mkIf cfg.enable { programs.fastfetch.enable = true; };
+  config = lib.mkIf cfg.enable {
+    programs.fastfetch.enable = true;
+
+    home.shellAliases = {
+      ff = lib.getExe config.programs.fastfetch.package;
+    };
+  };
 }

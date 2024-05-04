@@ -9,5 +9,11 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable { programs.lazygit.enable = true; };
+  config = lib.mkIf cfg.enable {
+    programs.lazygit.enable = true;
+
+    home.shellAliases = {
+      lg = lib.getExe config.programs.lazygit.package;
+    };
+  };
 }

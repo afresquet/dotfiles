@@ -34,5 +34,29 @@ in
         };
       };
     };
+
+    home.shellAliases =
+      let
+        git = lib.getExe config.programs.git.package;
+      in
+      rec {
+        ga = "${git} add";
+        gaa = "${ga} .";
+        gb = "${git} branch";
+        gba = "${gb} --all";
+        gbd = "${gb} -D";
+        gc = "${git} commit";
+        gca = "${gc} --amend -C HEAD";
+        gco = "${git} checkout";
+        gd = "${git} diff -w";
+        gds = "${gd} --staged";
+        gl = "${git} log --all --graph --format=oneline";
+        gp = "${git} push";
+        gpf = "${gp} --force-with-lease";
+        gra = "${git} rebase --abort";
+        grc = "${git} rebase --continue";
+        grs = "${git} restore --staged";
+        gs = "${git} status";
+      };
   };
 }

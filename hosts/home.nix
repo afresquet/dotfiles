@@ -45,6 +45,14 @@
     BROWSER = config.browser.path;
   };
 
+  home.shellAliases = {
+    cp = "cp -i";
+    mv = "mv -i";
+    rm = "rm -i";
+    c = "clear";
+    dot = "${config.editor.path} ~/dotfiles";
+  };
+
   # This value determines the Home Manager release that your configuration is
   # compatible with. This helps avoid breakage when a new Home Manager release
   # introduces backwards incompatible changes.

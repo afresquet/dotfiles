@@ -25,6 +25,8 @@ in
         # run fastfetch on launch
         ${config.terminal.onInit}
       '';
+
+      shellAliases = config.home.shellAliases;
     };
   };
 }
