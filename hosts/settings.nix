@@ -13,8 +13,14 @@
       username = mkOption { type = types.str; };
       description = mkOption { type = types.str; };
       shell = package;
-      terminal = package // {
-        onInit = mkOption { type = types.str; };
+      terminal = rec {
+        package = mkOption { type = types.package; };
+        path = mkOption { type = types.str; };
+        onInit = mkOption {
+          type = types.str;
+          default = "";
+        };
+        run = mkOption { type = types.functionTo types.str; };
       };
       editor = package;
       browser = package;
@@ -44,13 +50,15 @@
         path = "${package}/bin/${binary}";
       };
       package = name: packageBin name name;
+
+      terminalPackage = package "foot";
     in
     {
       username = "afresquet";
       description = "Alvaro";
       shell = package "nushell";
-      terminal = package "foot" // {
-        onInit = "${pkgs.fastfetch}/bin/fastfetch";
+      terminal = terminalPackage // {
+        run = program: "${terminalPackage.path} ${program}";
       };
       editor = packageBin "helix" "hx";
       browser = package "brave";

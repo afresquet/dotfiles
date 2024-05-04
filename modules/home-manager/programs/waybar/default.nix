@@ -66,6 +66,7 @@ in
             disabled = "󰂲";
             connected = "";
           };
+          on-click = config.terminal.run "${pkgs.bluetuith}/bin/bluetuith";
         };
         clock = {
           format = "{:%H:%M}";

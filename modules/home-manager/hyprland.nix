@@ -68,6 +68,7 @@ in
             ];
           };
           input = {
+            kb_options = "ctrl:nocaps";
             touchpad = {
               natural_scroll = true;
               scroll_factor = 0.5;
@@ -101,7 +102,7 @@ in
             menuBar
           ];
           bind = [
-            "${modKey}, C, killactive,"
+            "${modKey}, Escape, killactive,"
             "${modKey}, V, togglefloating,"
             "${modKey}, P, fullscreen, 1"
             "${modKey}, Return, exec, ${config.terminal.path}"
