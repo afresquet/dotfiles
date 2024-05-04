@@ -44,9 +44,9 @@
         };
 
       homeManagerConfiguration =
-        system: module:
+        { module, pkgs }:
         home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.${system};
+          inherit pkgs;
           extraSpecialArgs = {
             inherit inputs outputs;
           };
@@ -73,11 +73,29 @@
       };
 
       homeConfigurations = {
-        "afresquet@Alvaro-Desktop" = homeManagerConfiguration "x86_64-linux" ./hosts/desktop/home.nix;
+        "afresquet@Alvaro-Desktop" = homeManagerConfiguration {
+          module = ./hosts/desktop/home.nix;
+          inherit (outputs.nixosConfigurations.Alvaro-Desktop) pkgs;
+        };
 
-        "afresquet@Alvaro-Laptop" = homeManagerConfiguration "x86_64-linux" ./hosts/laptop/home.nix;
+        "afresquet@Alvaro-Laptop" = homeManagerConfiguration {
+          module = ./hosts/laptop/home.nix;
 
-        "afresquet@mac-afresquet" = homeManagerConfiguration "x86_64-darwin" ./hosts/work/home.nix;
+          inherit (outputs.nixosConfigurations.Alvaro-Laptop) pkgs;
+        };
+
+        "afresquet@mac-afresquet" = homeManagerConfiguration {
+          module = ./hosts/work/home.nix;
+
+          pkgs = import nixpkgs {
+            system = "x86_64-darwin";
+
+            overlays = [
+              outputs.overlays.additions
+              outputs.overlays.modifications
+            ];
+          };
+        };
       };
     };
 }
