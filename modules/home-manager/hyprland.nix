@@ -14,6 +14,24 @@ in
       enable = lib.mkEnableOption "Hyprland" // {
         default = true;
       };
+
+      workspace.extraRules =
+        let
+          workspaceExtraRulesOption = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+          };
+        in
+        {
+          browser = workspaceExtraRulesOption;
+          file-manager = workspaceExtraRulesOption;
+          terminal = workspaceExtraRulesOption;
+          discord = workspaceExtraRulesOption;
+          obsidian = workspaceExtraRulesOption;
+          whatsapp = workspaceExtraRulesOption;
+          music = workspaceExtraRulesOption;
+          _1password = workspaceExtraRulesOption;
+        };
     };
   };
 
@@ -24,23 +42,20 @@ in
       settings =
         let
           modKey = "SUPER";
-          launcher = "${pkgs.rofi-wayland}/bin/rofi -show drun";
-          menuBar = "${pkgs.waybar}/bin/waybar";
-          screenshot = "${pkgs.grimblast}/bin/grimblast";
-          brightness = "${pkgs.brightnessctl}/bin/brightnessctl";
-          media = "${pkgs.playerctl}/bin/playerctl";
+          menuBar = lib.getExe pkgs.waybar;
 
-          monitor = builtins.map (
-            m:
+          mapMonitors =
+            monitor:
             let
-              resolution = "${toString m.width}x${toString m.height}@${toString m.refreshRate}";
-              position = "${toString m.x}x${toString m.y}";
+              resolution = "${toString monitor.width}x${toString monitor.height}@${toString monitor.refreshRate}";
+              position = "${toString monitor.x}x${toString monitor.y}";
             in
-            "${m.name}, ${if m.enable then "${resolution}, ${position}, ${toString m.scale}" else "disable"}"
-          ) (config.monitors);
+            "${monitor.name}, ${
+              if monitor.enable then "${resolution}, ${position}, ${toString monitor.scale}" else "disable"
+            }";
         in
         {
-          inherit monitor;
+          monitor = builtins.map (mapMonitors) (config.monitors);
           general = {
             border_size = 2;
             gaps_in = 4;
@@ -104,97 +119,153 @@ in
             # Dropbox
             "${lib.getExe pkgs.maestral} start"
           ];
-          bind = [
-            "${modKey}, Escape, killactive,"
-            "${modKey}, V, togglefloating,"
-            "${modKey}, P, fullscreen, 1"
-            "${modKey}, Return, exec, ${config.terminal.path}"
-            "${modKey}, F, exec, ${config.fileManager.path}"
-            "${modKey}, Space, exec, ${launcher}"
-            "${modKey}, B, exec, ${config.browser.path}"
-            "${modKey}, W, exec, pkill waybar || ${menuBar}"
+          workspace =
+            let
+              discord = lib.getExe pkgs.discord;
+              obsidian = lib.getExe pkgs.obsidian;
+              whatsapp = ''${config.browser.path} --app="https://web.whatsapp.com"'';
+              music = ''${config.browser.path} --app="https://music.youtube.com/"'';
+              _1password = lib.getExe pkgs._1password-gui;
 
-            # Move focus
-            "${modKey}, left, movefocus, l"
-            "${modKey}, right, movefocus, r"
-            "${modKey}, up, movefocus, u"
-            "${modKey}, down, movefocus, d"
-            "${modKey}, H, movefocus, l"
-            "${modKey}, L, movefocus, r"
-            "${modKey}, K, movefocus, u"
-            "${modKey}, J, movefocus, d"
-            # Move window
-            "${modKey}_SHIFT, left, movewindow, l"
-            "${modKey}_SHIFT, right, movewindow, r"
-            "${modKey}_SHIFT, up, movewindow, u"
-            "${modKey}_SHIFT, down, movewindow, d"
-            "${modKey}_SHIFT, H, movewindow, l"
-            "${modKey}_SHIFT, L, movewindow, r"
-            "${modKey}_SHIFT, K, movewindow, u"
-            "${modKey}_SHIFT, J, movewindow, d"
+              merge = rules: builtins.concatStringsSep ", " (builtins.concatLists rules);
+              rule =
+                name: package:
+                let
+                  defaultRules = [
+                    "name:${name}"
+                    "on-created-empty:${package}"
+                  ];
+                in
+                merge [
+                  defaultRules
+                  cfg.workspace.extraRules.${name}
+                ];
+            in
+            [
+              (rule "browser" config.browser.path)
+              (rule "file-manager" config.fileManager.path)
+              (rule "terminal" config.terminal.path)
+              (rule "discord" discord)
+              (rule "obsidian" obsidian)
+              (rule "whatsapp" whatsapp)
+              (rule "music" music)
+              (rule "_1password" _1password)
+            ];
+          bind =
+            let
+              launcher = "${lib.getExe pkgs.rofi-wayland} -show drun";
+              screenshot = lib.getExe pkgs.grimblast;
+              moveWorkspaceToMonitor = lib.imap (
+                index: monitor: "${modKey}_ALT, ${toString index}, movecurrentworkspacetomonitor, ${monitor.name}"
+              ) config.monitors;
+            in
+            moveWorkspaceToMonitor
+            ++ [
+              "${modKey}, B, workspace, name:browser"
+              "${modKey}, D, workspace, name:discord"
+              "${modKey}, F, workspace, name:file-manager"
+              "${modKey}, T, workspace, name:terminal"
+              "${modKey}, O, workspace, name:obsidian"
+              "${modKey}, W, workspace, name:whatsapp"
+              "${modKey}, M, workspace, name:music"
+              "${modKey}, P, workspace, name:_1password"
 
-            # Switch workspaces with mainMod + [0-9]
-            "${modKey}, 1, workspace, 1"
-            "${modKey}, 2, workspace, 2"
-            "${modKey}, 3, workspace, 3"
-            "${modKey}, 4, workspace, 4"
-            "${modKey}, 5, workspace, 5"
-            "${modKey}, 6, workspace, 6"
-            "${modKey}, 7, workspace, 7"
-            "${modKey}, 8, workspace, 8"
-            "${modKey}, 9, workspace, 9"
-            "${modKey}, 0, workspace, 10"
-            "${modKey}, S, togglespecialworkspace, special:scratchpad"
+              "${modKey}, Escape, killactive,"
+              "${modKey}, V, togglefloating,"
+              "${modKey}, F11, fullscreen, 1"
+              "${modKey}, Return, exec, ${config.terminal.path}"
+              "${modKey}, Space, exec, ${launcher}"
+              "${modKey}_SHIFT, W, exec, pkill ${builtins.baseNameOf menuBar} || ${menuBar}"
 
-            # Move active window to a workspace with mainMod + SHIFT + [0-9]
-            "${modKey}_SHIFT, 1, movetoworkspace, 1"
-            "${modKey}_SHIFT, 2, movetoworkspace, 2"
-            "${modKey}_SHIFT, 3, movetoworkspace, 3"
-            "${modKey}_SHIFT, 4, movetoworkspace, 4"
-            "${modKey}_SHIFT, 5, movetoworkspace, 5"
-            "${modKey}_SHIFT, 6, movetoworkspace, 6"
-            "${modKey}_SHIFT, 7, movetoworkspace, 7"
-            "${modKey}_SHIFT, 8, movetoworkspace, 8"
-            "${modKey}_SHIFT, 9, movetoworkspace, 9"
-            "${modKey}_SHIFT, 0, movetoworkspace, 10"
-            "${modKey}_SHIFT, S, movetoworkspace, special:scratchpad"
+              # Move focus
+              "${modKey}, left, movefocus, l"
+              "${modKey}, right, movefocus, r"
+              "${modKey}, up, movefocus, u"
+              "${modKey}, down, movefocus, d"
+              "${modKey}, H, movefocus, l"
+              "${modKey}, L, movefocus, r"
+              "${modKey}, K, movefocus, u"
+              "${modKey}, J, movefocus, d"
+              # Move window
+              "${modKey}_SHIFT, left, movewindow, l"
+              "${modKey}_SHIFT, right, movewindow, r"
+              "${modKey}_SHIFT, up, movewindow, u"
+              "${modKey}_SHIFT, down, movewindow, d"
+              "${modKey}_SHIFT, H, movewindow, l"
+              "${modKey}_SHIFT, L, movewindow, r"
+              "${modKey}_SHIFT, K, movewindow, u"
+              "${modKey}_SHIFT, J, movewindow, d"
 
-            # Scroll through existing workspaces with mainMod + scroll
-            "${modKey}, mouse_down, workspace, e+1"
-            "${modKey}, mouse_up, workspace, e-1"
+              # Switch workspaces with mainMod + [0-9]
+              "${modKey}, 1, workspace, 1"
+              "${modKey}, 2, workspace, 2"
+              "${modKey}, 3, workspace, 3"
+              "${modKey}, 4, workspace, 4"
+              "${modKey}, 5, workspace, 5"
+              "${modKey}, 6, workspace, 6"
+              "${modKey}, 7, workspace, 7"
+              "${modKey}, 8, workspace, 8"
+              "${modKey}, 9, workspace, 9"
+              "${modKey}, 0, workspace, 10"
+              "${modKey}, S, togglespecialworkspace, special:scratchpad"
 
-            # Screenshot
-            ", Print, exec, ${screenshot} --cursor copy area"
-          ];
+              # Move active window to a workspace with mainMod + SHIFT + [0-9]
+              "${modKey}_SHIFT, 1, movetoworkspace, 1"
+              "${modKey}_SHIFT, 2, movetoworkspace, 2"
+              "${modKey}_SHIFT, 3, movetoworkspace, 3"
+              "${modKey}_SHIFT, 4, movetoworkspace, 4"
+              "${modKey}_SHIFT, 5, movetoworkspace, 5"
+              "${modKey}_SHIFT, 6, movetoworkspace, 6"
+              "${modKey}_SHIFT, 7, movetoworkspace, 7"
+              "${modKey}_SHIFT, 8, movetoworkspace, 8"
+              "${modKey}_SHIFT, 9, movetoworkspace, 9"
+              "${modKey}_SHIFT, 0, movetoworkspace, 10"
+              "${modKey}_SHIFT, S, movetoworkspace, special:scratchpad"
+
+              # Scroll through existing workspaces with mainMod + scroll
+              "${modKey}, mouse_down, workspace, e+1"
+              "${modKey}, mouse_up, workspace, e-1"
+
+              # Screenshot
+              ", Print, exec, ${screenshot} --cursor copy area"
+            ];
           # Mouse
           bindm = [
             # Move windows with mainMod + LMB and dragging
             "${modKey}, mouse:272, movewindow"
           ];
           # Repeat - Locked
-          bindel = [
-            # Volume
-            ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0"
-            ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0"
-            "${modKey}, XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0"
-            "${modKey}, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0"
+          bindel =
+            let
+              brightness = lib.getExe pkgs.brightnessctl;
+            in
+            [
+              # Volume
+              ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0"
+              ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0"
+              "${modKey}, XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0"
+              "${modKey}, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0"
 
-            # Brightness
-            ", XF86MonBrightnessUp, exec, ${brightness} set 5%+"
-            ", XF86MonBrightnessDown, exec, ${brightness} set 5%-"
-          ];
+              # Brightness
+              ", XF86MonBrightnessUp, exec, ${brightness} set 5%+"
+              ", XF86MonBrightnessDown, exec, ${brightness} set 5%-"
+            ];
           # Locked
-          bindl = [
-            # Mute Volume        
-            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+          bindl =
+            let
+              media = lib.getExe pkgs.playerctl;
+            in
+            [
+              # Mute Volume        
+              ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
 
-            # Media
-            ", XF86AudioPlay, exec, ${media} play-pause"
-            ", XF86AudioPrev, exec, ${media} previous"
-            ", XF86AudioNext, exec, ${media} next"
-            ", XF86AudioNext, exec, ${media} next"
-            ", XF86AudioStop, exec, ${media} stop"
-          ];
+              # Media
+              ", XF86AudioPlay, exec, ${media} play-pause"
+              ", XF86AudioPrev, exec, ${media} previous"
+              ", XF86AudioNext, exec, ${media} next"
+              ", XF86AudioNext, exec, ${media} next"
+              ", XF86AudioStop, exec, ${media} stop"
+            ];
         };
     };
   };

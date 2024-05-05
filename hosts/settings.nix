@@ -13,7 +13,7 @@
       username = mkOption { type = types.str; };
       description = mkOption { type = types.str; };
       shell = package;
-      terminal = rec {
+      terminal = {
         package = mkOption { type = types.package; };
         path = mkOption { type = types.str; };
         onInit = mkOption {
@@ -45,26 +45,22 @@
 
   config =
     let
-      packageBin = name: binary: rec {
-        package = pkgs.${name};
-        path = "${package}/bin/${binary}";
+      package = package: {
+        inherit package;
+        path = lib.getExe package;
       };
-      package = name: packageBin name name;
 
-      terminalPackage = package "foot";
+      terminalPackage = package pkgs.foot;
     in
     {
       username = "afresquet";
       description = "Alvaro";
-      shell = packageBin "nushell" "nu";
+      shell = package pkgs.nushell;
       terminal = terminalPackage // {
         run = program: "${terminalPackage.path} ${program}";
       };
-      editor = packageBin "helix" "hx";
-      browser = package "brave";
-      fileManager = rec {
-        package = pkgs.gnome.nautilus;
-        path = "${package}/bin/nautilus";
-      };
+      editor = package pkgs.helix;
+      browser = package pkgs.brave;
+      fileManager = package pkgs.gnome.nautilus;
     };
 }

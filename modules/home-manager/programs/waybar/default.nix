@@ -27,10 +27,8 @@ in
         layer = "top";
         height = 30;
         spacing = 4;
-        modules-left = [
-          "hyprland/workspaces"
-          "hyprland/window"
-        ];
+        modules-left = [ "hyprland/workspaces" ];
+        modules-center = [ ];
         modules-right = [
           "tray"
           "privacy"
@@ -46,7 +44,18 @@ in
         "hyprland/workspaces" = {
           disable-scroll = true;
           warp-on-scroll = false;
-          format = "{name}";
+          sort-by = "id";
+          format = "{icon}";
+          format-icons = {
+            discord = "";
+            browser = "<span font='Font Awesome 6 Brands'></span>";
+            file-manager = "";
+            terminal = "";
+            music = "";
+            whatsapp = "";
+            obsidian = "";
+            _1password = "";
+          };
         };
         "hyprland/window" = {
           separate-outputs = true;
