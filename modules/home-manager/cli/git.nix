@@ -20,7 +20,7 @@ in
       userEmail = cfg.email;
       extraConfig = {
         init.defaultBranch = "main";
-        core.editor = config.editor.path;
+        core.editor = lib.getExe config.editor;
         user.signingkey = cfg.signingKey;
         gpg.format = "ssh";
         commit.gpgsign = true;

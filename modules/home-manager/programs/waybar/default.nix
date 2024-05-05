@@ -67,16 +67,21 @@ in
         tray = {
           spacing = 10;
         };
-        bluetooth = {
-          format = "{icon}";
-          format-icons = {
-            on = "";
-            off = "󰂲";
-            disabled = "󰂲";
-            connected = "";
+        bluetooth =
+          let
+            bluetuith = lib.getExe pkgs.bluetuith;
+            terminal = lib.getExe config.terminal;
+          in
+          {
+            format = "{icon}";
+            format-icons = {
+              on = "";
+              off = "󰂲";
+              disabled = "󰂲";
+              connected = "";
+            };
+            on-click = "${terminal} ${bluetuith}";
           };
-          on-click = config.terminal.run "${pkgs.bluetuith}/bin/bluetuith";
-        };
         clock = {
           format = "{:%H:%M}";
           format-alt = "{:%A, %B %d, %Y %R}";
@@ -185,35 +190,43 @@ in
           format-disconnected = "Disconnected ⚠";
           tooltip-format = "{ipaddr}";
         };
-        pulseaudio = {
-          format = "{volume}% {icon} {format_source}";
-          format-bluetooth = "{volume}% {icon} {format_source}";
-          format-bluetooth-muted = " {icon} {format_source}";
-          format-muted = " {format_source}";
-          format-source = "{volume}% ";
-          format-source-muted = "";
-          format-icons = {
-            headphone = "";
-            hands-free = "";
-            headset = "";
-            phone = "";
-            portable = "";
-            car = "";
-            default = [
-              ""
-              ""
-              ""
-            ];
+        pulseaudio =
+          let
+            pavucontrol = lib.getExe pkgs.pavucontrol;
+          in
+          {
+            format = "{volume}% {icon} {format_source}";
+            format-bluetooth = "{volume}% {icon} {format_source}";
+            format-bluetooth-muted = " {icon} {format_source}";
+            format-muted = " {format_source}";
+            format-source = "{volume}% ";
+            format-source-muted = "";
+            format-icons = {
+              headphone = "";
+              hands-free = "";
+              headset = "";
+              phone = "";
+              portable = "";
+              car = "";
+              default = [
+                ""
+                ""
+                ""
+              ];
+            };
+            on-click = pavucontrol;
           };
-          on-click = "${pkgs.pavucontrol}/bin/pavucontrol";
-        };
         privacy = {
           icon-size = 16;
         };
-        "custom/session" = {
-          format = "";
-          on-click = "${pkgs.wlogout}/bin/wlogout";
-        };
+        "custom/session" =
+          let
+            wlogout = lib.getExe pkgs.wlogout;
+          in
+          {
+            format = "";
+            on-click = wlogout;
+          };
       };
       style = builtins.readFile ./style.css;
     };

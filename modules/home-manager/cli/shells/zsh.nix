@@ -15,8 +15,6 @@ in
       enableCompletion = true;
       autosuggestion.enable = true;
       syntaxHighlighting.enable = true;
-
-      initExtra = config.terminal.onInit;
     };
   };
 }

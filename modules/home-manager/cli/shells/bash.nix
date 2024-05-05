@@ -9,11 +9,5 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    programs.bash = {
-      enable = true;
-
-      initExtra = config.terminal.onInit;
-    };
-  };
+  config = lib.mkIf cfg.enable { programs.bash.enable = true; };
 }

@@ -16,8 +16,6 @@ in
       shellInit = ''
         set -g fish_greeting
       '';
-
-      shellInitLast = config.terminal.onInit;
     };
   };
 }

@@ -109,22 +109,29 @@ in
             force_zero_scaling = true;
           };
           env = [ "XCURSOR_SIZE, 24" ];
-          exec-once = [
-            # Wallpaper
-            "${pkgs.swww}/bin/swww-daemon"
-            "${pkgs.swww}/bin/swww img ${/home/${config.username}/dotfiles/assets/wallpaper.png} -t none"
+          exec-once =
+            let
+              swww = lib.getExe pkgs.swww;
+            in
+            [
+              # Wallpaper
+              "${swww}-daemon"
+              ''${swww} img "~/dotfiles/assets/wallpaper.png" -t none''
 
-            menuBar
+              menuBar
 
-            # Dropbox
-            "${lib.getExe pkgs.maestral} start"
-          ];
+              # Dropbox
+              "${lib.getExe pkgs.maestral} start"
+            ];
           workspace =
             let
+              browser = lib.getExe config.browser;
+              fileManager = lib.getExe config.fileManager;
+              terminal = lib.getExe config.terminal;
               discord = lib.getExe pkgs.discord;
               obsidian = lib.getExe pkgs.obsidian;
-              whatsapp = ''${config.browser.path} --app="https://web.whatsapp.com"'';
-              music = ''${config.browser.path} --app="https://music.youtube.com/"'';
+              whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
+              music = ''${browser} --app="https://music.youtube.com/"'';
               _1password = lib.getExe pkgs._1password-gui;
 
               merge = rules: builtins.concatStringsSep ", " (builtins.concatLists rules);
@@ -142,9 +149,9 @@ in
                 ];
             in
             [
-              (rule "browser" config.browser.path)
-              (rule "file-manager" config.fileManager.path)
-              (rule "terminal" config.terminal.path)
+              (rule "browser" browser)
+              (rule "file-manager" fileManager)
+              (rule "terminal" terminal)
               (rule "discord" discord)
               (rule "obsidian" obsidian)
               (rule "whatsapp" whatsapp)
@@ -173,7 +180,7 @@ in
               "${modKey}, Escape, killactive,"
               "${modKey}, V, togglefloating,"
               "${modKey}, F11, fullscreen, 1"
-              "${modKey}, Return, exec, ${config.terminal.path}"
+              "${modKey}, Return, exec, ${lib.getExe config.terminal}"
               "${modKey}, Space, exec, ${launcher}"
               "${modKey}_SHIFT, W, exec, pkill ${builtins.baseNameOf menuBar} || ${menuBar}"
 

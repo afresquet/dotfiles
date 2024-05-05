@@ -1,4 +1,5 @@
 {
+  lib,
   config,
   inputs,
   outputs,
@@ -39,10 +40,10 @@
   home.homeDirectory = "/home/${config.username}";
 
   home.sessionVariables = {
-    TERM = config.terminal.path;
-    SHELL = config.shell.path;
-    EDITOR = config.editor.path;
-    BROWSER = config.browser.path;
+    TERM = lib.getExe config.terminal;
+    SHELL = lib.getExe config.shell;
+    EDITOR = lib.getExe config.editor;
+    BROWSER = lib.getExe config.browser;
   };
 
   home.shellAliases = {
@@ -50,7 +51,6 @@
     mv = "mv -i";
     rm = "rm -i";
     c = "clear";
-    dot = "${config.editor.path} ~/dotfiles";
   };
 
   # This value determines the Home Manager release that your configuration is
