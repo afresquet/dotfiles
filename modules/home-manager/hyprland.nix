@@ -100,6 +100,9 @@ in
             "${pkgs.swww}/bin/swww img ${/home/${config.username}/dotfiles/assets/wallpaper.png} -t none"
 
             menuBar
+
+            # Dropbox
+            "${lib.getExe pkgs.maestral} start"
           ];
           bind = [
             "${modKey}, Escape, killactive,"

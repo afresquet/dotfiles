@@ -14,5 +14,10 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable { environment.systemPackages = [ pkgs.maestral ]; };
+  config = lib.mkIf cfg.enable {
+    environment.systemPackages = with pkgs; [
+      maestral
+      maestral-gui
+    ];
+  };
 }
