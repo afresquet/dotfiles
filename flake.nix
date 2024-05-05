@@ -23,23 +23,25 @@
     }@inputs:
     let
       inherit (self) outputs;
+      inherit (nixpkgs) lib;
 
-      forEachSystem = nixpkgs.lib.genAttrs (import systems);
+      forEachSystem = lib.genAttrs (import systems);
 
-      utils = import ./utils.nix { inherit (nixpkgs) lib; };
+      utils = import ./utils.nix { inherit lib; };
 
       libAndUtils = {
-        inherit (nixpkgs) lib;
-        inherit utils;
+        inherit lib utils;
       };
 
       nixosSystem =
-        system: module:
+        { system, module }:
         nixpkgs.lib.nixosSystem {
           inherit system;
+
           specialArgs = {
             inherit inputs outputs;
           };
+
           modules = [ module ];
         };
 
@@ -47,9 +49,11 @@
         { module, pkgs }:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
+
           extraSpecialArgs = {
             inherit inputs outputs;
           };
+
           modules = [ module ];
         };
     in
@@ -67,14 +71,23 @@
       homeManagerModules = import ./modules/home-manager libAndUtils;
 
       nixosConfigurations = {
-        Alvaro-Desktop = nixosSystem "x86_64-linux" ./hosts/desktop/configuration.nix;
+        Alvaro-Desktop = nixosSystem {
+          system = "x86_64-linux";
 
-        Alvaro-Laptop = nixosSystem "x86_64-linux" ./hosts/laptop/configuration.nix;
+          module = ./hosts/desktop/configuration.nix;
+        };
+
+        Alvaro-Laptop = nixosSystem {
+          system = "x86_64-linux";
+
+          module = ./hosts/laptop/configuration.nix;
+        };
       };
 
       homeConfigurations = {
         "afresquet@Alvaro-Desktop" = homeManagerConfiguration {
           module = ./hosts/desktop/home.nix;
+
           inherit (outputs.nixosConfigurations.Alvaro-Desktop) pkgs;
         };
 
