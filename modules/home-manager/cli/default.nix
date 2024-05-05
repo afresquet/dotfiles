@@ -9,6 +9,7 @@ let
 
         home.packages = with pkgs; [
           fd
+          sd
           tokei
           uutils-coreutils
           wget

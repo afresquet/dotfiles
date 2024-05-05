@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.jq;
 in
@@ -9,5 +14,9 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable { programs.jq.enable = true; };
+  config = lib.mkIf cfg.enable {
+    programs.jq.enable = true;
+
+    home.packages = [ pkgs.jqp ];
+  };
 }

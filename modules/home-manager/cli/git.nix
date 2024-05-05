@@ -53,10 +53,16 @@ in
         gl = "${git} log --all --graph --format=oneline";
         gp = "${git} push";
         gpf = "${gp} --force-with-lease";
+        gpl = "${git} pull";
+        gplr = "${gpl} --rebase";
+        gr = "${git} restore";
         gra = "${git} rebase --abort";
         grc = "${git} rebase --continue";
-        grs = "${git} restore --staged";
+        grs = "${gr} --staged";
         gs = "${git} status";
+        gsh = "${git} stash";
+        gsha = "${gsh} apply";
+        gshp = "${gsh} pop";
       };
   };
 }
