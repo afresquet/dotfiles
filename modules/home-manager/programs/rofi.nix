@@ -19,5 +19,7 @@ in
       enable = true;
       package = pkgs.rofi-wayland;
     };
+
+    home.packages = [ pkgs.rofimoji ];
   };
 }

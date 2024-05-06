@@ -162,7 +162,9 @@ in
           windowrulev2 = [ "noborder, onworkspace:1" ];
           bind =
             let
-              launcher = "${lib.getExe pkgs.rofi-wayland} -show drun";
+              rofi = lib.getExe config.programs.rofi.package;
+              launcher = "${rofi} -show drun";
+              emoji = ''${rofi} -modi "emoji:rofimoji" -show emoji'';
               screenshot = lib.getExe pkgs.grimblast;
               moveWorkspaceToMonitor = lib.imap (
                 index: monitor: "${modKey}_ALT, ${toString index}, movecurrentworkspacetomonitor, ${monitor.name}"
@@ -184,6 +186,7 @@ in
               "${modKey}, F11, fullscreen, 1"
               "${modKey}, Return, exec, ${lib.getExe config.terminal}"
               "${modKey}, Space, exec, ${launcher}"
+              "${modKey}, period, exec, ${emoji}"
               "${modKey}_SHIFT, W, exec, pkill ${builtins.baseNameOf menuBar} || ${menuBar}"
 
               # Move focus
