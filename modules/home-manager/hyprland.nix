@@ -101,6 +101,7 @@ in
             pseudotile = true;
             preserve_split = true;
             force_split = 2;
+            no_gaps_when_only = 1;
           };
           master = {
             new_is_master = false;
@@ -158,6 +159,7 @@ in
               (rule "music" music)
               (rule "_1password" _1password)
             ];
+          windowrulev2 = [ "noborder, onworkspace:1" ];
           bind =
             let
               launcher = "${lib.getExe pkgs.rofi-wayland} -show drun";
