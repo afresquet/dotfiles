@@ -26,13 +26,7 @@ in
         commit.gpgsign = true;
         push.autoSetupRemote = true;
       };
-      delta = {
-        enable = true;
-        options = {
-          navigate = true;
-          light = false;
-        };
-      };
+      difftastic.enable = true;
     };
 
     home.shellAliases =
@@ -51,6 +45,7 @@ in
         gd = "${git} diff -w";
         gds = "${gd} --staged";
         gl = "${git} log --all --graph --format=oneline";
+        gld = "${gl} -p --ext-diff";
         gp = "${git} push";
         gpf = "${gp} --force-with-lease";
         gpl = "${git} pull";
