@@ -181,6 +181,15 @@ in
               "${modKey}, M, workspace, name:music"
               "${modKey}, P, workspace, name:_1password"
 
+              "${modKey}_SHIFT, B, movetoworkspace, name:browser"
+              "${modKey}_SHIFT, D, movetoworkspace, name:discord"
+              "${modKey}_SHIFT, F, movetoworkspace, name:file-manager"
+              "${modKey}_SHIFT, T, movetoworkspace, name:terminal"
+              "${modKey}_SHIFT, O, movetoworkspace, name:obsidian"
+              "${modKey}_SHIFT, W, movetoworkspace, name:whatsapp"
+              "${modKey}_SHIFT, M, movetoworkspace, name:music"
+              "${modKey}_SHIFT, P, movetoworkspace, name:_1password"
+
               "${modKey}, Escape, killactive,"
               "${modKey}, V, togglefloating,"
               "${modKey}, F11, fullscreen, 1"
