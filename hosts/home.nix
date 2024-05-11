@@ -40,7 +40,7 @@
   home.homeDirectory = "/home/${config.username}";
 
   home.sessionVariables = {
-    TERM = lib.getExe config.terminal;
+    TERMINAL = lib.getExe config.terminal;
     SHELL = lib.getExe config.shell;
     EDITOR = lib.getExe config.editor;
     BROWSER = lib.getExe config.browser;

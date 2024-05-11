@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  outputs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.fastfetch;
 in
@@ -13,8 +8,6 @@ in
       default = true;
     };
   };
-
-  imports = [ outputs.homeManagerModules.polyfills.fastfetch ];
 
   config = lib.mkIf cfg.enable {
     programs.fastfetch.enable = true;
