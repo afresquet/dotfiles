@@ -55,6 +55,7 @@ in
             whatsapp = "";
             obsidian = "";
             _1password = "";
+            twitter = "";
           };
         };
         "hyprland/window" = {

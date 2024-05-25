@@ -31,6 +31,7 @@ in
           whatsapp = workspaceExtraRulesOption;
           music = workspaceExtraRulesOption;
           _1password = workspaceExtraRulesOption;
+          twitter = workspaceExtraRulesOption;
         };
     };
   };
@@ -134,6 +135,7 @@ in
               whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
               music = ''${browser} --app="https://music.youtube.com/"'';
               _1password = lib.getExe pkgs._1password-gui;
+              twitter = ''${browser} --app="https://x.com/"'';
 
               merge = rules: builtins.concatStringsSep ", " (builtins.concatLists rules);
               rule =
@@ -158,6 +160,7 @@ in
               (rule "whatsapp" whatsapp)
               (rule "music" music)
               (rule "_1password" _1password)
+              (rule "twitter" twitter)
             ];
           windowrulev2 = [ "noborder, onworkspace:1" ];
           bind =
@@ -180,6 +183,7 @@ in
               "${modKey}, W, workspace, name:whatsapp"
               "${modKey}, M, workspace, name:music"
               "${modKey}, P, workspace, name:_1password"
+              "${modKey}, X, workspace, name:twitter"
 
               "${modKey}_SHIFT, B, movetoworkspace, name:browser"
               "${modKey}_SHIFT, D, movetoworkspace, name:discord"
@@ -189,6 +193,7 @@ in
               "${modKey}_SHIFT, W, movetoworkspace, name:whatsapp"
               "${modKey}_SHIFT, M, movetoworkspace, name:music"
               "${modKey}_SHIFT, P, movetoworkspace, name:_1password"
+              "${modKey}_SHIFT, X, movetoworkspace, name:twitter"
 
               "${modKey}, Escape, killactive,"
               "${modKey}, V, togglefloating,"
