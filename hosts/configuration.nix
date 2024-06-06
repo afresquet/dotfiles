@@ -32,6 +32,8 @@
     extraGroups = [
       "networkmanager"
       "wheel"
+      "tty"
+      "dialout"
     ];
     inherit (config) description shell;
   };
