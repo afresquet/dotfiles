@@ -183,6 +183,12 @@ in
               ];
             };
           }
+
+          {
+            name = "sql";
+            formatter.command = "sleek";
+            auto-format = true;
+          }
         ];
 
         language-server = {
@@ -245,6 +251,8 @@ in
         pyright
         ruff-lsp
         black
+        # sql
+        sleek
       ];
     };
   };
