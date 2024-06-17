@@ -238,7 +238,7 @@ in
         typescript
         nodePackages.typescript-language-server
         # bash
-        nodePackages.bash-language-server
+        bash-language-server
         # docker
         dockerfile-language-server-nodejs
         # markdown
