@@ -104,9 +104,6 @@ in
             force_split = 2;
             no_gaps_when_only = 1;
           };
-          master = {
-            new_is_master = false;
-          };
           xwayland = {
             force_zero_scaling = true;
           };
