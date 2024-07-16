@@ -32,6 +32,7 @@ in
     home.shellAliases =
       let
         git = lib.getExe config.programs.git.package;
+        gw = "${git} worktree";
       in
       rec {
         ga = "${git} add";
@@ -58,6 +59,9 @@ in
         gsh = "${git} stash";
         gsha = "${gsh} apply";
         gshp = "${gsh} pop";
+        gwa = "${gw} add";
+        gwl = "${gw} list";
+        gwr = "${gw} remove";
       };
   };
 }
