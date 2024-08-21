@@ -35,6 +35,7 @@
       "wheel"
       "tty"
       "dialout"
+      "uinput"
     ];
     inherit (config) description shell;
   };
