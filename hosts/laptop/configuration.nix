@@ -11,4 +11,7 @@
     inputs.nixos-hardware.nixosModules.framework-13-7040-amd
     ./hardware-configuration.nix
   ];
+
+  heroic.enable = false;
+  lutris.enable = false;
 }

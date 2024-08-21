@@ -13,6 +13,7 @@
     outputs.nixosModules.polyfills.default
     outputs.nixosModules.programs.default
     outputs.nixosModules.services.default
+    outputs.nixosModules.gaming
   ];
 
   nixpkgs.overlays = [
