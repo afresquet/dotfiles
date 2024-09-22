@@ -34,6 +34,6 @@
     terminal = pkgs.foot;
     editor = pkgs.helix;
     browser = pkgs.brave;
-    fileManager = pkgs.gnome.nautilus;
+    fileManager = pkgs.nautilus;
   };
 }
