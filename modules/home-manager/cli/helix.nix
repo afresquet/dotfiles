@@ -253,6 +253,8 @@ in
         black
         # sql
         sleek
+        # lldb
+        lldb
       ];
     };
   };
