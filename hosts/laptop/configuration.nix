@@ -12,6 +12,8 @@
     ./hardware-configuration.nix
   ];
 
+  services.libinput.touchpad.disableWhileTyping = true;
+
   heroic.enable = false;
   lutris.enable = false;
 }
