@@ -17,7 +17,7 @@
 
   stylix = {
     enable = true;
-    image = /home/${config.username}/dotfiles/assets/wallpaper.png;
+    image = ../assets/wallpaper.png;
     base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
     polarity = "dark";
     fonts.monospace = {
