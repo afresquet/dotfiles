@@ -102,7 +102,6 @@ in
             pseudotile = true;
             preserve_split = true;
             force_split = 2;
-            no_gaps_when_only = 1;
           };
           xwayland = {
             force_zero_scaling = true;

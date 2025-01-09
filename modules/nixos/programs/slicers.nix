@@ -17,7 +17,7 @@ in
   config = lib.mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
       cura
-      orca-slicer
+      # orca-slicer
       prusa-slicer
     ];
   };

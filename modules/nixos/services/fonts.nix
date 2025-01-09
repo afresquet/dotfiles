@@ -2,6 +2,6 @@
 {
   fonts.packages = with pkgs; [
     font-awesome
-    nerdfonts
+    nerd-fonts.hack
   ];
 }

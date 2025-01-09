@@ -21,7 +21,7 @@
     polarity = "dark";
     fonts.monospace = {
       name = "Hack Nerd Font Mono";
-      package = pkgs.nerdfonts;
+      package = pkgs.nerd-fonts.hack;
     };
     opacity.terminal = 0.95;
     targets = {

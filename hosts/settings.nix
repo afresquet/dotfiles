@@ -31,7 +31,7 @@
     username = "afresquet";
     description = "Alvaro";
     shell = pkgs.nushell;
-    terminal = pkgs.foot;
+    terminal = pkgs.ghostty;
     editor = pkgs.helix;
     browser = pkgs.brave;
     fileManager = pkgs.nautilus;
