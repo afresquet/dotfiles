@@ -4,6 +4,10 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default";
+    nix-darwin = {
+      url = "github:LnL7/nix-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
     home-manager = {
       url = "github:nix-community/home-manager";
@@ -17,6 +21,7 @@
     {
       self,
       nixpkgs,
+      nix-darwin,
       systems,
       home-manager,
       ...
@@ -84,6 +89,12 @@
         };
       };
 
+      darwinConfigurations = {
+        Alvaros-Mac-mini = nix-darwin.lib.darwinSystem {
+          modules = [ ./hosts/mac-mini/configuration.nix ];
+        };
+      };
+
       homeConfigurations = {
         "afresquet@Alvaro-Desktop" = homeManagerConfiguration {
           module = ./hosts/desktop/home.nix;
@@ -95,6 +106,19 @@
           module = ./hosts/laptop/home.nix;
 
           inherit (outputs.nixosConfigurations.Alvaro-Laptop) pkgs;
+        };
+
+        "afresquet@Alvaros-Mac-mini" = homeManagerConfiguration {
+          module = ./hosts/mac-mini/home.nix;
+
+          pkgs = import nixpkgs {
+            system = "aarch64-darwin";
+
+            overlays = [
+              outputs.overlays.additions
+              outputs.overlays.modifications
+            ];
+          };
         };
 
         "afresquet@mac-afresquet" = homeManagerConfiguration {

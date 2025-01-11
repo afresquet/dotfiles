@@ -59,6 +59,9 @@ in
 
           file-picker.hidden = false;
           indent-guides.render = true;
+
+          end-of-line-diagnostics = "hint";
+          inline-diagnostics.cursor-line = "warning";
         };
 
         keys.normal = {
