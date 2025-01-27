@@ -19,7 +19,7 @@ in
       userName = config.username;
       userEmail = cfg.email;
       extraConfig = {
-        init.defaultBranch = "main";
+        init.defaultBranch = "master";
         core.editor = lib.getExe config.editor;
         user.signingkey = cfg.signingKey;
         gpg.format = "ssh";

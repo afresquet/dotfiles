@@ -8,7 +8,7 @@
 stdenv.mkDerivation rec {
   name = "surrealdb-bin";
   pname = "surreal";
-  version = "2.0.4";
+  version = "2.1.4";
 
   src = fetchzip {
     url = "https://github.com/surrealdb/surrealdb/releases/download/v${version}/surreal-v${version}.linux-amd64.tgz";
