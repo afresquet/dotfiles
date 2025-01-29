@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 let
   cfg = config.btop;
 in
@@ -9,5 +14,10 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable { programs.btop.enable = true; };
+  config = lib.mkIf cfg.enable {
+    programs.btop = {
+      enable = true;
+      package = pkgs.btop.override { rocmSupport = true; };
+    };
+  };
 }
