@@ -12,7 +12,7 @@ stdenv.mkDerivation rec {
 
   src = fetchzip {
     url = "https://github.com/surrealdb/surrealdb/releases/download/v${version}/surreal-v${version}.linux-amd64.tgz";
-    sha256 = "sha256-BQxjx45nBLnjOBHe0Ata/t/QcMCHdXzy/ci0RhY70SQ=";
+    sha256 = "sha256-pNsp8RF6CgjRgbpf6oYhseaUve3FTWJz6MAwuyWcEpk=";
   };
 
   nativeBuildInputs = [ autoPatchelfHook ];
