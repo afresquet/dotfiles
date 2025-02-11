@@ -3,6 +3,7 @@
   fetchurl,
   makeDesktopItem,
   appimageTools,
+  ...
 }:
 let
   releaseNotesVersion = "4.3.7";

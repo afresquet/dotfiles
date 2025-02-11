@@ -3,6 +3,7 @@
   fetchurl,
   makeDesktopItem,
   appimageTools,
+  ...
 }:
 
 appimageTools.wrapType2 rec {

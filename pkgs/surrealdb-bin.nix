@@ -4,6 +4,7 @@
   autoPatchelfHook,
   glibc,
   gcc-unwrapped,
+  ...
 }:
 stdenv.mkDerivation rec {
   name = "surrealdb-bin";
