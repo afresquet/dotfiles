@@ -5,7 +5,7 @@ in
 {
   options = {
     eza.enable = lib.mkEnableOption "eza" // {
-      default = true;
+      default = false;
     };
   };
 

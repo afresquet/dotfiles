@@ -5,20 +5,18 @@
   ...
 }:
 let
-  cfg = config.discord;
+  cfg = config.anki;
 in
 {
   options = {
-    discord.enable = lib.mkEnableOption "Discord" // {
+    anki.enable = lib.mkEnableOption "Anki" // {
       default = true;
     };
   };
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
-      discord
+      anki
     ];
-
-    allowedUnfree = [ "discord" ];
   };
 }
