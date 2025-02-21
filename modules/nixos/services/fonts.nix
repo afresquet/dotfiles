@@ -1,7 +1,10 @@
 { pkgs, ... }:
 {
-  fonts.packages = with pkgs; [
-    font-awesome
-    nerd-fonts.hack
-  ];
+  fonts = {
+    fontconfig.enable = true;
+    packages = with pkgs; [
+      font-awesome
+      nerd-fonts.hack
+    ];
+  };
 }
