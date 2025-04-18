@@ -64,6 +64,7 @@ in
             layout = "dwindle";
             resize_on_border = true;
           };
+          ecosystem.no_update_news = false;
           decoration = {
             rounding = 10;
             blur = {
