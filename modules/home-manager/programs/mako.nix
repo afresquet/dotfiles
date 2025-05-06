@@ -12,9 +12,11 @@ in
   config = lib.mkIf cfg.enable {
     services.mako = {
       enable = true;
-      borderRadius = 5;
-      borderSize = 2;
-      layer = "overlay";
+      settings = {
+        borderRadius = 5;
+        borderSize = 2;
+        layer = "overlay";
+      };
     };
   };
 }
