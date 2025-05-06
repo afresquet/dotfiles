@@ -212,7 +212,7 @@ in
           };
 
           ruff = {
-            command = "ruff-lsp";
+            command = "ruff";
             config.settings.args = [
               "--ignore"
               "E501"
@@ -252,7 +252,7 @@ in
         yaml-language-server
         # python
         pyright
-        ruff-lsp
+        ruff
         black
         # sql
         sleek
