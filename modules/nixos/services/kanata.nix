@@ -5,7 +5,7 @@ in
 {
   options = {
     kanata.enable = lib.mkEnableOption "kanata" // {
-      default = true;
+      default = false;
     };
   };
 
