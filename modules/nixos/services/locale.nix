@@ -7,9 +7,11 @@
 
   # Configure keymap in X11
   services.xserver = {
+    enable = true;
     xkb = {
       layout = "us";
-      variant = "";
+      variant = "altgr-intl";
+      options = "lv3:ralt_switch";
     };
   };
 }

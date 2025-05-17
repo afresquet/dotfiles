@@ -85,7 +85,9 @@ in
             ];
           };
           input = {
-            kb_options = "ctrl:nocaps";
+            kb_layout = "us";
+            kb_variant = "altgr-intl";
+            kb_options = "ctrl:nocaps,lv3:ralt_switch";
             touchpad = {
               natural_scroll = true;
               scroll_factor = 0.5;
@@ -249,7 +251,7 @@ in
               "${modKey}, mouse_up, workspace, e-1"
 
               # Screenshot
-              ", Print, exec, ${screenshot} --cursor copy area"
+              ", Print, exec, ${screenshot} copy area"
             ];
           # Mouse
           bindm = [
@@ -278,7 +280,7 @@ in
               media = lib.getExe pkgs.playerctl;
             in
             [
-              # Mute Volume        
+              # Mute Volume
               ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
 
               # Media
