@@ -12,17 +12,21 @@
 
       secondaryMonitor = builtins.elemAt config.monitors 1;
       secondaryMonitorRule = "monitor:${secondaryMonitor.name}";
+
+      tertiaryMonitor = builtins.elemAt config.monitors 2;
+      tertiaryMonitorRule = "monitor:${tertiaryMonitor.name}";
     in
     {
       browser = [ primaryMonitorRule ];
       terminal = [ primaryMonitorRule ];
       file-manager = [ primaryMonitorRule ];
-      twitter = [ primaryMonitorRule ];
-      obsidian = [ primaryMonitorRule ];
 
       discord = [ secondaryMonitorRule ];
       whatsapp = [ secondaryMonitorRule ];
       music = [ secondaryMonitorRule ];
+
+      twitter = [ tertiaryMonitorRule ];
+      obsidian = [ primaryMonitorRule ];
       _1password = [ secondaryMonitorRule ];
     };
 }
