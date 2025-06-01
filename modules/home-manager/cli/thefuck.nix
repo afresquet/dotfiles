@@ -5,7 +5,7 @@ in
 {
   options = {
     thefuck.enable = lib.mkEnableOption "thefuck" // {
-      default = true;
+      default = false;
     };
   };
 
