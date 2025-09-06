@@ -23,5 +23,16 @@
       y = 0;
       enable = true;
     }
+
+    {
+      name = "HDMI-A-2";
+      width = 3840;
+      height = 2160;
+      refreshRate = 60.0;
+      x = 3840;
+      y = 0;
+      scale = 2;
+      enable = true;
+    }
   ];
 }
