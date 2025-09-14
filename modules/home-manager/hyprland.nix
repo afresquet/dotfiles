@@ -64,7 +64,7 @@ in
             layout = "dwindle";
             resize_on_border = true;
           };
-          ecosystem.no_update_news = false;
+          ecosystem.no_update_news = true;
           decoration = {
             rounding = 10;
             blur = {
@@ -93,10 +93,9 @@ in
               scroll_factor = 0.5;
             };
           };
-          gestures = {
-            workspace_swipe = true;
-            workspace_swipe_fingers = 4;
-          };
+          gesture = [
+            "4, horizontal, workspace"
+          ];
           misc = {
             disable_hyprland_logo = true;
             disable_splash_rendering = true;

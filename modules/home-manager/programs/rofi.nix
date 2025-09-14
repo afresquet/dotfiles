@@ -15,10 +15,7 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.rofi = {
-      enable = true;
-      package = pkgs.rofi-wayland;
-    };
+    programs.rofi.enable = true;
 
     home.packages = [ pkgs.rofimoji ];
   };
