@@ -243,7 +243,7 @@ in
         # bash
         bash-language-server
         # docker
-        dockerfile-language-server-nodejs
+        dockerfile-language-server
         # markdown
         marksman
         # toml

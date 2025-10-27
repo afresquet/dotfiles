@@ -16,9 +16,11 @@ in
   config = lib.mkIf cfg.enable {
     programs.git = {
       enable = true;
-      userName = config.username;
-      userEmail = cfg.email;
-      extraConfig = {
+      settings = {
+        user = {
+          name = config.username;
+          email = cfg.email;
+        };
         init.defaultBranch = "master";
         core.editor = lib.getExe config.editor;
         user.signingkey = cfg.signingKey;
@@ -26,7 +28,10 @@ in
         commit.gpgsign = true;
         push.autoSetupRemote = true;
       };
-      difftastic.enable = true;
+    };
+    programs.difftastic = {
+      enable = true;
+      git.enable = true;
     };
 
     home.shellAliases =
