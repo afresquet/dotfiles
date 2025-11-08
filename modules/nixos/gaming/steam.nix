@@ -32,7 +32,7 @@ in
       # Wrapper for HUD
       # mangohud %command%
       mangohud
-      protonup
+      protonup-ng
     ];
 
     environment.sessionVariables = {

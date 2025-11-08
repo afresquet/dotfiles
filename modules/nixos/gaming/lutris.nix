@@ -10,7 +10,7 @@ in
 {
   options = {
     lutris.enable = lib.mkEnableOption "Lutris" // {
-      default = true;
+      default = false;
     };
   };
 

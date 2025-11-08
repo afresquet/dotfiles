@@ -10,7 +10,7 @@ in
 {
   options = {
     mullvad.enable = lib.mkEnableOption "Mullvad VPN" // {
-      default = true;
+      default = false;
     };
   };
 
