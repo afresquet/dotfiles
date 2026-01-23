@@ -119,10 +119,9 @@ in
               ''${swww} img ~/dotfiles/assets/wallpaper.png -t none''
 
               menuBar
-
-              # Dropbox
-              "${lib.getExe pkgs.maestral} start"
-            ];
+            ]
+          # ++ lib.optional config.dropbox.enable "${lib.getExe pkgs.maestral} start"
+          ;
           workspace =
             let
               browser = lib.getExe config.browser;
