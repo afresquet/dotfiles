@@ -21,6 +21,7 @@
       terminal = [ primaryMonitorRule ];
       file-manager = [ primaryMonitorRule ];
       obsidian = [ primaryMonitorRule ];
+      bambu-studio = [ primaryMonitorRule ];
 
       discord = [ secondaryMonitorRule ];
       whatsapp = [ secondaryMonitorRule ];

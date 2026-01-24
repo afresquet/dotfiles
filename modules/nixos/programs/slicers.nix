@@ -16,6 +16,7 @@ in
 
   config = lib.mkIf cfg.enable {
     environment.systemPackages = with pkgs; [
+      bambu-studio
       cura
       # orca-slicer
       prusa-slicer

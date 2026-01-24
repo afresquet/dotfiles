@@ -32,6 +32,7 @@ in
           music = workspaceExtraRulesOption;
           _1password = workspaceExtraRulesOption;
           twitter = workspaceExtraRulesOption;
+          bambu-studio = workspaceExtraRulesOption;
         };
     };
   };
@@ -116,7 +117,7 @@ in
             [
               # Wallpaper
               "${swww}-daemon"
-              ''${swww} img ~/dotfiles/assets/wallpaper.png -t none''
+              "${swww} img ~/dotfiles/assets/wallpaper.png -t none"
 
               menuBar
             ]
@@ -133,6 +134,7 @@ in
               music = ''${browser} --app="https://music.youtube.com/"'';
               _1password = lib.getExe pkgs._1password-gui;
               twitter = ''${browser} --app="https://x.com/"'';
+              bambu-studio = lib.getExe pkgs.bambu-studio;
 
               merge = rules: builtins.concatStringsSep ", " (builtins.concatLists rules);
               rule =
@@ -158,6 +160,7 @@ in
               (rule "music" music)
               (rule "_1password" _1password)
               (rule "twitter" twitter)
+              (rule "bambu-studio" bambu-studio)
             ];
           windowrulev2 = [ "noborder, onworkspace:1" ];
           bind =
@@ -181,6 +184,7 @@ in
               "${modKey}, M, workspace, name:music"
               "${modKey}, P, workspace, name:_1password"
               "${modKey}, X, workspace, name:twitter"
+              "${modKey}, G, workspace, name:bambu-studio"
 
               "${modKey}_SHIFT, B, movetoworkspace, name:browser"
               "${modKey}_SHIFT, D, movetoworkspace, name:discord"
@@ -190,6 +194,7 @@ in
               "${modKey}_SHIFT, M, movetoworkspace, name:music"
               "${modKey}_SHIFT, P, movetoworkspace, name:_1password"
               "${modKey}_SHIFT, X, movetoworkspace, name:twitter"
+              "${modKey}_SHIFT, G, movetoworkspace, name:bambu-studio"
 
               "${modKey}, Escape, killactive,"
               "${modKey}, V, togglefloating,"

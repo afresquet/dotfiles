@@ -56,6 +56,7 @@ in
             obsidian = "";
             _1password = "";
             twitter = "";
+            bambu-studio = "";
           };
         };
         "hyprland/window" = {
