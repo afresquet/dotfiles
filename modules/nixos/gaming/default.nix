@@ -6,5 +6,6 @@
     ./minecraft.nix
     ./piper.nix
     ./steam.nix
+    ./vr.nix
   ];
 }
