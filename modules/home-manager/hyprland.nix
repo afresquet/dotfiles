@@ -27,6 +27,7 @@ in
           file-manager = workspaceExtraRulesOption;
           terminal = workspaceExtraRulesOption;
           discord = workspaceExtraRulesOption;
+          steam = workspaceExtraRulesOption;
           obsidian = workspaceExtraRulesOption;
           whatsapp = workspaceExtraRulesOption;
           music = workspaceExtraRulesOption;
@@ -129,6 +130,7 @@ in
               fileManager = lib.getExe config.fileManager;
               terminal = lib.getExe config.terminal;
               discord = lib.getExe pkgs.discord;
+              steam = lib.getExe pkgs.steam;
               obsidian = lib.getExe pkgs.obsidian;
               whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
               music = ''${browser} --app="https://music.youtube.com/"'';
@@ -155,6 +157,7 @@ in
               (rule "file-manager" fileManager)
               (rule "terminal" terminal)
               (rule "discord" discord)
+              (rule "steam" steam)
               (rule "obsidian" obsidian)
               (rule "whatsapp" whatsapp)
               (rule "music" music)
@@ -177,6 +180,7 @@ in
             ++ [
               "${modKey}, B, workspace, name:browser"
               "${modKey}, D, workspace, name:discord"
+              "${modKey}, G, workspace, name:steam"
               "${modKey}, F, workspace, name:file-manager"
               "${modKey}, T, workspace, name:terminal"
               "${modKey}, O, workspace, name:obsidian"
@@ -184,17 +188,18 @@ in
               "${modKey}, M, workspace, name:music"
               "${modKey}, P, workspace, name:_1password"
               "${modKey}, X, workspace, name:twitter"
-              "${modKey}, G, workspace, name:bambu-studio"
+              "${modKey}, C, workspace, name:bambu-studio"
 
               "${modKey}_SHIFT, B, movetoworkspace, name:browser"
               "${modKey}_SHIFT, D, movetoworkspace, name:discord"
+              "${modKey}_SHIFT, G, movetoworkspace, name:steam"
               "${modKey}_SHIFT, F, movetoworkspace, name:file-manager"
               "${modKey}_SHIFT, T, movetoworkspace, name:terminal"
               "${modKey}_SHIFT, O, movetoworkspace, name:obsidian"
               "${modKey}_SHIFT, M, movetoworkspace, name:music"
               "${modKey}_SHIFT, P, movetoworkspace, name:_1password"
               "${modKey}_SHIFT, X, movetoworkspace, name:twitter"
-              "${modKey}_SHIFT, G, movetoworkspace, name:bambu-studio"
+              "${modKey}_SHIFT, C, movetoworkspace, name:bambu-studio"
 
               "${modKey}, Escape, killactive,"
               "${modKey}, V, togglefloating,"

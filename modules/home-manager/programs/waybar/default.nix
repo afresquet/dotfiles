@@ -48,6 +48,7 @@ in
           format = "{icon}";
           format-icons = {
             discord = "";
+            steam = "";
             browser = "<span font='Font Awesome 6 Brands'></span>";
             file-manager = "";
             terminal = "";

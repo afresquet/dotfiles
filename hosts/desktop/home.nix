@@ -21,6 +21,7 @@
       terminal = [ primaryMonitorRule ];
       file-manager = [ primaryMonitorRule ];
       obsidian = [ primaryMonitorRule ];
+      steam = [ primaryMonitorRule ];
       bambu-studio = [ primaryMonitorRule ];
 
       discord = [ secondaryMonitorRule ];
