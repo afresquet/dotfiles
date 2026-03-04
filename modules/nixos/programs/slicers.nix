@@ -18,8 +18,9 @@ in
     environment.systemPackages = with pkgs; [
       bambu-studio
       cura
-      # orca-slicer
+      orca-slicer
       prusa-slicer
+      openscad-unstable
     ];
   };
 }
