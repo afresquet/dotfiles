@@ -165,7 +165,6 @@ in
               (rule "twitter" twitter)
               (rule "bambu-studio" bambu-studio)
             ];
-          windowrulev2 = [ "noborder, onworkspace:1" ];
           bind =
             let
               rofi = lib.getExe config.programs.rofi.package;
