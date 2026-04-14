@@ -29,6 +29,7 @@
       helix.enable = false;
     };
   };
+  gtk.gtk4.theme = null;
 
   git = {
     email = "29437693+afresquet@users.noreply.github.com";

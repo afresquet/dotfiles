@@ -70,7 +70,7 @@
         system: import ./pkgs (libAndUtils // { pkgs = nixpkgs.legacyPackages.${system}; })
       );
 
-      formatter = forEachSystem (system: nixpkgs.legacyPackages.${system}.nixfmt-rfc-style);
+      formatter = forEachSystem (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
       overlays = import ./overlays libAndUtils;
 

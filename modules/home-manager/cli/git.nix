@@ -28,6 +28,7 @@ in
         commit.gpgsign = true;
         push.autoSetupRemote = true;
       };
+      signing.format = null;
     };
     programs.difftastic = {
       enable = true;

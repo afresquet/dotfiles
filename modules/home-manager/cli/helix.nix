@@ -231,15 +231,15 @@ in
       extraPackages = with pkgs; [
         # nix
         nil
-        nixfmt-rfc-style
+        nixfmt
         # rust
         rust-analyzer
         # html css json
         vscode-langservers-extracted
-        nodePackages.prettier
+        prettier
         # javascript typescript
         typescript
-        nodePackages.typescript-language-server
+        typescript-language-server
         # bash
         bash-language-server
         # docker

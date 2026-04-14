@@ -113,12 +113,12 @@ in
           env = [ "XCURSOR_SIZE, 24" ];
           exec-once =
             let
-              swww = lib.getExe pkgs.swww;
+              awww = lib.getExe pkgs.awww;
             in
             [
               # Wallpaper
-              "${swww}-daemon"
-              "${swww} img ~/dotfiles/assets/wallpaper.png -t none"
+              "${awww}-daemon"
+              "${awww} img ~/dotfiles/assets/wallpaper.png -t none"
 
               menuBar
             ]
