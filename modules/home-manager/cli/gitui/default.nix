@@ -5,7 +5,7 @@ in
 {
   options = {
     gitui.enable = lib.mkEnableOption "GitUI" // {
-      default = true;
+      default = false;
     };
   };
 

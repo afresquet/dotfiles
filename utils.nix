@@ -19,20 +19,20 @@ let
         path: kind:
         if kind == "directory" then
           let
-            file = "${dir}/${path}/default.nix";
+            file = dir + "/${path}/default.nix";
           in
           if builtins.pathExists file then [ file ] else [ ]
         else if path == "default.nix" then
           [ ]
         else
-          [ "${dir}/${path}" ];
+          [ (dir + "/${path}") ];
 
       mapDirEntriesWithNames =
         path: kind:
         if kind == "directory" then
           let
             file = {
-              path = "${dir}/${path}/default.nix";
+              path = dir + "/${path}/default.nix";
               name = path;
             };
           in
@@ -40,7 +40,7 @@ let
         else
           let
             file = {
-              path = "${dir}/${path}";
+              path = dir + "/${path}";
               name = getFileNameWithoutExtension path;
             };
           in

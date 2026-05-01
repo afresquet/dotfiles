@@ -1,9 +1,4 @@
-{
-  lib,
-  config,
-  outputs,
-  ...
-}:
+{ lib, config, ... }:
 let
   cfg = config.silicon;
 in
@@ -13,8 +8,6 @@ in
       default = true;
     };
   };
-
-  imports = [ outputs.homeManagerModules.polyfills.silicon ];
 
   config = lib.mkIf cfg.enable {
     programs.silicon = {

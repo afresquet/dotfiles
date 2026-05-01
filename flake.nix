@@ -54,7 +54,11 @@
         };
 
       homeManagerConfiguration =
-        { module, pkgs }:
+        {
+          module,
+          pkgs,
+          nixosAllowedUnfree ? [ ],
+        }:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
 
@@ -62,7 +66,10 @@
             inherit inputs outputs;
           };
 
-          modules = [ module ];
+          modules = [
+            module
+            { inherit nixosAllowedUnfree; }
+          ];
         };
     in
     {
@@ -103,12 +110,16 @@
           module = ./hosts/desktop/home.nix;
 
           inherit (outputs.nixosConfigurations.Alvaro-Desktop) pkgs;
+
+          nixosAllowedUnfree = outputs.nixosConfigurations.Alvaro-Desktop.config.allowedUnfree;
         };
 
         "afresquet@Alvaro-Laptop" = homeManagerConfiguration {
           module = ./hosts/laptop/home.nix;
 
           inherit (outputs.nixosConfigurations.Alvaro-Laptop) pkgs;
+
+          nixosAllowedUnfree = outputs.nixosConfigurations.Alvaro-Laptop.config.allowedUnfree;
         };
 
         "afresquet@Alvaros-Mac-mini" = homeManagerConfiguration {
@@ -128,7 +139,7 @@
           module = ./hosts/work/home.nix;
 
           pkgs = import nixpkgs {
-            system = "x86_64-darwin";
+            system = "aarch64-darwin";
 
             overlays = [
               outputs.overlays.additions

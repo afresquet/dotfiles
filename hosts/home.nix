@@ -13,6 +13,8 @@
     outputs.homeManagerModules.cli.default
     outputs.homeManagerModules.hyprland
     outputs.homeManagerModules.programs.default
+
+    outputs.homeManagerModules.polyfills.default
   ];
 
   stylix = {

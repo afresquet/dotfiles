@@ -12,7 +12,14 @@
 
     outputs.homeManagerModules.cli.default
 
+    outputs.homeManagerModules.polyfills.default
+
     ./settings.nix
+  ];
+
+  home.packages = with pkgs; [
+    ruby
+    cocoapods
   ];
 
   stylix = {
