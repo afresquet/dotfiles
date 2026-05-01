@@ -136,7 +136,7 @@
           };
         };
 
-        "afresquet@mac-afresquet" = homeManagerConfiguration {
+        "alvaro.fresquet@Alvaros-MacBook-Pro.local" = homeManagerConfiguration {
           module = ./hosts/work/home.nix;
 
           pkgs = import nixpkgs {

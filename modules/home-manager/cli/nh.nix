@@ -27,6 +27,7 @@ in
         nost = "${nh} os test ${flake}";
         nosb = "${nh} os boot ${flake}";
         nhms = "${nh} home switch ${flake}";
+        nca = "${nh} clean all --no-gcroots";
       };
   };
 }
