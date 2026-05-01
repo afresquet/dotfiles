@@ -1,11 +1,11 @@
-{ lib, config, ... }:
+{ lib, config, isLinux, ... }:
 let
   cfg = config.ghostty;
 in
 {
   options = {
     ghostty.enable = lib.mkEnableOption "ghostty" // {
-      default = true;
+      default = isLinux;
     };
   };
 

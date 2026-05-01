@@ -1,11 +1,11 @@
-{ lib, config, ... }:
+{ lib, config, isLinux, ... }:
 let
   cfg = config.obs-studio;
 in
 {
   options = {
     obs-studio.enable = lib.mkEnableOption "OBS Studio" // {
-      default = true;
+      default = isLinux;
     };
   };
 

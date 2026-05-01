@@ -3,6 +3,7 @@
   lib,
   config,
   pkgs,
+  isLinux,
   ...
 }:
 let
@@ -12,7 +13,7 @@ in
   options = {
     hyprland = {
       enable = lib.mkEnableOption "Hyprland" // {
-        default = true;
+        default = isLinux;
       };
 
       workspace.extraRules =

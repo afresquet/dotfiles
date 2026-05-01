@@ -1,11 +1,11 @@
-{ lib, config, ... }:
+{ lib, config, isLinux, ... }:
 let
   cfg = config.mako;
 in
 {
   options = {
     mako.enable = lib.mkEnableOption "Mako" // {
-      default = true;
+      default = isLinux;
     };
   };
 

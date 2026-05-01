@@ -1,52 +1,38 @@
 {
   lib,
   config,
-  inputs,
   outputs,
-  pkgs,
+  isDarwin,
+  isLinux,
   ...
 }:
 {
   imports = [
-    inputs.stylix.homeModules.stylix
-
     outputs.homeManagerModules.cli.default
-    outputs.homeManagerModules.hyprland
     outputs.homeManagerModules.programs.default
-
     outputs.homeManagerModules.polyfills.default
+    outputs.homeManagerModules.hyprland
+    outputs.homeManagerModules.stylix
   ];
 
-  stylix = {
-    enable = true;
-    image = ../assets/wallpaper.png;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
-    polarity = "dark";
-    fonts.monospace = {
-      name = "Hack Nerd Font Mono";
-      package = pkgs.nerd-fonts.hack;
-    };
-    opacity.terminal = 0.85;
-    targets = {
-      helix.enable = false;
-    };
-  };
   gtk.gtk4.theme = null;
 
+  home.username = config.username;
+  home.homeDirectory = lib.mkDefault (
+    if isDarwin then "/Users/${config.username}" else "/home/${config.username}"
+  );
+
   git = {
-    email = "29437693+afresquet@users.noreply.github.com";
-    signingKey = "/home/${config.username}/.ssh/id_ed25519.pub";
+    email = lib.mkDefault "29437693+afresquet@users.noreply.github.com";
+    signingKey = lib.mkDefault "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
   };
 
-  # Home Manager needs a bit of information about you and the paths it should
-  # manage.
-  home.username = config.username;
-  home.homeDirectory = "/home/${config.username}";
-
   home.sessionVariables = {
-    TERMINAL = lib.getExe config.terminal;
     SHELL = lib.getExe config.shell;
     EDITOR = lib.getExe config.editor;
+  }
+  // lib.optionalAttrs isLinux {
+    TERMINAL = lib.getExe config.terminal;
     BROWSER = lib.getExe config.browser;
   };
 
@@ -57,15 +43,7 @@
     c = "clear";
   };
 
-  # This value determines the Home Manager release that your configuration is
-  # compatible with. This helps avoid breakage when a new Home Manager release
-  # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "23.11"; # Please read the comment before changing.
+  home.stateVersion = "23.11";
 
-  # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 }

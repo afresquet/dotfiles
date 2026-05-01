@@ -1,8 +1,4 @@
+{ utils, ... }:
 {
-  imports = [
-    ./bash.nix
-    ./fish.nix
-    ./nushell.nix
-    ./zsh.nix
-  ];
+  imports = utils.importDir ./.;
 }

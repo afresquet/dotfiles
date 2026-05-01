@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  isLinux,
   ...
 }:
 let
@@ -11,7 +12,7 @@ in
   options = {
     waybar = {
       enable = lib.mkEnableOption "Waybar" // {
-        default = true;
+        default = isLinux;
       };
       statsIcon = lib.mkOption {
         type = lib.types.str;

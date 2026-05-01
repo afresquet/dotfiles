@@ -1,7 +1,4 @@
+{ utils, ... }:
 {
-  imports = [
-    ./alacritty.nix
-    ./foot.nix
-    ./kitty.nix
-  ];
+  imports = utils.importDir ./.;
 }

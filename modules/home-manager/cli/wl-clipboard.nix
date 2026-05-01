@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  isLinux,
   ...
 }:
 let
@@ -10,7 +11,7 @@ in
 {
   options = {
     wl-clipboard.enable = lib.mkEnableOption "wl-clipboard" // {
-      default = true;
+      default = isLinux;
     };
   };
 

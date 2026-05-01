@@ -5,6 +5,8 @@
     ./settings.nix
   ];
 
+  stylix.opacity.terminal = 0.85;
+
   hyprland.workspace.extraRules =
     let
       primaryMonitor = builtins.elemAt config.monitors 0;

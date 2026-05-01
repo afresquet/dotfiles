@@ -1,11 +1,11 @@
-{ lib, config, ... }:
+{ lib, config, isLinux, ... }:
 let
   cfg = config.wlogout;
 in
 {
   options = {
     wlogout.enable = lib.mkEnableOption "wlogout" // {
-      default = true;
+      default = isLinux;
     };
   };
 

@@ -4,5 +4,7 @@
     ./settings.nix
   ];
 
-  waybar.statsIcon = "";
+  stylix.opacity.terminal = 0.85;
+
+  waybar.statsIcon = "";
 }
