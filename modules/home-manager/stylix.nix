@@ -1,5 +1,11 @@
 { ... }:
-{ config, pkgs, inputs, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  inputs,
+  ...
+}:
 {
   imports = [ inputs.stylix.homeModules.stylix ];
 
@@ -12,6 +18,7 @@
       name = "Hack Nerd Font Mono";
       package = pkgs.nerd-fonts.hack;
     };
+    opacity.terminal = lib.mkDefault 0.85;
     targets = {
       helix.enable = false;
     };
