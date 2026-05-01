@@ -9,6 +9,10 @@
     editor = mkOption { type = types.package; };
     browser = mkOption { type = types.package; };
     fileManager = mkOption { type = types.package; };
+    wallpaper = mkOption {
+      type = types.path;
+      default = ../assets/wallpaper.png;
+    };
     monitors = mkOption {
       type = types.listOf (
         types.submodule {
@@ -28,12 +32,12 @@
   };
 
   config = {
-    username = "afresquet";
-    description = "Alvaro";
-    shell = pkgs.nushell;
-    terminal = pkgs.ghostty;
-    editor = pkgs.helix;
-    browser = pkgs.brave;
-    fileManager = pkgs.nautilus;
+    username = lib.mkDefault "afresquet";
+    description = lib.mkDefault "Alvaro";
+    shell = lib.mkDefault pkgs.nushell;
+    terminal = lib.mkDefault pkgs.ghostty;
+    editor = lib.mkDefault pkgs.helix;
+    browser = lib.mkDefault pkgs.brave;
+    fileManager = lib.mkDefault pkgs.nautilus;
   };
 }

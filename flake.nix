@@ -63,7 +63,8 @@
           inherit pkgs;
 
           extraSpecialArgs = {
-            inherit inputs outputs;
+            inherit inputs outputs utils;
+            inherit (pkgs.stdenv.hostPlatform) isLinux isDarwin;
           };
 
           modules = [

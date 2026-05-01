@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  isLinux,
   ...
 }:
 let
@@ -10,7 +11,7 @@ in
 {
   options = {
     rofi.enable = lib.mkEnableOption "rofi" // {
-      default = true;
+      default = isLinux;
     };
   };
 

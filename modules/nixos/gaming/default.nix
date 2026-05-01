@@ -1,11 +1,1 @@
-{ ... }:
-{
-  imports = [
-    ./heroic.nix
-    ./lutris.nix
-    ./minecraft.nix
-    ./piper.nix
-    ./steam.nix
-    ./vr.nix
-  ];
-}
+{ utils, ... }: utils.makeCategory ./.

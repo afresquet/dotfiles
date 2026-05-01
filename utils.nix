@@ -83,5 +83,17 @@ rec {
     in
     lib.mergeAttrsList modules;
 
+  makeCategory =
+    dir:
+    let
+      modules = importDirAsAttrSet { inherit dir; };
+    in
+    modules
+    // {
+      default = {
+        imports = importDir dir;
+      };
+    };
+
   inherit getFileNameWithoutExtension;
 }
