@@ -26,6 +26,7 @@ in
         noss = "${nh} os switch ${flake}";
         nost = "${nh} os test ${flake}";
         nosb = "${nh} os boot ${flake}";
+        ndws = "${nh} darwin switch ${flake}";
         nhms = "${nh} home switch ${flake}";
         nca = "${nh} clean all --no-gcroots";
       };

@@ -84,6 +84,8 @@
 
       nixosModules = import ./modules/nixos libAndUtils;
 
+      darwinModules = import ./modules/darwin libAndUtils;
+
       homeManagerModules = import ./modules/home-manager libAndUtils;
 
       nixosConfigurations = {
@@ -102,6 +104,9 @@
 
       darwinConfigurations = {
         Alvaros-Mac-mini = nix-darwin.lib.darwinSystem {
+          specialArgs = {
+            inherit inputs outputs;
+          };
           modules = [ ./hosts/mac-mini/configuration.nix ];
         };
       };
