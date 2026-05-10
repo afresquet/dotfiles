@@ -15,8 +15,16 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Enable bluetooth
-    hardware.bluetooth.enable = true;
+    hardware.bluetooth = {
+      enable = true;
+      powerOnBoot = true;
+      settings.General = {
+        JustWorksRepairing = "always";
+        Experimental = true;
+      };
+    };
+
+    hardware.xpadneo.enable = true;
 
     environment.systemPackages = [ pkgs.bluetuith ];
   };
