@@ -9,6 +9,9 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixos-hardware.url = "github:nixos/nixos-hardware/master";
+    nixos-raspberrypi = {
+      url = "github:nvmd/nixos-raspberrypi";
+    };
     home-manager = {
       url = "github:nix-community/home-manager";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -42,8 +45,12 @@
       };
 
       nixosSystem =
-        { system, module }:
-        nixpkgs.lib.nixosSystem {
+        {
+          system,
+          module,
+          builder ? nixpkgs.lib.nixosSystem,
+        }:
+        builder {
           inherit system;
 
           specialArgs = {
@@ -100,6 +107,14 @@
 
           module = ./hosts/laptop/configuration.nix;
         };
+
+        Home-Server = nixosSystem {
+          system = "aarch64-linux";
+
+          module = ./hosts/home-server/configuration.nix;
+
+          builder = inputs.nixos-raspberrypi.lib.nixosSystem;
+        };
       };
 
       darwinConfigurations = {
@@ -126,6 +141,21 @@
           inherit (outputs.nixosConfigurations.Alvaro-Laptop) pkgs;
 
           nixosAllowedUnfree = outputs.nixosConfigurations.Alvaro-Laptop.config.allowedUnfree;
+        };
+
+        "pi@Home-Server" = homeManagerConfiguration {
+          module = ./hosts/home-server/home.nix;
+
+          pkgs = import nixpkgs {
+            system = "aarch64-linux";
+
+            overlays = [
+              outputs.overlays.additions
+              outputs.overlays.modifications
+            ];
+          };
+
+          nixosAllowedUnfree = outputs.nixosConfigurations.Home-Server.config.allowedUnfree;
         };
 
         "afresquet@Alvaros-Mac-mini" = homeManagerConfiguration {

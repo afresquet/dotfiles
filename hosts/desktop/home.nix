@@ -7,6 +7,8 @@
 
   stylix.opacity.terminal = 0.85;
 
+  btop.rocmSupport = true;
+
   hyprland.workspace.extraRules =
     let
       primaryMonitor = builtins.elemAt config.monitors 0;

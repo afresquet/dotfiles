@@ -1,0 +1,45 @@
+name: Build Home-Server SD image
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reclaim disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY" /usr/local/.ghcup /opt/hostedtoolcache
+          docker system prune -af || true
+          df -h /
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@main
+        with:
+          extra-conf: |
+            extra-substituters = https://nixos-raspberrypi.cachix.org
+            extra-trusted-public-keys = nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI=
+
+      - name: Build Home-Server SD image
+        run: nix build .#nixosConfigurations.Home-Server.config.system.build.sdImage -L
+
+      - name: Stage artifact
+        run: |
+          mkdir -p /tmp/artifact
+          if [ -d result ]; then
+            cp -rL result/. /tmp/artifact/
+          else
+            cp -L result "/tmp/artifact/$(basename "$(readlink -f result)")"
+          fi
+          ls -lah /tmp/artifact/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: home-server-sd-image
+          path: /tmp/artifact/*
+          if-no-files-found: error
+          retention-days: 7

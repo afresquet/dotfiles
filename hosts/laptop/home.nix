@@ -4,5 +4,7 @@
     ./settings.nix
   ];
 
+  btop.rocmSupport = true;
+
   waybar.statsIcon = "";
 }
