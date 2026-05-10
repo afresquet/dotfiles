@@ -20,6 +20,7 @@ in
       xz
       unzip
       p7zip
+      zstd
     ];
   };
 }
