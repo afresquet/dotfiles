@@ -4,10 +4,19 @@
   outputs,
   ...
 }:
+let
+  keys = import ../../secrets/keys.nix;
+in
 {
   imports = [
     outputs.darwinModules.programs.default
     outputs.darwinModules.services.default
+  ];
+
+  users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys = with keys; [
+    afresquet
+    alvaroDesktop
+    alvaroLaptop
   ];
 
   system.primaryUser = "afresquet";

@@ -4,6 +4,9 @@
   outputs,
   ...
 }:
+let
+  keys = import ../../secrets/keys.nix;
+in
 {
   imports = [
     inputs.nixos-raspberrypi.nixosModules.raspberry-pi-5.base
@@ -38,8 +41,11 @@
       "networkmanager"
     ];
     inherit (config) description shell;
-    openssh.authorizedKeys.keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDHTRDzddRLTvDOW2xY2mRunvH0ues6UOKYhUAP3WY4l afresquet@nixos"
+    openssh.authorizedKeys.keys = with keys; [
+      afresquet
+      alvaroDesktop
+      alvaroLaptop
+      alvarosMacMini
     ];
   };
 

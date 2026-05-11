@@ -21,6 +21,12 @@
       url = "github:nix-community/stylix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.darwin.follows = "nix-darwin";
+      inputs.home-manager.follows = "home-manager";
+    };
   };
 
   outputs =
