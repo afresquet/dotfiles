@@ -108,6 +108,24 @@ in
       };
     };
 
+    dashboard.services.qbittorrent = {
+      group = "Downloads";
+      name = "qBittorrent";
+      href = "http://torrent.home-server/";
+      icon = "qbittorrent.png";
+      description = "Torrent client (Mullvad)";
+      widget = {
+        type = "qbittorrent";
+        url =
+          if (config.vpn.enable or false) then
+            "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString cfg.webuiPort}"
+          else
+            "http://127.0.0.1:${toString cfg.webuiPort}";
+        username = "admin";
+        password = "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}";
+      };
+    };
+
     reverseProxy.services.qbittorrent = {
       host = "torrent.home-server";
       # When confined to the VPN namespace, caddy can't reach 127.0.0.1:<port>

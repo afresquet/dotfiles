@@ -70,8 +70,21 @@ in
 
     reverseProxy.services.pihole = {
       host = "pihole.home-server";
-      aliases = [ "home-server" ];
       upstream = "127.0.0.1:${toString cfg.adminPort}";
+    };
+
+    dashboard.services.pihole = {
+      group = "Network";
+      name = "Pi-hole";
+      href = "http://pihole.home-server/admin/";
+      icon = "pi-hole.png";
+      description = "DNS sinkhole";
+      widget = {
+        type = "pihole";
+        url = "http://127.0.0.1:${toString cfg.adminPort}";
+        version = 6;
+        key = "{{HOMEPAGE_VAR_PIHOLE_API_KEY}}";
+      };
     };
 
     virtualisation.oci-containers = {

@@ -27,6 +27,7 @@ in
     outputs.nixosModules.services.arr
     outputs.nixosModules.services.jellyfin
     outputs.nixosModules.services.vpn
+    outputs.nixosModules.services.dashboard
 
     ./settings.nix
   ];
@@ -36,6 +37,7 @@ in
   arrStack.enable = true;
   jellyfin.enable = true;
   vpn.enable = true;
+  dashboard.enable = true;
 
   pihole.enable = true;
   home-assistant-container.enable = true;

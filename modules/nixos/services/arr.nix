@@ -122,6 +122,44 @@ in
       }
     ) apps;
 
+    dashboard.services =
+      let
+        appMeta = {
+          radarr = { displayName = "Radarr"; description = "Movies"; widgetType = "radarr"; };
+          sonarr = { displayName = "Sonarr"; description = "TV shows"; widgetType = "sonarr"; };
+          lidarr = { displayName = "Lidarr"; description = "Music"; widgetType = "lidarr"; };
+          readarr = { displayName = "Readarr"; description = "Books"; widgetType = "readarr"; };
+          bazarr = { displayName = "Bazarr"; description = "Subtitles"; widgetType = "bazarr"; };
+          prowlarr = { displayName = "Prowlarr"; description = "Indexer manager"; widgetType = "prowlarr"; };
+          jellyseerr = { displayName = "Jellyseerr"; description = "Media requests"; widgetType = "jellyseerr"; };
+        };
+      in
+      lib.mapAttrs (
+        name: port:
+        let
+          meta = appMeta.${name};
+          # Prowlarr is in the namespace, so homepage (on host) reaches it via
+          # the bridge IP. Everything else is a host service.
+          widgetHost =
+            if (config.vpn.enable or false) && name == "prowlarr" then
+              config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+            else
+              "127.0.0.1";
+        in
+        {
+          group = "Media";
+          name = meta.displayName;
+          href = "http://${name}.home-server/";
+          icon = "${name}.png";
+          description = meta.description;
+          widget = {
+            type = meta.widgetType;
+            url = "http://${widgetHost}:${toString port}";
+            key = "{{HOMEPAGE_VAR_${lib.toUpper name}_API_KEY}}";
+          };
+        }
+      ) apps;
+
     # Confine prowlarr (the only native service that touches public indexer
     # sites) to the VPN namespace. Byparr runs as a container directly attached
     # to the namespace via --network=ns:..., so it doesn't need vpnConfinement.

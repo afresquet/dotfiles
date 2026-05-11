@@ -32,5 +32,20 @@ in
       host = "jellyfin.home-server";
       upstream = "127.0.0.1:${toString cfg.port}";
     };
+
+    dashboard.services.jellyfin = {
+      group = "Media";
+      name = "Jellyfin";
+      href = "http://jellyfin.home-server/";
+      icon = "jellyfin.png";
+      description = "Media server";
+      widget = {
+        type = "jellyfin";
+        url = "http://127.0.0.1:${toString cfg.port}";
+        key = "{{HOMEPAGE_VAR_JELLYFIN_API_KEY}}";
+        enableBlocks = true;
+        enableNowPlaying = true;
+      };
+    };
   };
 }

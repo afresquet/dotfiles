@@ -25,4 +25,9 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  "homepage-api-keys.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
 }

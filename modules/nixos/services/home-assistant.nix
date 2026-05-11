@@ -42,6 +42,19 @@ in
       upstream = "127.0.0.1:8123";
     };
 
+    dashboard.services.home-assistant = {
+      group = "System";
+      name = "Home Assistant";
+      href = "http://home-assistant.home-server/";
+      icon = "home-assistant.png";
+      description = "Home automation";
+      widget = {
+        type = "homeassistant";
+        url = "http://127.0.0.1:8123";
+        key = "{{HOMEPAGE_VAR_HOMEASSISTANT_TOKEN}}";
+      };
+    };
+
     virtualisation.oci-containers = {
       backend = "podman";
       containers.home-assistant = {
