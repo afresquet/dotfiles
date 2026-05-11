@@ -19,11 +19,21 @@ in
     outputs.nixosModules.services.avahi
     outputs.nixosModules.services.tailscale
     outputs.nixosModules.services.pihole
+    outputs.nixosModules.services.home-assistant
+    outputs.nixosModules.services.caddy
+    outputs.nixosModules.services.bluetooth
 
     ./settings.nix
   ];
 
+  bluetooth.xboxController.enable = false;
+
   pihole.enable = true;
+  home-assistant-container.enable = true;
+  reverseProxy = {
+    enable = true;
+    dnsTarget = "100.85.40.30";
+  };
 
   environment.systemPackages = [
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
@@ -38,6 +48,8 @@ in
 
   networking.hostName = config.hostname;
   networking.networkmanager.enable = true;
+
+  time.timeZone = "Europe/Madrid";
 
   services.openssh.settings.PasswordAuthentication = false;
 

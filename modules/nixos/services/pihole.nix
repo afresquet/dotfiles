@@ -6,6 +6,13 @@
 }:
 let
   cfg = config.pihole;
+  proxy = config.reverseProxy or { enable = false; services = { }; dnsTarget = null; };
+  dnsHostEntries = lib.concatLists (
+    lib.mapAttrsToList (
+      _: svc: map (h: "${proxy.dnsTarget} ${h}") ([ svc.host ] ++ svc.aliases)
+    ) proxy.services
+  );
+  shouldServeProxyDns = (proxy.enable or false) && (proxy.dnsTarget or null) != null;
 in
 {
   imports = [ inputs.agenix.nixosModules.default ];
@@ -14,12 +21,6 @@ in
     pihole = {
       enable = lib.mkEnableOption "Pi-hole DNS sinkhole" // {
         default = false;
-      };
-
-      timeZone = lib.mkOption {
-        type = lib.types.str;
-        default = "UTC";
-        description = "Time zone passed to the Pi-hole container.";
       };
 
       dataDir = lib.mkOption {
@@ -37,10 +38,10 @@ in
         description = "Upstream DNS servers Pi-hole forwards queries to.";
       };
 
-      adminInterface = lib.mkOption {
-        type = lib.types.str;
-        default = "tailscale0";
-        description = "Interface on which the admin UI (port 80) is reachable.";
+      adminPort = lib.mkOption {
+        type = lib.types.port;
+        default = 8081;
+        description = "Localhost port the admin UI is exposed on (proxied externally).";
       };
     };
   };
@@ -54,7 +55,6 @@ in
     networking.firewall = {
       allowedTCPPorts = [ 53 ];
       allowedUDPPorts = [ 53 ];
-      interfaces.${cfg.adminInterface}.allowedTCPPorts = [ 80 ];
     };
 
     systemd.tmpfiles.rules = [
@@ -68,6 +68,12 @@ in
       autoPrune.enable = true;
     };
 
+    reverseProxy.services.pihole = {
+      host = "pihole.home-server";
+      aliases = [ "home-server" ];
+      upstream = "127.0.0.1:${toString cfg.adminPort}";
+    };
+
     virtualisation.oci-containers = {
       backend = "podman";
       containers.pihole = {
@@ -76,16 +82,19 @@ in
         ports = [
           "53:53/tcp"
           "53:53/udp"
-          "80:80/tcp"
+          "127.0.0.1:${toString cfg.adminPort}:80/tcp"
         ];
         volumes = [
           "${cfg.dataDir}/etc-pihole:/etc/pihole"
           "${cfg.dataDir}/etc-dnsmasq.d:/etc/dnsmasq.d"
         ];
         environment = {
-          TZ = cfg.timeZone;
+          TZ = config.time.timeZone;
           FTLCONF_dns_upstreams = lib.concatStringsSep ";" cfg.upstreamDns;
           FTLCONF_dns_listeningMode = "all";
+        }
+        // lib.optionalAttrs shouldServeProxyDns {
+          FTLCONF_dns_hosts = lib.concatStringsSep ";" dnsHostEntries;
         };
         environmentFiles = [ config.age.secrets.pihole-webpassword.path ];
         extraOptions = [ "--cap-add=NET_ADMIN" ];

@@ -9,8 +9,14 @@ let
 in
 {
   options = {
-    bluetooth.enable = lib.mkEnableOption "Bluetooth" // {
-      default = true;
+    bluetooth = {
+      enable = lib.mkEnableOption "Bluetooth" // {
+        default = true;
+      };
+
+      xboxController.enable = lib.mkEnableOption "xpadneo (Xbox controller driver)" // {
+        default = true;
+      };
     };
   };
 
@@ -24,7 +30,7 @@ in
       };
     };
 
-    hardware.xpadneo.enable = true;
+    hardware.xpadneo.enable = cfg.xboxController.enable;
 
     environment.systemPackages = [ pkgs.bluetuith ];
   };
