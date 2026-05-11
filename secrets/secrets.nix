@@ -15,4 +15,9 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  "qbittorrent-webuipw.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
 }

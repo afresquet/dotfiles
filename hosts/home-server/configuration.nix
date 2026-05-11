@@ -23,12 +23,16 @@ in
     outputs.nixosModules.services.caddy
     outputs.nixosModules.services.bluetooth
     outputs.nixosModules.services.qbittorrent
+    outputs.nixosModules.services.arr
+    outputs.nixosModules.services.jellyfin
 
     ./settings.nix
   ];
 
   bluetooth.xboxController.enable = false;
   qbittorrent.enable = true;
+  arrStack.enable = true;
+  jellyfin.enable = true;
 
   pihole.enable = true;
   home-assistant-container.enable = true;
