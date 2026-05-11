@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   inputs,
   outputs,
@@ -25,6 +26,7 @@ in
     outputs.nixosModules.services.qbittorrent
     outputs.nixosModules.services.arr
     outputs.nixosModules.services.jellyfin
+    outputs.nixosModules.services.vpn
 
     ./settings.nix
   ];
@@ -33,6 +35,7 @@ in
   qbittorrent.enable = true;
   arrStack.enable = true;
   jellyfin.enable = true;
+  vpn.enable = true;
 
   pihole.enable = true;
   home-assistant-container.enable = true;
@@ -56,6 +59,19 @@ in
   networking.networkmanager.enable = true;
 
   time.timeZone = "Europe/Madrid";
+
+  # Disable the system-wide NSS cache daemon (nsncd). It runs in the host's
+  # network namespace and resolves all NSS lookups via the host's resolv.conf,
+  # which means services inside the VPN namespace (Prowlarr, FlareSolverr) end
+  # up using the ISP's DNS (Livebox) and inheriting its torrent-site DNS
+  # poisoning. Without nscd, each process does its own NSS lookups in its own
+  # network namespace.
+  services.nscd.enable = false;
+  system.nssModules = lib.mkForce [ ];
+  # Several *arr systemd units have BindReadOnlyPaths=/run/nscd baked into
+  # their hardening config (upstream assumes nscd is always running). Create
+  # an empty target so the mount-namespace setup succeeds.
+  systemd.tmpfiles.rules = [ "d /run/nscd 0755 root root -" ];
 
   fileSystems."/mnt/hdd" = {
     device = "/dev/disk/by-label/hdd";

@@ -20,4 +20,9 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  "mullvad-wg.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
 }

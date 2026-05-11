@@ -33,11 +33,12 @@ cd ~/dotfiles/secrets
 agenix -e <name>.age
 ```
 
-| Secret                          | Content (one line)                                         |
+| Secret                          | Content                                                    |
 |---------------------------------|------------------------------------------------------------|
 | `tailscale-auth.age`            | tailscale auth key (`tskey-auth-...`)                      |
 | `pihole-webpassword.age`        | `FTLCONF_webserver_api_password=YOUR_PASSWORD`             |
 | `qbittorrent-webuipw.age`       | the PBKDF2 hash *only* (see qBittorrent section below)     |
+| `mullvad-wg.age`                | full Mullvad WireGuard config (`[Interface]` + `[Peer]`). **Override `DNS = 10.64.0.1` with `DNS = 1.1.1.1`** — Mullvad's own DNS sinkholes torrent indexers to `127.0.0.1`. See VPN namespace section below. |
 
 After creating any new `.age` file: `git add` it so the flake can see it, then
 `nixos-rebuild switch`.
@@ -122,8 +123,17 @@ ever wipe `qbittorrent-webuipw.age`):
 From now on the password persists across rebuilds — the wrapper module
 substitutes the agenix-decrypted hash into `qBittorrent.conf` at start.
 
-Everything else (save path, seeding limits, host header validation) is
-declarative in `modules/nixos/services/qbittorrent.nix`.
+Everything else (save path, seeding limits, host header validation, WG
+interface binding) is declarative in `modules/nixos/services/qbittorrent.nix`.
+
+**Important:** the qbittorrent module hardcodes `Session\InterfaceAddress` to
+the Mullvad-assigned IP for the WireGuard tunnel (currently `10.75.78.187`).
+This IP is tied to your Mullvad WireGuard key, *not* the exit server — it stays
+stable as long as you don't regenerate the WG key. If you ever rotate the WG
+key, read the new `Address = ...` line from the Mullvad config and update the
+`Session\InterfaceAddress` value in `qbittorrent.nix`. Without this binding,
+qBittorrent silently picks the wrong interface and DHT/peer traffic doesn't go
+through Mullvad.
 
 ## 7. Jellyfin
 
@@ -155,17 +165,25 @@ URL: `http://prowlarr.home-server/`
    - **Settings → Indexers → Indexer Proxies → +** → FlareSolverr
    - Name: `flaresolverr`, Host: `http://127.0.0.1:8191`, Tags: add `cf`
    - Edit each protected indexer → add the `cf` tag → save.
-4. **Settings → Apps → +** → add each *arr Prowlarr should sync indexers to:
+   - Note: despite being labeled "FlareSolverr" in Prowlarr's UI, the actual
+     backend is **Byparr** (Camoufox-based, far better at current Cloudflare
+     protections than FlareSolverr). It runs as a podman container inside the
+     wg namespace and exposes the same API on `127.0.0.1:8191`.
+4. **Settings → Apps → +** → add each *arr Prowlarr should sync indexers to.
+   *Prowlarr lives in the wg namespace and the *arr apps run on the host*, so
+   Prowlarr must reach them via the namespace's host-side bridge IP
+   `192.168.15.5`:
 
-   | App     | App URL                  | Use Sonarr/Radarr's API key from |
-   |---------|--------------------------|----------------------------------|
-   | Sonarr  | `http://127.0.0.1:8989`  | Sonarr → Settings → General → Security |
-   | Radarr  | `http://127.0.0.1:7878`  | same path in Radarr              |
-   | Lidarr  | `http://127.0.0.1:8686`  | same path in Lidarr              |
-   | Readarr | `http://127.0.0.1:8787`  | same path in Readarr             |
+   | App     | App URL                       | Use *arr's API key from |
+   |---------|-------------------------------|-------------------------|
+   | Sonarr  | `http://192.168.15.5:8989`    | Sonarr → Settings → General → Security |
+   | Radarr  | `http://192.168.15.5:7878`    | same path in Radarr |
+   | Lidarr  | `http://192.168.15.5:8686`    | same path in Lidarr |
+   | Readarr | `http://192.168.15.5:8787`    | same path in Readarr |
 
-   For all of them, **Prowlarr Server** stays `http://127.0.0.1:9696` (Prowlarr's
-   own URL — used for callbacks).
+   For all of them, **Prowlarr Server** = `http://192.168.15.1:9696` — that's
+   the URL the *arrs on the host use to call back into Prowlarr (host →
+   namespace via the bridge's namespace-side IP).
 
 ## 9. Sonarr / Radarr / Lidarr / Readarr
 
@@ -187,10 +205,16 @@ For **each** app:
    **Use Hardlinks instead of Copy** is checked. (Should be on by default; if
    it's off, hardlinks fall back to copies and disk usage doubles.)
 4. **Settings → Download Clients → + → qBittorrent**:
-   - Host `127.0.0.1`, Port `8080`
+   - Host `192.168.15.1` (not `127.0.0.1` — qBittorrent lives in the wg
+     namespace; the host reaches it via the namespace-side bridge IP)
+   - Port `8080`
    - Username / Password: the qBittorrent admin credentials from agenix
    - Category: `sonarr` / `radarr` / `lidarr` / `readarr` respectively (the app
      auto-creates the category in qBittorrent)
+   - **☑ Remove Completed Downloads** (advanced) — let *arr clean up paused
+     torrents via the qBittorrent API after import, rather than qBittorrent
+     auto-removing them. Prevents the "qBittorrent is configured to remove
+     torrents…" health-check warning.
 5. **Settings → Indexers** — should auto-populate from Prowlarr's sync. If not,
    trigger a manual sync from the Prowlarr → Apps page.
 
@@ -243,6 +267,106 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
   → Jellyfin picks up via real-time monitoring
 ```
 
+## VPN namespace (Mullvad WireGuard via `vpn-confinement`)
+
+qBittorrent, Prowlarr, and Byparr run inside a Linux network namespace named
+`wg` whose only egress is a Mullvad WireGuard tunnel. Tailscale, caddy,
+Pi-hole, Home Assistant, Jellyfin, and the *arr orchestrators all run in the
+default (host) namespace and are unaffected.
+
+The namespace has its own iptables (default-DROP INPUT, kill switch — if the
+tunnel drops, namespaced services lose internet rather than leaking through
+the host's interface). vpn-confinement creates a bridge `wg-br` between the
+default and `wg` namespaces, with these well-known addresses:
+
+| Address          | Where                                                    |
+|------------------|----------------------------------------------------------|
+| `192.168.15.1`   | Namespace-side end of the bridge (services in `wg` bind here for callers from the host) |
+| `192.168.15.5`   | Host-side end of the bridge (services on the host expose here for callers in the namespace) |
+| `10.x.x.x`       | The Mullvad-assigned WG IP, applied to `wg0` inside the namespace |
+
+### Cross-namespace addressing rules
+
+| From → To                                              | Use                       |
+|--------------------------------------------------------|---------------------------|
+| Host service → namespaced service (Prowlarr, qBittorrent, Byparr) | `192.168.15.1:<port>` |
+| Namespaced service → host service (the *arr apps)      | `192.168.15.5:<port>`     |
+| Within the same namespace (e.g. Prowlarr → Byparr)     | `127.0.0.1:<port>`        |
+| Within the host (e.g. Bazarr → Sonarr)                 | `127.0.0.1:<port>`        |
+
+Whenever a service refuses connections with "Connection refused (localhost:X)",
+think about which side of the namespace each end of the connection lives on.
+Almost every wiring bug we hit came from using `127.0.0.1` when the two ends
+are in different namespaces.
+
+### DNS
+
+The namespace ignores Pi-hole and the host's resolv.conf. It uses what's in
+the `[Interface]` `DNS = ...` field of the Mullvad WG config. **That MUST be a
+non-filtering resolver — `1.1.1.1` is what we use.** Mullvad's default
+`10.64.0.1` actively sinkholes torrent-indexer hostnames (returns `127.0.0.1`),
+which causes silent failures like `ERR_CONNECTION_REFUSED` deep inside
+FlareSolverr/Byparr.
+
+### nscd is disabled host-wide for this reason
+
+`services.nscd.enable = false` in the host config. Without that, glibc lookups
+from any process — including ones inside the namespace — go through the host's
+nsncd daemon, which resolves using the host's resolv.conf (the Livebox, which
+ISP-poisons torrent sites). Disabling nscd makes each process do its own NSS
+lookups in its own namespace.
+
+The upstream NixOS *arr modules still have `InaccessiblePaths=/run/nscd` and
+`BindReadOnlyPaths=/run/nscd` baked into their hardening config (assumption
+that nscd is always enabled). To satisfy systemd's mount-namespacing, we
+create an empty `/run/nscd` via `systemd.tmpfiles.rules`. Don't remove that
+rule.
+
+### qBittorrent interface binding (subtle but essential)
+
+qBittorrent inside the namespace doesn't auto-bind to `wg0` — it picks
+`veth-wg` (alphabetically first non-loopback), which would send torrent
+traffic out the bridge rather than through Mullvad. Three keys in
+`serverConfig.BitTorrent` force binding to `wg0`:
+
+```nix
+"Session\\Interface" = "wg0";
+"Session\\InterfaceName" = "wg0";
+"Session\\InterfaceAddress" = "10.75.78.187";  # hardcoded Mullvad WG IP
+```
+
+All three are required; setting only `InterfaceName` causes qBittorrent to
+silently bind to nothing. The `InterfaceAddress` is the Mullvad-assigned IP
+from your WG config's `Address = ...` line — see qBittorrent section above
+for what to do if you ever rotate WG keys.
+
+### Cloudflare bypass (Byparr container)
+
+FlareSolverr in nixpkgs can't reliably solve current Cloudflare challenges
+(1337x, TPB, etc. fail with timeouts). Byparr (Camoufox-based, FlareSolverr API
+compatible) is run as a podman container directly attached to the `wg`
+namespace via `--network=ns:/var/run/netns/wg`. Prowlarr's "FlareSolverr"
+indexer proxy entry points at `http://127.0.0.1:8191` (namespace-internal) and
+the container responds — Prowlarr neither knows nor cares it's Byparr.
+
+The container's lifecycle is bound to `wg.service` so it tears down/restarts
+with the namespace.
+
+### Firewall openings
+
+Three places where the firewall is opened for cross-namespace traffic. All
+declarative:
+
+- **`networking.firewall.interfaces.wg-br.allowedTCPPorts`** (in `arr.nix`):
+  `7878 8989 8686 8787` — so Prowlarr (in namespace) can reach the *arr apps
+  on the host via `wg-br`. Not exposed elsewhere.
+- **`vpnNamespaces.wg.portMappings`** (in `qbittorrent.nix`, `arr.nix`):
+  DNATs PREROUTING for `8080` (qBittorrent UI) and `9696` (Prowlarr UI) so
+  external (caddy) traffic can be forwarded into the namespace.
+- **`vpnNamespaces.wg.openVPNPorts`** (in `qbittorrent.nix`): accepts inbound
+  on `6881` TCP+UDP on `wg0` so DHT replies don't get dropped by the
+  namespace's default-DROP INPUT after conntrack expires.
+
 ## Notes / gotchas
 
 - **Hardlink ownership**: qBittorrent runs with `UMask=0002` so new files are
@@ -251,9 +375,11 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
   `/mnt/hdd/media/*` without tripping the kernel's `fs.protected_hardlinks`
   check. Don't change qBittorrent's UMask back to defaults or hardlinks will
   silently fall back to copies.
-- **Seeding policy**: 1.0 ratio OR 48h, then remove + delete files. Declared in
-  `qbittorrent.nix`. Adjust there, not in the UI (UI changes get clobbered on
-  next service restart by `serverConfig`).
+- **Seeding policy**: 1.0 ratio OR 48h, then **pause** the torrent (not remove).
+  Declared in `qbittorrent.nix`. *arr removes the paused torrents via API once
+  import completes (each *arr's "Remove Completed Downloads" toggle). Pause
+  rather than remove keeps *arr's database consistent — removing behind its
+  back triggers a health-check warning.
 - **API keys**: not declarative. Each app generates its own on first run; if you
   ever wipe `/var/lib/<app>` you'll have to re-paste them into the apps that
   consume them (Prowlarr → all *arr, Bazarr → Sonarr/Radarr, Jellyseerr →
@@ -261,3 +387,21 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
 - **`home-server` (bare hostname)**: aliased on the Pi-hole vhost in caddy so
   Tailscale MagicDNS users have a path in even when subdomain DNS isn't working
   yet. Don't remove that alias.
+- **Tailscale health-check warning** ("Tailscale can't reach the configured DNS
+  servers"): cosmetic. The home-server *is* the tailnet DNS (Pi-hole), so when
+  the daemon health-checks the configured DNS by querying `100.85.40.30` over
+  the tunnel, the request loops back to itself and the health check fails. It
+  doesn't affect tailnet clients. Ignore.
+- **Mullvad has no port forwarding** (removed in 2023). Torrenting still works
+  via DHT and tracker-introduced peers, but no incoming connections from
+  internet peers. Means slightly fewer peers per torrent — not noticeable in
+  practice for well-seeded content. AirVPN/ProtonVPN still do port forwarding
+  if it ever becomes a real bottleneck.
+- **VPN exit reputation**: torrent sites blacklist popular Mullvad exit IPs
+  (Netherlands especially). Sweden tends to work best in our experience. To
+  swap: regenerate the WG config on Mullvad's site for a different country,
+  paste into `agenix -e secrets/mullvad-wg.age`, **keep `DNS = 1.1.1.1`**, then
+  `nixos-rebuild switch && sudo systemctl restart wg.service`. If the Mullvad
+  *server* changes the Mullvad *exit IP* changes too, but **your WG `Address`
+  stays the same** (it's per-key, not per-server) — so `qbittorrent.nix`'s
+  hardcoded `InterfaceAddress` doesn't need updating unless you rotate keys.
