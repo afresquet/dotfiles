@@ -19,6 +19,8 @@ in
         }
       '';
 
+      environmentVariables = lib.mapAttrs (_: v: toString v) config.home.sessionVariables;
+
       shellAliases = config.home.shellAliases;
     };
   };

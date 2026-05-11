@@ -1,0 +1,95 @@
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
+let
+  cfg = config.pihole;
+in
+{
+  imports = [ inputs.agenix.nixosModules.default ];
+
+  options = {
+    pihole = {
+      enable = lib.mkEnableOption "Pi-hole DNS sinkhole" // {
+        default = false;
+      };
+
+      timeZone = lib.mkOption {
+        type = lib.types.str;
+        default = "UTC";
+        description = "Time zone passed to the Pi-hole container.";
+      };
+
+      dataDir = lib.mkOption {
+        type = lib.types.str;
+        default = "/var/lib/pihole";
+        description = "Directory for Pi-hole persistent state.";
+      };
+
+      upstreamDns = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [
+          "1.1.1.1"
+          "1.0.0.1"
+        ];
+        description = "Upstream DNS servers Pi-hole forwards queries to.";
+      };
+
+      adminInterface = lib.mkOption {
+        type = lib.types.str;
+        default = "tailscale0";
+        description = "Interface on which the admin UI (port 80) is reachable.";
+      };
+    };
+  };
+
+  config = lib.mkIf cfg.enable {
+    age.secrets.pihole-webpassword.file = ../../../secrets/pihole-webpassword.age;
+
+    # Free port 53 so the container can bind it.
+    services.resolved.enable = false;
+
+    networking.firewall = {
+      allowedTCPPorts = [ 53 ];
+      allowedUDPPorts = [ 53 ];
+      interfaces.${cfg.adminInterface}.allowedTCPPorts = [ 80 ];
+    };
+
+    systemd.tmpfiles.rules = [
+      "d ${cfg.dataDir} 0755 root root -"
+      "d ${cfg.dataDir}/etc-pihole 0755 root root -"
+      "d ${cfg.dataDir}/etc-dnsmasq.d 0755 root root -"
+    ];
+
+    virtualisation.podman = {
+      enable = true;
+      autoPrune.enable = true;
+    };
+
+    virtualisation.oci-containers = {
+      backend = "podman";
+      containers.pihole = {
+        image = "pihole/pihole:latest";
+        autoStart = true;
+        ports = [
+          "53:53/tcp"
+          "53:53/udp"
+          "80:80/tcp"
+        ];
+        volumes = [
+          "${cfg.dataDir}/etc-pihole:/etc/pihole"
+          "${cfg.dataDir}/etc-dnsmasq.d:/etc/dnsmasq.d"
+        ];
+        environment = {
+          TZ = cfg.timeZone;
+          FTLCONF_dns_upstreams = lib.concatStringsSep ";" cfg.upstreamDns;
+          FTLCONF_dns_listeningMode = "all";
+        };
+        environmentFiles = [ config.age.secrets.pihole-webpassword.path ];
+        extraOptions = [ "--cap-add=NET_ADMIN" ];
+      };
+    };
+  };
+}

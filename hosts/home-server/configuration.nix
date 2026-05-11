@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   inputs,
   outputs,
   ...
@@ -17,8 +18,15 @@ in
     outputs.nixosModules.services.ssh
     outputs.nixosModules.services.avahi
     outputs.nixosModules.services.tailscale
+    outputs.nixosModules.services.pihole
 
     ./settings.nix
+  ];
+
+  pihole.enable = true;
+
+  environment.systemPackages = [
+    inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
   _module.args.nixos-raspberrypi = inputs.nixos-raspberrypi;
