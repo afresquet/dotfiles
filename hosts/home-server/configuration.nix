@@ -22,11 +22,13 @@ in
     outputs.nixosModules.services.home-assistant
     outputs.nixosModules.services.caddy
     outputs.nixosModules.services.bluetooth
+    outputs.nixosModules.services.qbittorrent
 
     ./settings.nix
   ];
 
   bluetooth.xboxController.enable = false;
+  qbittorrent.enable = true;
 
   pihole.enable = true;
   home-assistant-container.enable = true;
