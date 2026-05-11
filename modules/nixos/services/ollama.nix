@@ -5,15 +5,12 @@ in
 {
   options = {
     ollama.enable = lib.mkEnableOption "Ollama" // {
-      default = true;
+      default = false;
     };
   };
 
   config = lib.mkIf cfg.enable {
     # Enable the Ollama daemon.
-    services.ollama = {
-      enable = true;
-      loadModels = [ "deepseek-r1:14b" ];
-    };
+    services.ollama.enable = true;
   };
 }
