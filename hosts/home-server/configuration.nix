@@ -48,6 +48,10 @@ in
 
   environment.systemPackages = [
     inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
+    # Terminfo for Ghostty so SSH sessions from a Ghostty terminal get full
+    # capabilities (no "terminal is not fully functional" warning in less /
+    # tmux / nvim).
+    pkgs.ghostty.terminfo
   ];
 
   _module.args.nixos-raspberrypi = inputs.nixos-raspberrypi;
