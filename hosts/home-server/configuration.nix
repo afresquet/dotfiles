@@ -51,6 +51,15 @@ in
 
   time.timeZone = "Europe/Madrid";
 
+  fileSystems."/mnt/hdd" = {
+    device = "/dev/disk/by-label/hdd";
+    fsType = "ext4";
+    options = [
+      "noatime"
+      "nofail"
+    ];
+  };
+
   services.openssh.settings.PasswordAuthentication = false;
 
   users.users.${config.username} = {
