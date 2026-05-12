@@ -40,7 +40,10 @@ in
   dashboard.enable = true;
 
   pihole.enable = true;
-  home-assistant-container.enable = true;
+  home-assistant-container = {
+    enable = true;
+    hacs.enable = true;
+  };
   reverseProxy = {
     enable = true;
     dnsTarget = "100.85.40.30";
