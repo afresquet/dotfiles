@@ -110,7 +110,11 @@ in
       "wheel"
       "networkmanager"
     ];
-    inherit (config) description shell;
+    inherit (config) description;
+    # Login shell is bash so ssh-driven tooling (e.g. Ghostty's ssh-terminfo
+    # wrapper, which sends bash syntax to the remote) parses correctly.
+    # Interactive sessions hand off to nushell via bash's initExtra.
+    shell = pkgs.bash;
     openssh.authorizedKeys.keys = with keys; [
       afresquet
       alvaroDesktop
