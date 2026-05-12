@@ -1,10 +1,10 @@
-{ lib, utils, ... }:
+{ lib, utils, inputs, ... }:
 {
   additions =
     final: prev:
     import ../pkgs {
       inherit (final) pkgs;
-      inherit lib utils;
+      inherit lib utils inputs;
     };
 
   modifications =

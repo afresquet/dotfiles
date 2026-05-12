@@ -28,6 +28,7 @@ in
     outputs.nixosModules.services.jellyfin
     outputs.nixosModules.services.vpn
     outputs.nixosModules.services.dashboard
+    outputs.nixosModules.services.monitoring
 
     ./settings.nix
   ];
@@ -38,24 +39,17 @@ in
   jellyfin.enable = true;
   vpn.enable = true;
   dashboard.enable = true;
+  monitoring = {
+    enable = true;
+    serverHost = "alvaros-mac-mini.${config.tailnet.domain}";
+  };
 
   pihole.enable = true;
   home-assistant-container = {
     enable = true;
     hacs.enable = true;
   };
-  reverseProxy = {
-    enable = true;
-    dnsTarget = "100.85.40.30";
-  };
-
-  environment.systemPackages = [
-    inputs.agenix.packages.${pkgs.stdenv.hostPlatform.system}.default
-    # Terminfo for Ghostty so SSH sessions from a Ghostty terminal get full
-    # capabilities (no "terminal is not fully functional" warning in less /
-    # tmux / nvim).
-    pkgs.ghostty.terminfo
-  ];
+  reverseProxy.enable = true;
 
   _module.args.nixos-raspberrypi = inputs.nixos-raspberrypi;
 
@@ -65,9 +59,25 @@ in
   ];
 
   networking.hostName = config.hostname;
-  networking.networkmanager.enable = true;
+  networking.networkmanager = {
+    enable = true;
+    # Hand DNS over to Pi-hole (so the Pi resolves *.ts.net via the dnsmasq
+    # forwarder we add in pihole.nix). Without this, NetworkManager would
+    # rewrite resolv.conf with the router's DNS on every link change.
+    dns = "none";
+  };
+  networking.nameservers = [ "127.0.0.1" ];
 
   time.timeZone = "Europe/Madrid";
+
+  # Raspberry Pi kernels ship with the memory cgroup controller disabled by
+  # default to save a few % of overhead. Without it, /sys/fs/cgroup/.../memory.*
+  # files don't exist, so cAdvisor and systemd_exporter report 0 for all
+  # container/unit memory metrics. Re-enabling requires a reboot.
+  boot.kernelParams = [
+    "cgroup_enable=memory"
+    "cgroup_memory=1"
+  ];
 
   # Disable the system-wide NSS cache daemon (nsncd). It runs in the host's
   # network namespace and resolves all NSS lookups via the host's resolv.conf,

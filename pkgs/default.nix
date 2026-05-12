@@ -2,6 +2,7 @@
   pkgs,
   lib,
   utils,
+  inputs,
   ...
 }:
 let
@@ -16,7 +17,7 @@ let
   mapPackageFiles =
     { name, path }:
     {
-      ${name} = pkgs.callPackage path { inherit helix; };
+      ${name} = pkgs.callPackage path { inherit helix inputs; };
     };
   packages = builtins.map mapPackageFiles packageFiles;
 in

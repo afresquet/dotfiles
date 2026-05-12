@@ -11,6 +11,28 @@ let
     hash = cfg.hacs.hash;
     stripRoot = false;
   };
+  monitoringEnabled = config.monitoring.enable or false;
+
+  # Body of HA's `prometheus:` integration. Drops as the include target so
+  # we own the metric filter declaratively without touching configuration.yaml.
+  prometheusYaml = builtins.toFile "ha-prometheus.yaml" ''
+    # Nix-managed (modules/nixos/services/home-assistant.nix). Edit there.
+    filter:
+      include_domains:
+        - sensor
+        - binary_sensor
+        - light
+        - switch
+        - climate
+        - person
+        - sun
+        - weather
+  '';
+
+  # Minimal hand-written HA dashboard. No good Prometheus-based HA dashboard
+  # exists on grafana.com (most are InfluxDB). Stored as a static JSON file
+  # so UI edits round-trip via `export-grafana-dashboard`.
+  haDashboardJson = ./monitoring/dashboards/home-assistant.json;
 in
 {
   options = {
@@ -94,6 +116,9 @@ in
           "--network=host"
           "--cap-add=NET_ADMIN"
           "--cap-add=NET_RAW"
+          # Place the container payload inside the podman-home-assistant.service
+          # cgroup so cAdvisor's per-unit metrics reflect actual usage.
+          "--cgroups=split"
         ];
       };
     };
@@ -116,6 +141,58 @@ in
         cp -r ${hacsSrc} ${cfg.dataDir}/custom_components/hacs
         chmod -R u+w ${cfg.dataDir}/custom_components/hacs
       '';
+    };
+
+    # ─── Monitoring ───
+    # HA's built-in /api/prometheus endpoint serves metrics for every entity.
+    # Requires a long-lived access token (LLAT) on the scraper + a `prometheus:`
+    # block in HA's config. We own the integration's body declaratively via
+    # an `!include`d sub-file; configuration.yaml gets the include directive
+    # idempotently appended on first run.
+    systemd.services.home-assistant-prometheus-config = lib.mkIf monitoringEnabled {
+      description = "Install Prometheus integration config for HA";
+      wantedBy = [ "podman-home-assistant.service" ];
+      before = [ "podman-home-assistant.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        install -m 0644 ${prometheusYaml} ${cfg.dataDir}/prometheus.yaml
+
+        config=${cfg.dataDir}/configuration.yaml
+
+        # Fresh install: HA hasn't booted yet, so configuration.yaml doesn't
+        # exist. Seed it with default_config (what HA itself writes on first
+        # run) plus our include, so the integration is wired from boot one.
+        if [ ! -f "$config" ]; then
+          printf 'default_config:\n\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nprometheus: !include prometheus.yaml\n' \
+            > "$config"
+          exit 0
+        fi
+
+        # Existing install: only append if there's no `prometheus:` top-level
+        # key already (in any form). Matching on `^prometheus:` catches both
+        # `prometheus: !include …` and inline `prometheus:` blocks, avoiding
+        # the duplicate-key parse error HA would otherwise hit.
+        if ! ${pkgs.gnugrep}/bin/grep -Eq '^prometheus:' "$config"; then
+          printf '\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nprometheus: !include prometheus.yaml\n' \
+            >> "$config"
+        fi
+      '';
+    };
+
+    # Container needs to restart when our integration config changes.
+    systemd.services.podman-home-assistant.restartTriggers =
+      lib.mkIf monitoringEnabled [ prometheusYaml ];
+
+    monitoring.exporters.home-assistant = lib.mkIf monitoringEnabled {
+      port = 8123;
+      metricsPath = "/api/prometheus";
+      bearerTokenFile = "/run/agenix/home-assistant-llat";
+    };
+    monitoring.dashboards.home-assistant = lib.mkIf monitoringEnabled {
+      json = haDashboardJson;
     };
   };
 }

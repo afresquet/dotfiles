@@ -89,12 +89,12 @@
     in
     {
       packages = forEachSystem (
-        system: import ./pkgs (libAndUtils // { pkgs = nixpkgs.legacyPackages.${system}; })
+        system: import ./pkgs (libAndUtils // { pkgs = nixpkgs.legacyPackages.${system}; inherit inputs; })
       );
 
       formatter = forEachSystem (system: nixpkgs.legacyPackages.${system}.nixfmt);
 
-      overlays = import ./overlays libAndUtils;
+      overlays = import ./overlays (libAndUtils // { inherit inputs; });
 
       nixosModules = import ./modules/nixos libAndUtils;
 
@@ -128,6 +128,10 @@
         Alvaros-Mac-mini = nix-darwin.lib.darwinSystem {
           specialArgs = {
             inherit inputs outputs;
+            # Pi's evaluated config so the Mac's monitoring module can read
+            # service definitions (probe URLs, etc.) directly from where the
+            # Pi service modules declare them, instead of duplicating.
+            piConfig = outputs.nixosConfigurations.Home-Server.config;
           };
           modules = [ ./hosts/mac-mini/configuration.nix ];
         };

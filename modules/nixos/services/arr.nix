@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 let
@@ -23,6 +24,23 @@ let
     "prowlarr"
     "jellyseerr"
   ];
+
+  # Per-app exportarr config. The 5 *arr apps that store their API key in
+  # config.xml.
+  # TODO: bazarr — uses a different config format (YAML, not XML), so it
+  # needs its own key extractor before it can join arrExporters.
+  monitoringEnabled = config.monitoring.enable or false;
+  prowlarrUrl =
+    if (config.vpn.enable or false)
+    then "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString apps.prowlarr}"
+    else "http://127.0.0.1:${toString apps.prowlarr}";
+  arrExporters = {
+    radarr   = { port = 9707; configPath = "/var/lib/radarr/.config/Radarr/config.xml";    url = "http://127.0.0.1:${toString apps.radarr}"; };
+    sonarr   = { port = 9708; configPath = "/var/lib/sonarr/.config/NzbDrone/config.xml";  url = "http://127.0.0.1:${toString apps.sonarr}"; };
+    lidarr   = { port = 9709; configPath = "/var/lib/lidarr/.config/Lidarr/config.xml";    url = "http://127.0.0.1:${toString apps.lidarr}"; };
+    readarr  = { port = 9710; configPath = "/var/lib/readarr/config.xml";                  url = "http://127.0.0.1:${toString apps.readarr}"; };
+    prowlarr = { port = 9711; configPath = "/var/lib/private/prowlarr/config.xml";         url = prowlarrUrl; };
+  };
 in
 {
   options.arrStack = {
@@ -89,15 +107,13 @@ in
         extraOptions = [
           "--network=ns:/var/run/netns/${config.vpn.namespace}"
           "--dns=1.1.1.1"
+          # Place the container payload inside the podman-byparr.service cgroup
+          # so cAdvisor's per-unit metrics reflect actual container resources.
+          "--cgroups=split"
         ];
       };
     };
 
-    systemd.services.podman-byparr = lib.mkIf (config.vpn.enable or false) {
-      after = [ "wg.service" ];
-      bindsTo = [ "wg.service" ];
-      partOf = [ "wg.service" ];
-    };
 
     users.users =
       lib.mapAttrs (_: _: { extraGroups = [ "media" ]; }) mediaApps
@@ -160,13 +176,55 @@ in
         }
       ) apps;
 
-    # Confine prowlarr (the only native service that touches public indexer
-    # sites) to the VPN namespace. Byparr runs as a container directly attached
-    # to the namespace via --network=ns:..., so it doesn't need vpnConfinement.
-    systemd.services.prowlarr.vpnConfinement = lib.mkIf (config.vpn.enable or false) {
-      enable = true;
-      vpnNamespace = config.vpn.namespace;
-    };
+    # All systemd.services in this module are merged here so the dotted form
+    # (foo.x = ...) and the dynamically-keyed mapAttrs' form can co-exist.
+    systemd.services = lib.mkMerge [
+      (lib.mkIf (config.vpn.enable or false) {
+        # Tie podman-byparr's lifecycle to wg.service.
+        podman-byparr = {
+          after = [ "wg.service" ];
+          bindsTo = [ "wg.service" ];
+          partOf = [ "wg.service" ];
+        };
+        # Confine prowlarr (the only native service that touches public
+        # indexer sites) to the VPN namespace. Byparr runs as a container
+        # attached to the namespace via --network=ns:..., so it doesn't need
+        # vpnConfinement.
+        prowlarr.vpnConfinement = {
+          enable = true;
+          vpnNamespace = config.vpn.namespace;
+        };
+      })
+
+      # Per-app key extractors for exportarr. requiredBy = hard dep,
+      # RemainAfterExit defaults false → re-runs on each exporter start so a
+      # re-keyed config.xml gets picked up.
+      (lib.mkIf monitoringEnabled (
+        lib.mapAttrs' (
+          appName: app: lib.nameValuePair "exportarr-${appName}-key" {
+            description = "Extract API key for ${appName} exportarr";
+            requiredBy = [ "prometheus-exportarr-${appName}-exporter.service" ];
+            before = [ "prometheus-exportarr-${appName}-exporter.service" ];
+            after = [ "${appName}.service" ];
+            serviceConfig.Type = "oneshot";
+            script = ''
+              install -d -m 0755 /run/exportarr
+              for _ in $(seq 1 30); do
+                [ -s "${app.configPath}" ] && break
+                sleep 1
+              done
+              if [ ! -s "${app.configPath}" ]; then
+                echo "${appName} config.xml not present at ${app.configPath}" >&2
+                exit 1
+              fi
+              umask 077
+              ${pkgs.gnugrep}/bin/grep -oP '(?<=<ApiKey>)[^<]+' "${app.configPath}" \
+                > /run/exportarr/${appName}-key
+            '';
+          }
+        ) arrExporters
+      ))
+    ];
 
     vpnNamespaces = lib.mkIf (config.vpn.enable or false) {
       ${config.vpn.namespace}.portMappings = [
@@ -176,6 +234,40 @@ in
           protocol = "tcp";
         }
       ];
+    };
+
+    # ─── Monitoring (exportarr) ───
+    # Per-app oneshots extract the API key from each *arr's config.xml at
+    # service start, dropping it into /run/exportarr/<app>-key. The exporter
+    # then loads it via systemd LoadCredential (apiKeyFile option). This avoids
+    # a secret-per-app in agenix — the *arr apps already manage their keys.
+
+    services.prometheus.exporters = lib.mkIf monitoringEnabled (
+      lib.mapAttrs' (
+        appName: app: lib.nameValuePair "exportarr-${appName}" {
+          enable = true;
+          listenAddress = "0.0.0.0";
+          inherit (app) port url;
+          apiKeyFile = "/run/exportarr/${appName}-key";
+        }
+      ) arrExporters
+    );
+
+    monitoring.exporters = lib.mkIf monitoringEnabled (
+      lib.mapAttrs' (
+        appName: app: lib.nameValuePair "exportarr-${appName}" { inherit (app) port; }
+      ) arrExporters
+    );
+
+    monitoring.dashboards = lib.mkIf monitoringEnabled {
+      # onedr0p/exportarr's bundled "all-in-one" dashboard for Prowlarr +
+      # Radarr/Sonarr/Lidarr/Readarr (Sabnzbd panels stay empty since we
+      # don't run it). Pinned by commit so future upstream changes don't
+      # silently break the hash.
+      exportarr = {
+        url = "https://raw.githubusercontent.com/onedr0p/exportarr/86a455425ab5299a36b85c14d881c51b05aa2629/examples/grafana/dashboard2.json";
+        hash = "sha256-sF5fUFPu6rdF/4HUY7efqayira8s3vStSxcXCs3x+Wk=";
+      };
     };
   };
 }

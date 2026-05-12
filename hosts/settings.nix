@@ -29,6 +29,16 @@
         }
       );
     };
+    tailnet.domain = mkOption {
+      type = types.str;
+      description = ''
+        Tailscale MagicDNS suffix. Find with
+        `tailscale status --self --json | jq -r .MagicDNSSuffix`.
+        Per-host IPs are not stored — anything that needs an address either
+        uses an FQDN like "$\{shortname}.$\{tailnet.domain}" (resolved via
+        MagicDNS) or discovers it at runtime via `tailscale ip -4`.
+      '';
+    };
   };
 
   config = {
@@ -39,5 +49,7 @@
     editor = lib.mkDefault pkgs.helix;
     browser = lib.mkDefault pkgs.brave;
     fileManager = lib.mkDefault pkgs.nautilus;
+
+    tailnet.domain = "tail606ad7.ts.net";
   };
 }
