@@ -101,6 +101,25 @@ in
     ];
   };
 
+  # zram first: compressed RAM-backed swap absorbs memory-pressure spikes
+  # without touching disk. With 8 GiB RAM and zstd, 50% gives ~4 GiB of zram
+  # which typically holds ~10-12 GiB of cold pages.
+  zramSwap = {
+    enable = true;
+    algorithm = "zstd";
+    memoryPercent = 50;
+  };
+
+  # Disk swapfile on the NVMe as a backstop for whatever zram can't hold.
+  # Lower priority than zram (NixOS gives zram priority 5 by default), so the
+  # kernel only spills here once zram is full.
+  swapDevices = [
+    {
+      device = "/var/lib/swapfile";
+      size = 4096; # MiB
+    }
+  ];
+
   services.openssh.settings.PasswordAuthentication = false;
 
   users.users.${config.username} = {
