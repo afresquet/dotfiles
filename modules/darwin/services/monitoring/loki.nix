@@ -98,8 +98,14 @@ in
     launchd.daemons.loki = {
       serviceConfig = {
         Label = "com.grafana.loki";
-        ProgramArguments = [
-          "${pkgs.grafana-loki}/bin/loki"
+        # See wait4path rationale on the prometheus daemon.
+        ProgramArguments = let exe = "${pkgs.grafana-loki}/bin/loki"; in [
+          "/bin/sh" "-c"
+          ''
+            /bin/wait4path "$0"
+            exec "$0" "$@"
+          ''
+          exe
           "-config.file=${lokiConfig}"
         ];
         WorkingDirectory = cfg.lokiDataDir;

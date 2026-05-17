@@ -131,8 +131,14 @@ in
     launchd.daemons.grafana = {
       serviceConfig = {
         Label = "com.grafana.grafana";
-        ProgramArguments = [
-          "${pkgs.grafana}/bin/grafana"
+        # See wait4path rationale on the prometheus daemon.
+        ProgramArguments = let exe = "${pkgs.grafana}/bin/grafana"; in [
+          "/bin/sh" "-c"
+          ''
+            /bin/wait4path "$0"
+            exec "$0" "$@"
+          ''
+          exe
           "server"
           "--config=${grafanaConfig}"
           "--homepath=${pkgs.grafana}/share/grafana"
@@ -140,7 +146,6 @@ in
         WorkingDirectory = "${cfg.grafanaDataDir}/data";
         RunAtLoad = true;
         KeepAlive = true;
-        # See ThrottleInterval rationale on the prometheus daemon.
         ThrottleInterval = 60;
         StandardOutPath = "/var/log/grafana.log";
         StandardErrorPath = "/var/log/grafana.err";
