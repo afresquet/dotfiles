@@ -25,6 +25,7 @@ in
     outputs.nixosModules.services.bluetooth
     outputs.nixosModules.services.qbittorrent
     outputs.nixosModules.services.arr
+    outputs.nixosModules.services.navidrome
     outputs.nixosModules.services.jellyfin
     outputs.nixosModules.services.vpn
     outputs.nixosModules.services.dashboard
@@ -36,6 +37,7 @@ in
   bluetooth.xboxController.enable = false;
   qbittorrent.enable = true;
   arrStack.enable = true;
+  navidrome.enable = true;
   jellyfin.enable = true;
   vpn.enable = true;
   dashboard.enable = true;

@@ -245,7 +245,23 @@ URL: `http://bazarr.home-server/`
 5. **Settings → Providers**: add OpenSubtitles, Subscene, etc. (some need
    accounts).
 
-## 11. Jellyseerr
+## 11. Navidrome
+
+URL: `http://navidrome.home-server/`
+
+Subsonic-compatible streaming server pointed at `/mnt/hdd/media/music`. Runs as
+the native `navidrome` user (added to the `media` group for read access).
+
+1. First-run: create an admin user (Navidrome stores accounts in
+   `/var/lib/navidrome/navidrome.db`).
+2. The scanner picks up `/mnt/hdd/media/music` automatically — initial scan
+   takes a while if the library is large. Watch progress under **Settings →
+   About → Server Status** or via `journalctl -u navidrome -f`.
+3. Optional: **Settings → Personal → Last.fm** to scrobble plays.
+4. Subsonic clients (DSub, play:Sub, Symfonium, Substreamer, Tempo, etc.):
+   server `http://navidrome.home-server`, your admin credentials.
+
+## 12. Jellyseerr
 
 URL: `http://jellyseerr.home-server/`
 
