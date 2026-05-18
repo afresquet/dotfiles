@@ -261,7 +261,25 @@ the native `navidrome` user (added to the `media` group for read access).
 4. Subsonic clients (DSub, play:Sub, Symfonium, Substreamer, Tempo, etc.):
    server `http://navidrome.home-server`, your admin credentials.
 
-## 12. Jellyseerr
+## 12. MusicSeerr
+
+URL: `http://musicseerr.home-server/`
+
+Music request + discovery frontend around Lidarr with a built-in audio player
+that can stream from Navidrome / Jellyfin. Runs as a podman container with
+`--network=host`, so the URLs below are all host-loopback. State lives under
+`/var/lib/musicseerr/{config,cache}`.
+
+1. First-run: create an admin user via the web UI.
+2. **Settings → Lidarr**:
+   - URL: `http://127.0.0.1:8686`
+   - API key: from `http://lidarr.home-server/` → Settings → General → Security.
+3. **Settings → Player → Navidrome** (recommended) or **Jellyfin**:
+   - Navidrome URL: `http://127.0.0.1:4533`, admin credentials from §11.
+   - Jellyfin URL: `http://127.0.0.1:8096`, admin credentials from §7.
+4. Optional: **Settings → ListenBrainz / Last.fm** to scrobble plays.
+
+## 13. Jellyseerr
 
 URL: `http://jellyseerr.home-server/`
 
