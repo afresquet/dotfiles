@@ -27,6 +27,8 @@ in
     outputs.nixosModules.services.arr
     outputs.nixosModules.services.musicseerr
     outputs.nixosModules.services.navidrome
+    outputs.nixosModules.services.slskd
+    outputs.nixosModules.services.explo
     outputs.nixosModules.services.jellyfin
     outputs.nixosModules.services.vpn
     outputs.nixosModules.services.dashboard
@@ -40,6 +42,8 @@ in
   arrStack.enable = true;
   musicseerr.enable = true;
   navidrome.enable = true;
+  slskd.enable = true;
+  explo.enable = true;
   jellyfin.enable = true;
   vpn.enable = true;
   dashboard.enable = true;

@@ -44,4 +44,9 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  "explo-env.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
 }

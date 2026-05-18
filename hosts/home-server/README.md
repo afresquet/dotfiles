@@ -39,6 +39,7 @@ agenix -e <name>.age
 | `pihole-webpassword.age`        | `FTLCONF_webserver_api_password=YOUR_PASSWORD`             |
 | `qbittorrent-webuipw.age`       | the PBKDF2 hash *only* (see qBittorrent section below)     |
 | `mullvad-wg.age`                | full Mullvad WireGuard config (`[Interface]` + `[Peer]`). **Override `DNS = 10.64.0.1` with `DNS = 1.1.1.1`** — Mullvad's own DNS sinkholes torrent indexers to `127.0.0.1`. See VPN namespace section below. |
+| `explo-env.age`                 | `KEY=value` env for the Explo container (see §13). Ships with placeholder values that prevent Explo from doing anything useful until you `agenix -e` it. |
 
 After creating any new `.age` file: `git add` it so the flake can see it, then
 `nixos-rebuild switch`.
@@ -279,7 +280,171 @@ that can stream from Navidrome / Jellyfin. Runs as a podman container with
    - Jellyfin URL: `http://127.0.0.1:8096`, admin credentials from §7.
 4. Optional: **Settings → ListenBrainz / Last.fm** to scrobble plays.
 
-## 13. Jellyseerr
+## 13. Explo
+
+URL: `http://explo.home-server/`
+
+ListenBrainz-driven music auto-discovery — Explo pulls Weekly Exploration /
+Weekly Jams / Daily Jams from your ListenBrainz account, has **slskd**
+download the matching tracks from Soulseek, moves them into a Navidrome
+subfolder, and creates the playlist via Subsonic API.
+
+Depends on §11 (Navidrome) and §14 (slskd) being set up first — Explo logs
+into Navidrome with admin credentials and into slskd with an API key. Tracks
+land at `/mnt/hdd/media/music/explo/<playlist>/`, which sits under
+Navidrome's `MusicFolder` so the next scan picks them up.
+
+### Bootstrap
+
+1. **Prereqs:**
+   - A ListenBrainz account **with enough scrobbling history that the
+     collaborative-filtering engine has produced recommendations for you** —
+     this is the most-likely source of "Explo ran but did nothing." If you
+     fetched recommendations and the logs say
+     `prefetch: fetched tracks ... count=0` for every playlist, ListenBrainz
+     hasn't generated anything for the user yet. The fastest fix is
+     **Settings → Import on listenbrainz.org → Import from Last.fm** to
+     backfill historical scrobbles; the recommendation engine reprocesses
+     within a few hours and `count` flips non-zero. Otherwise you wait days
+     to weeks while Navidrome/Jellyfin scrobble forward.
+   - Navidrome admin user already created (§11).
+   - slskd running with a Soulseek login configured *and* an `explo` API key
+     in `slskd.yml` (§14).
+
+2. **Fill in the env secret** — the module ships an encrypted placeholder so
+   the flake evaluates; the placeholder values prevent Explo from doing
+   anything useful, by design:
+
+   ```sh
+   agenix -e ~/dotfiles/secrets/explo-env.age
+   ```
+
+   Replace each `__FILL_IN__` with the real value:
+
+   ```
+   LISTENBRAINZ_USER=<your-listenbrainz-username>
+   SYSTEM_USERNAME=<navidrome-admin-username>
+   SYSTEM_PASSWORD=<navidrome-admin-password>
+   SLSKD_API_KEY=<slskd-api-key from §14>
+   UI_USERNAME=<web-ui-login>
+   UI_PASSWORD=<web-ui-password>
+   ```
+
+3. `nixos-rebuild switch && sudo systemctl restart podman-explo.service`.
+
+### First-run UI walkthrough
+
+1. Visit `http://explo.home-server/` and log in with the `UI_USERNAME` /
+   `UI_PASSWORD` from the env secret.
+2. **Schedules** tab: confirm or tweak when each playlist runs (Weekly
+   Exploration defaults to Tuesday 00:15, Weekly Jams to Monday 00:30, Daily
+   Jams to 01:15 daily — all in the timezone Explo's container sees, which
+   is `Europe/Madrid` here).
+3. **Run now** on Weekly Exploration to verify the loop end-to-end — Explo
+   should download tracks, trigger a Navidrome scan, and create a
+   `Weekly-Exploration-<year>-Week<n>` playlist visible in Navidrome.
+
+### Notes
+
+- Explo's downloaded files live at `/mnt/hdd/media/music/explo/`. They're
+  owned `root:media` (setgid on the parent dir keeps the group), readable by
+  Navidrome through its `media` group membership.
+- slskd actually fetches the files; Explo moves them out of
+  `/mnt/hdd/downloads/soulseek` (slskd's HDD-backed staging dir) into the
+  music tree via the `/slskd` bind mount (`MIGRATE_DOWNLOADS=true`). If a
+  download stalls or a track can't be found, Explo skips it — check
+  `journalctl -u podman-explo.service` and `journalctl -u podman-slskd.service`
+  if a playlist comes back short.
+- Empty playlists usually mean ListenBrainz has nothing for the user yet —
+  see the prereq above. The container is fine; the engine just has no data.
+- Hard reset: `sudo rm -rf /var/lib/explo/config/*` wipes the playlist cache,
+  so the next run re-downloads.
+
+## 14. slskd
+
+URL: `http://slskd.home-server/`
+
+Soulseek client used as Explo's download backend (§13) and reachable manually
+for ad-hoc searches. Runs in the **wg VPN namespace** alongside qBittorrent
+and Prowlarr, so peer traffic exits via Mullvad. Same Mullvad caveat applies
+as for torrenting: no inbound port forwarding, so peer connectivity is
+outbound-initiated only — fewer peers, but transfers still work.
+
+State splits in two: config / database / logs go in `/var/lib/slskd/` (on
+the NVMe), actual downloads land in `/mnt/hdd/downloads/soulseek/` and
+incompletes in `/mnt/hdd/downloads/soulseek-incomplete/` (both on the HDD,
+owned `root:media 2775` — same shape as qBittorrent's download dir). The
+slskd module sets `SLSKD_DOWNLOADS_DIR=/downloads` and
+`SLSKD_INCOMPLETE_DIR=/incomplete` so those overrides win over anything the
+YAML says.
+
+### Bootstrap
+
+1. **Create a Soulseek account** at <https://www.slsknet.org/> ("register"
+   link). Check the email confirmation — the login won't work until you
+   verify. These credentials are separate from slskd's own web UI password.
+
+2. **Edit `slskd.yml`.** Despite what slskd's web UI implies, there are no
+   "Options → Soulseek" or "Options → API Keys" tabs — every meaningful
+   credential lives in `/var/lib/slskd/slskd.yml`. Two ways to edit:
+
+   - **Web UI:** top-right **System** (gear icon) → **Options** opens a YAML
+     editor in the browser. We pass `SLSKD_REMOTE_CONFIGURATION=true` so it
+     can write back to disk.
+   - **On the Pi:** `sudo $EDITOR /var/lib/slskd/slskd.yml`.
+
+   The shipped file is entirely commented-out examples. **Do not uncomment
+   blocks wholesale** — many of them contain literal `<placeholder>` strings
+   (e.g. `<CIDR to blacklist, e.g. 255.255.255.255/32>`) that fail validation
+   and cause slskd to reject the whole config with
+   `Options (re)configuration rejected`. Add only real values.
+
+   Minimum block to append:
+
+   ```yaml
+   soulseek:
+     username: <slsknet-username>
+     password: <slsknet-password>
+
+   web:
+     authentication:
+       username: slskd                # change if you want, default is fine
+       password: <new-web-ui-password>
+       api_keys:
+         explo:
+           key: <16-255 char string, e.g. `openssl rand -hex 32`>
+           role: readwrite
+   ```
+
+   Save. slskd watches the file (`Options changed, restarting (re)connection
+   process` in the journal) and reconnects within a second. The header
+   banner flips to "Connected" once the Soulseek login goes through.
+
+3. **Paste the API key** from the `explo:` entry into `explo-env.age`
+   (`SLSKD_API_KEY=`, §13 step 2).
+
+4. *(Optional)* **Share music back.** Soulseek etiquette is to upload some
+   of your library in return. Add a read-only bind to
+   `modules/nixos/services/slskd.nix` (e.g.
+   `"/mnt/hdd/media/music:/music:ro"`) and add `/music` under
+   `shares.directories` in `slskd.yml`. Skip if you'd rather lurk.
+
+### Notes
+
+- The web UI is reverse-proxied via caddy → `192.168.15.1:5030` (namespace
+  bridge), so `http://slskd.home-server/` works from any tailnet client even
+  though slskd itself is namespaced.
+- Don't override `directories.downloads` / `directories.incomplete` in
+  `slskd.yml` — env vars from the module take precedence, and you'd be
+  editing dead config.
+- Inbound Soulseek peer port `50300` is open on `wg0` (declared via
+  `vpnNamespaces.<ns>.openVPNPorts`), but Mullvad swallows inbound — see
+  the VPN namespace section for why that's expected.
+- Default web UI creds are `slskd` / `slskd`. Change them in `slskd.yml`
+  before exposing this anywhere beyond the tailnet; everything in
+  `web.authentication.password` is stored **plaintext**.
+
+## 15. Jellyseerr
 
 URL: `http://jellyseerr.home-server/`
 
