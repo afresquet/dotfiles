@@ -56,7 +56,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    users.groups.media = { };
+    # Pin the gid so the linuxserver/lidarr:nightly container can join this
+    # group via podman's `--group-add=<numeric>` flag (the image has no entry
+    # for "media" in /etc/group, so the name form wouldn't resolve inside).
+    # 984 is the gid the dynamic assignment landed on with this module
+    # active — pinning here just freezes the existing value, no chown needed.
+    users.groups.media.gid = 984;
 
     systemd.tmpfiles.rules = [
       "d ${cfg.dataRoot}/downloads             2775 root media -"
@@ -71,8 +76,18 @@ in
 
     services.radarr.enable = true;
     services.sonarr.enable = true;
-    services.lidarr.enable = true;
     services.readarr.enable = true;
+
+    # Lidarr runs from the linuxserver/lidarr:nightly container (not the
+    # nixpkgs service) because plugin support — needed for Tubifarry, which
+    # registers slskd as a native Lidarr download client — only exists on the
+    # nightly branch. The data dir is reused as-is; the linuxserver image
+    # expects config.xml/lidarr.db directly under /config, which matches the
+    # /var/lib/lidarr/.config/Lidarr/ layout `services.lidarr` left behind.
+    # The lidarr user/group are still defined below (uid/gid 306, matching
+    # nixpkgs' static ids) so the existing files keep their owner without a
+    # recursive chown.
+    users.groups.lidarr.gid = 306;
 
     # The *arr apps run on the host; Prowlarr lives in the VPN namespace and
     # needs to reach them on the namespace's bridge side (192.168.15.5) to
@@ -90,36 +105,108 @@ in
     services.bazarr.enable = true;
     services.jellyseerr.enable = true;
 
-    # Byparr is a FlareSolverr-compatible Cloudflare bypass with much better
-    # success on current Cloudflare challenges. No nixpkgs package, so we run
-    # the upstream container directly inside the VPN namespace by attaching
-    # podman to the existing netns. Prowlarr's existing "FlareSolverr" indexer
-    # proxy config keeps working unchanged (Byparr serves the same API).
-    virtualisation.oci-containers = lib.mkIf (config.vpn.enable or false) {
+    virtualisation.oci-containers = {
       backend = "podman";
-      containers.byparr = {
-        image = "ghcr.io/thephaseless/byparr:latest";
-        autoStart = true;
-        environment = {
-          TZ = config.time.timeZone;
-          LOG_LEVEL = "info";
-        };
-        extraOptions = [
-          "--network=ns:/var/run/netns/${config.vpn.namespace}"
-          "--dns=1.1.1.1"
-          # Place the container payload inside the podman-byparr.service cgroup
-          # so cAdvisor's per-unit metrics reflect actual container resources.
-          "--cgroups=split"
-        ];
-      };
+      containers = lib.mkMerge [
+        {
+          lidarr = {
+            image = "lscr.io/linuxserver/lidarr:nightly";
+            autoStart = true;
+            volumes = [
+              # Reuse the nixpkgs-lidarr data dir verbatim — linuxserver image
+              # expects config.xml/lidarr.db directly under /config, which is
+              # exactly the layout `services.lidarr` already produced.
+              "/var/lib/lidarr/.config/Lidarr:/config"
+              # Bind-mount the HDD at the same path the host sees so the
+              # absolute paths stored in lidarr.db (e.g. /mnt/hdd/media/music)
+              # still resolve from inside the container.
+              "/mnt/hdd:/mnt/hdd"
+              # Tubifarry's slskd download client reports paths as slskd sees
+              # them — `/downloads/<album>/<file>` — which is the path slskd's
+              # own container uses internally. Mount the same host dir at the
+              # same path inside Lidarr so those paths resolve directly, with
+              # no Lidarr Remote Path Mapping needed in the UI.
+              "/mnt/hdd/downloads/soulseek:/downloads"
+            ];
+            environment = {
+              TZ = config.time.timeZone;
+              # Run as the existing nixpkgs lidarr user so /var/lib/lidarr's
+              # files (owned 306:306) stay readable/writable without chown.
+              # PGID is set to the *media* group (984), not lidarr (306):
+              # linuxserver's s6 entrypoint uses `s6-setuidgid` to drop to the
+              # PUID/PGID user, which *replaces* supplementary groups with the
+              # primary group only — `--group-add=984` was silently stripped,
+              # leaving lidarr unable to write to /mnt/hdd/downloads/soulseek.
+              # Making media the primary group gives lidarr group-write on
+              # everything in /mnt/hdd; /var/lib/lidarr files are owned 306:306
+              # but lidarr writes there as the owner anyway, so the gid shift
+              # doesn't break config access.
+              PUID = "306";
+              PGID = "984";
+              # 0002 = 2775 dirs / 0664 files — so other media-group consumers
+              # (Navidrome, etc.) can read what Lidarr writes into media/music.
+              UMASK = "0002";
+            };
+            extraOptions = [
+              # Host network so Prowlarr (in the VPN namespace) can still push
+              # via 192.168.15.5:8686 over the wg-br interface, and so caddy /
+              # musicseerr / exportarr reach 127.0.0.1:8686 unchanged.
+              "--network=host"
+              "--cgroups=split"
+              # s6 (linuxserver's init) doesn't forward SIGTERM to Lidarr,
+              # so `systemctl restart` hangs ~90s until podman SIGKILLs the
+              # container. SIGINT propagates cleanly through s6 and .NET
+              # treats it as a graceful shutdown.
+              "--stop-signal=SIGINT"
+              "--stop-timeout=15"
+            ];
+          };
+        }
+
+        # Byparr is a FlareSolverr-compatible Cloudflare bypass with much
+        # better success on current Cloudflare challenges. No nixpkgs package,
+        # so we run the upstream container directly inside the VPN namespace by
+        # attaching podman to the existing netns. Prowlarr's "FlareSolverr"
+        # indexer proxy config keeps working unchanged (Byparr serves the
+        # same API).
+        (lib.mkIf (config.vpn.enable or false) {
+          byparr = {
+            image = "ghcr.io/thephaseless/byparr:latest";
+            autoStart = true;
+            environment = {
+              TZ = config.time.timeZone;
+              LOG_LEVEL = "info";
+            };
+            extraOptions = [
+              "--network=ns:/var/run/netns/${config.vpn.namespace}"
+              "--dns=1.1.1.1"
+              "--cgroups=split"
+            ];
+          };
+        })
+      ];
     };
 
 
-    users.users =
-      lib.mapAttrs (_: _: { extraGroups = [ "media" ]; }) mediaApps
-      // lib.optionalAttrs (config.qbittorrent.enable or false) {
+    users.users = lib.mkMerge [
+      (lib.mapAttrs (_: _: { extraGroups = [ "media" ]; }) mediaApps)
+      (lib.optionalAttrs (config.qbittorrent.enable or false) {
         qbittorrent.extraGroups = [ "media" ];
-      };
+      })
+      {
+        # services.lidarr.enable is no longer set (we run the nightly
+        # container instead), so the user it used to create must be declared
+        # explicitly. Same uid/home as nixpkgs used, so file ownership in
+        # /var/lib/lidarr stays valid.
+        lidarr = {
+          isSystemUser = true;
+          group = "lidarr";
+          uid = 306;
+          home = "/var/lib/lidarr";
+          description = "Lidarr daemon";
+        };
+      }
+    ];
 
     reverseProxy.services = lib.mapAttrs (
       name: port:
@@ -205,7 +292,9 @@ in
             description = "Extract API key for ${appName} exportarr";
             requiredBy = [ "prometheus-exportarr-${appName}-exporter.service" ];
             before = [ "prometheus-exportarr-${appName}-exporter.service" ];
-            after = [ "${appName}.service" ];
+            # lidarr runs as a podman container (nightly branch for plugins),
+            # so the unit name is `podman-lidarr.service`, not `lidarr.service`.
+            after = [ (if appName == "lidarr" then "podman-lidarr.service" else "${appName}.service") ];
             serviceConfig.Type = "oneshot";
             script = ''
               install -d -m 0755 /run/exportarr
