@@ -17,6 +17,8 @@ in
   boot.initrd.kernelModules = [ "amdgpu" ];
   services.xserver.videoDrivers = [ "amdgpu" ];
 
+  sunshine.enable = true;
+
   users.users.${config.username}.openssh.authorizedKeys.keys = with keys; [
     afresquet
     alvaroLaptop
