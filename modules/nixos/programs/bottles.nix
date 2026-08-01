@@ -10,7 +10,7 @@ in
 {
   options = {
     bottles.enable = lib.mkEnableOption "Bottles" // {
-      default = true;
+      default = false;
     };
   };
 

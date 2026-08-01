@@ -12,25 +12,29 @@
   hyprland.workspace.extraRules =
     let
       primaryMonitor = builtins.elemAt config.monitors 0;
-      primaryMonitorRule = "monitor:${primaryMonitor.name}";
+      primaryMonitorRule = {
+        monitor = primaryMonitor.name;
+      };
 
       secondaryMonitor = builtins.elemAt config.monitors 1;
-      secondaryMonitorRule = "monitor:${secondaryMonitor.name}";
+      secondaryMonitorRule = {
+        monitor = secondaryMonitor.name;
+      };
 
       # tertiaryMonitor = builtins.elemAt config.monitors 2;
-      # tertiaryMonitorRule = "monitor:${tertiaryMonitor.name}";
+      # tertiaryMonitorRule = { monitor = tertiaryMonitor.name; };
     in
     {
-      browser = [ primaryMonitorRule ];
-      terminal = [ primaryMonitorRule ];
-      file-manager = [ primaryMonitorRule ];
-      obsidian = [ primaryMonitorRule ];
-      steam = [ primaryMonitorRule ];
-      bambu-studio = [ primaryMonitorRule ];
+      browser = primaryMonitorRule;
+      terminal = primaryMonitorRule;
+      file-manager = primaryMonitorRule;
+      obsidian = primaryMonitorRule;
+      steam = primaryMonitorRule;
+      bambu-studio = primaryMonitorRule;
 
-      discord = [ secondaryMonitorRule ];
-      whatsapp = [ secondaryMonitorRule ];
-      music = [ secondaryMonitorRule ];
-      _1password = [ secondaryMonitorRule ];
+      discord = secondaryMonitorRule;
+      whatsapp = secondaryMonitorRule;
+      music = secondaryMonitorRule;
+      _1password = secondaryMonitorRule;
     };
 }

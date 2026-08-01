@@ -10,7 +10,7 @@ in
 {
   options = {
     apprenticevr.enable = lib.mkEnableOption "apprenticevr" // {
-      default = true;
+      default = false;
     };
   };
 

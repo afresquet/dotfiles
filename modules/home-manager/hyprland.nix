@@ -16,11 +16,14 @@ in
         default = isLinux;
       };
 
+      # Extra `hl.workspace_rule` fields merged into the generated rule for each
+      # named workspace, e.g. `{ monitor = "DP-1"; }`. Field names use the Lua
+      # API spelling (underscores), not the legacy hyprlang hyphens.
       workspace.extraRules =
         let
           workspaceExtraRulesOption = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
+            type = lib.types.attrsOf lib.types.anything;
+            default = { };
           };
         in
         {
@@ -43,115 +46,152 @@ in
     wayland.windowManager.hyprland = {
       enable = true;
 
+      # Hyprland 0.55+ uses a Lua config. Home Manager maps each `settings`
+      # attribute to an `hl.<name>(...)` call, so everything below is written in
+      # the new Lua API shape: config sections nest under `config` (one
+      # `hl.config({...})` call), keybinds use the `hl.dsp.*` dispatcher API,
+      # monitors/gestures are tables, and startup programs run from the
+      # `hyprland.start` hook.
+      configType = "lua";
+
       settings =
         let
-          modKey = "SUPER";
+          inherit (lib.generators) mkLuaInline;
+
           menuBar = lib.getExe pkgs.waybar;
+          awww = lib.getExe pkgs.awww;
 
-          mapMonitors =
-            monitor:
-            let
-              resolution = "${toString monitor.width}x${toString monitor.height}@${toString monitor.refreshRate}";
-              position = "${toString monitor.x}x${toString monitor.y}";
-            in
-            "${monitor.name}, ${
-              if monitor.enable then "${resolution}, ${position}, ${toString monitor.scale}" else "disable"
-            }";
-        in
-        {
-          monitor = builtins.map (mapMonitors) (config.monitors);
-          general = {
-            border_size = 2;
-            gaps_in = 4;
-            gaps_out = 8;
-            layout = "dwindle";
-            resize_on_border = true;
-          };
-          ecosystem.no_update_news = true;
-          decoration = {
-            rounding = 10;
-            blur = {
-              enabled = true;
-              xray = true;
-            };
-          };
-          animations = {
-            enabled = false;
-            bezier = "myBezier, 0.05, 0.9, 0.1, 1.05";
-            animation = [
-              "windows, 1, 7, myBezier"
-              "windowsOut, 1, 7, default, popin 80%"
-              "border, 1, 10, default"
-              "borderangle, 1, 8, default"
-              "fade, 1, 7, default"
-              "workspaces, 1, 6, default"
-            ];
-          };
-          input = {
-            kb_layout = "us";
-            kb_variant = "altgr-intl";
-            kb_options = "ctrl:nocaps,lv3:ralt_switch";
-            touchpad = {
-              natural_scroll = true;
-              scroll_factor = 0.5;
-            };
-          };
-          gesture = [
-            "4, horizontal, workspace"
-          ];
-          misc = {
-            disable_hyprland_logo = true;
-            disable_splash_rendering = true;
-          };
-          dwindle = {
-            pseudotile = true;
-            preserve_split = true;
-            force_split = 2;
-          };
-          xwayland = {
-            force_zero_scaling = true;
-          };
-          env = [ "XCURSOR_SIZE, 24" ];
-          exec-once =
-            let
-              awww = lib.getExe pkgs.awww;
-            in
-            [
-              # Wallpaper
-              "${awww}-daemon"
-              "${awww} img ~/dotfiles/assets/wallpaper.png -t none"
+          # Programs launched on their named workspaces.
+          browser = lib.getExe config.browser;
+          fileManager = lib.getExe config.fileManager;
+          terminal = lib.getExe config.terminal;
+          discord = lib.getExe pkgs.discord;
+          steam = lib.getExe pkgs.steam;
+          obsidian = lib.getExe pkgs.obsidian;
+          whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
+          music = ''${browser} --app="https://music.youtube.com/"'';
+          _1password = lib.getExe pkgs._1password-gui;
+          twitter = ''${browser} --app="https://x.com/"'';
+          bambu-studio = lib.getExe pkgs.bambu-studio;
 
-              menuBar
-            ]
+          rofi = lib.getExe config.programs.rofi.package;
+          launcher = "${rofi} -show drun";
+          emoji = ''${rofi} -modi "emoji:rofimoji" -show emoji'';
+          screenshot = lib.getExe pkgs.grimblast;
+          brightness = lib.getExe pkgs.brightnessctl;
+          media = lib.getExe pkgs.playerctl;
+
+          # Keybind helpers: arg 1 is a key string ("SUPER + B"), arg 2 a
+          # dispatcher (raw Lua `hl.dsp.*`), optional arg 3 a table of flags.
+          mkBind = keys: dispatch: { _args = [ keys (mkLuaInline dispatch) ]; };
+          mkBindOpts = keys: dispatch: opts: {
+            _args = [ keys (mkLuaInline dispatch) opts ];
+          };
+          execDsp = cmd: "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
+          wsFocus = name: ''hl.dsp.focus({ workspace = "name:${name}" })'';
+          wsMove = name: ''hl.dsp.window.move({ workspace = "name:${name}" })'';
+          focusDir = dir: ''hl.dsp.focus({ direction = "${dir}" })'';
+          moveDir = dir: ''hl.dsp.window.move({ direction = "${dir}" })'';
+
+          startupCommands = [
+            # Wallpaper
+            "${awww}-daemon"
+            "${awww} img ~/dotfiles/assets/wallpaper.png -t none"
+
+            menuBar
+          ]
           # ++ lib.optional config.dropbox.enable "${lib.getExe pkgs.maestral} start"
           ;
-          workspace =
-            let
-              browser = lib.getExe config.browser;
-              fileManager = lib.getExe config.fileManager;
-              terminal = lib.getExe config.terminal;
-              discord = lib.getExe pkgs.discord;
-              steam = lib.getExe pkgs.steam;
-              obsidian = lib.getExe pkgs.obsidian;
-              whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
-              music = ''${browser} --app="https://music.youtube.com/"'';
-              _1password = lib.getExe pkgs._1password-gui;
-              twitter = ''${browser} --app="https://x.com/"'';
-              bambu-studio = lib.getExe pkgs.bambu-studio;
+        in
+        {
+          monitor = builtins.map (
+            monitor:
+            if monitor.enable then
+              {
+                output = monitor.name;
+                mode = "${toString monitor.width}x${toString monitor.height}@${toString monitor.refreshRate}";
+                position = "${toString monitor.x}x${toString monitor.y}";
+                scale = monitor.scale;
+              }
+            else
+              {
+                output = monitor.name;
+                disabled = true;
+              }
+          ) config.monitors;
 
-              merge = rules: builtins.concatStringsSep ", " (builtins.concatLists rules);
+          # Look and feel. These merge with Stylix's `hl.config` (colors,
+          # shadow, background) into a single call — keep leaves distinct from
+          # Stylix's (notably it owns `misc.disable_hyprland_logo`).
+          config = {
+            general = {
+              border_size = 2;
+              gaps_in = 4;
+              gaps_out = 8;
+              layout = "dwindle";
+              resize_on_border = true;
+            };
+            decoration = {
+              rounding = 10;
+              blur = {
+                enabled = true;
+                xray = true;
+              };
+            };
+            animations.enabled = false;
+            input = {
+              kb_layout = "us";
+              kb_variant = "altgr-intl";
+              kb_options = "ctrl:nocaps,lv3:ralt_switch";
+              touchpad = {
+                natural_scroll = true;
+                scroll_factor = 0.5;
+              };
+            };
+            misc.disable_splash_rendering = true;
+            dwindle = {
+              preserve_split = true;
+              force_split = 2;
+            };
+            ecosystem.no_update_news = true;
+            xwayland.force_zero_scaling = true;
+          };
+
+          env = {
+            _args = [
+              "XCURSOR_SIZE"
+              "24"
+            ];
+          };
+
+          gesture = {
+            fingers = 4;
+            direction = "horizontal";
+            action = "workspace";
+          };
+
+          # Autostart: run programs from the start hook (the Lua-native
+          # replacement for `exec-once`).
+          on = {
+            _args = [
+              "hyprland.start"
+              (mkLuaInline (
+                "function()\n"
+                + lib.concatMapStringsSep "\n" (cmd: "  hl.exec_cmd(${builtins.toJSON cmd})") startupCommands
+                + "\nend"
+              ))
+            ];
+          };
+
+          workspace_rule =
+            let
               rule =
                 name: package:
-                let
-                  defaultRules = [
-                    "name:${name}"
-                    "on-created-empty:${package}"
-                  ];
-                in
-                merge [
-                  defaultRules
-                  cfg.workspace.extraRules.${name}
-                ];
+                {
+                  workspace = "name:${name}";
+                  on_created_empty = package;
+                }
+                // cfg.workspace.extraRules.${name};
             in
             [
               (rule "browser" browser)
@@ -166,137 +206,147 @@ in
               (rule "twitter" twitter)
               (rule "bambu-studio" bambu-studio)
             ];
+
           bind =
             let
-              rofi = lib.getExe config.programs.rofi.package;
-              launcher = "${rofi} -show drun";
-              emoji = ''${rofi} -modi "emoji:rofimoji" -show emoji'';
-              screenshot = lib.getExe pkgs.grimblast;
-              moveWorkspaceToMonitor = lib.imap (
-                index: monitor: "${modKey}_ALT, ${toString index}, movecurrentworkspacetomonitor, ${monitor.name}"
+              moveWorkspaceToMonitor = lib.imap1 (
+                index: monitor:
+                mkBind "SUPER + ALT + ${toString index}" "hl.dsp.workspace.move({ monitor = ${builtins.toJSON monitor.name} })"
               ) config.monitors;
+
+              workspaceNumbers = builtins.genList (
+                i:
+                let
+                  n = i + 1;
+                  key = if n == 10 then "0" else toString n;
+                in
+                mkBind "SUPER + ${key}" "hl.dsp.focus({ workspace = ${toString n} })"
+              ) 10;
+
+              moveToWorkspaceNumbers = builtins.genList (
+                i:
+                let
+                  n = i + 1;
+                  key = if n == 10 then "0" else toString n;
+                in
+                mkBind "SUPER + SHIFT + ${key}" "hl.dsp.window.move({ workspace = ${toString n} })"
+              ) 10;
             in
             moveWorkspaceToMonitor
             ++ [
-              "${modKey}, B, workspace, name:browser"
-              "${modKey}, D, workspace, name:discord"
-              "${modKey}, G, workspace, name:steam"
-              "${modKey}, F, workspace, name:file-manager"
-              "${modKey}, T, workspace, name:terminal"
-              "${modKey}, O, workspace, name:obsidian"
-              "${modKey}, W, workspace, name:whatsapp"
-              "${modKey}, M, workspace, name:music"
-              "${modKey}, P, workspace, name:_1password"
-              "${modKey}, X, workspace, name:twitter"
-              "${modKey}, C, workspace, name:bambu-studio"
+              # Focus named workspaces
+              (mkBind "SUPER + B" (wsFocus "browser"))
+              (mkBind "SUPER + D" (wsFocus "discord"))
+              (mkBind "SUPER + G" (wsFocus "steam"))
+              (mkBind "SUPER + F" (wsFocus "file-manager"))
+              (mkBind "SUPER + T" (wsFocus "terminal"))
+              (mkBind "SUPER + O" (wsFocus "obsidian"))
+              (mkBind "SUPER + W" (wsFocus "whatsapp"))
+              (mkBind "SUPER + M" (wsFocus "music"))
+              (mkBind "SUPER + P" (wsFocus "_1password"))
+              (mkBind "SUPER + X" (wsFocus "twitter"))
+              (mkBind "SUPER + C" (wsFocus "bambu-studio"))
 
-              "${modKey}_SHIFT, B, movetoworkspace, name:browser"
-              "${modKey}_SHIFT, D, movetoworkspace, name:discord"
-              "${modKey}_SHIFT, G, movetoworkspace, name:steam"
-              "${modKey}_SHIFT, F, movetoworkspace, name:file-manager"
-              "${modKey}_SHIFT, T, movetoworkspace, name:terminal"
-              "${modKey}_SHIFT, O, movetoworkspace, name:obsidian"
-              "${modKey}_SHIFT, M, movetoworkspace, name:music"
-              "${modKey}_SHIFT, P, movetoworkspace, name:_1password"
-              "${modKey}_SHIFT, X, movetoworkspace, name:twitter"
-              "${modKey}_SHIFT, C, movetoworkspace, name:bambu-studio"
+              # Move active window to named workspaces
+              (mkBind "SUPER + SHIFT + B" (wsMove "browser"))
+              (mkBind "SUPER + SHIFT + D" (wsMove "discord"))
+              (mkBind "SUPER + SHIFT + G" (wsMove "steam"))
+              (mkBind "SUPER + SHIFT + F" (wsMove "file-manager"))
+              (mkBind "SUPER + SHIFT + T" (wsMove "terminal"))
+              (mkBind "SUPER + SHIFT + O" (wsMove "obsidian"))
+              (mkBind "SUPER + SHIFT + M" (wsMove "music"))
+              (mkBind "SUPER + SHIFT + P" (wsMove "_1password"))
+              (mkBind "SUPER + SHIFT + X" (wsMove "twitter"))
+              (mkBind "SUPER + SHIFT + C" (wsMove "bambu-studio"))
 
-              "${modKey}, Escape, killactive,"
-              "${modKey}, V, togglefloating,"
-              "${modKey}, F11, fullscreen, 1"
-              "${modKey}, Return, exec, ${lib.getExe config.terminal}"
-              "${modKey}, Space, exec, ${launcher}"
-              "${modKey}, period, exec, ${emoji}"
-              "${modKey}_SHIFT, W, exec, pkill ${builtins.baseNameOf menuBar} || ${menuBar}"
+              (mkBind "SUPER + Escape" "hl.dsp.window.close()")
+              (mkBind "SUPER + V" ''hl.dsp.window.float({ action = "toggle" })'')
+              (mkBind "SUPER + F11" ''hl.dsp.window.fullscreen({ mode = "maximized" })'')
+              (mkBind "SUPER + Return" (execDsp terminal))
+              (mkBind "SUPER + Space" (execDsp launcher))
+              (mkBind "SUPER + period" (execDsp emoji))
+              (mkBind "SUPER + SHIFT + W" (execDsp "pkill ${builtins.baseNameOf menuBar} || ${menuBar}"))
 
               # Move focus
-              "${modKey}, left, movefocus, l"
-              "${modKey}, right, movefocus, r"
-              "${modKey}, up, movefocus, u"
-              "${modKey}, down, movefocus, d"
-              "${modKey}, H, movefocus, l"
-              "${modKey}, L, movefocus, r"
-              "${modKey}, K, movefocus, u"
-              "${modKey}, J, movefocus, d"
+              (mkBind "SUPER + left" (focusDir "left"))
+              (mkBind "SUPER + right" (focusDir "right"))
+              (mkBind "SUPER + up" (focusDir "up"))
+              (mkBind "SUPER + down" (focusDir "down"))
+              (mkBind "SUPER + H" (focusDir "left"))
+              (mkBind "SUPER + L" (focusDir "right"))
+              (mkBind "SUPER + K" (focusDir "up"))
+              (mkBind "SUPER + J" (focusDir "down"))
+
               # Move window
-              "${modKey}_SHIFT, left, movewindow, l"
-              "${modKey}_SHIFT, right, movewindow, r"
-              "${modKey}_SHIFT, up, movewindow, u"
-              "${modKey}_SHIFT, down, movewindow, d"
-              "${modKey}_SHIFT, H, movewindow, l"
-              "${modKey}_SHIFT, L, movewindow, r"
-              "${modKey}_SHIFT, K, movewindow, u"
-              "${modKey}_SHIFT, J, movewindow, d"
+              (mkBind "SUPER + SHIFT + left" (moveDir "left"))
+              (mkBind "SUPER + SHIFT + right" (moveDir "right"))
+              (mkBind "SUPER + SHIFT + up" (moveDir "up"))
+              (mkBind "SUPER + SHIFT + down" (moveDir "down"))
+              (mkBind "SUPER + SHIFT + H" (moveDir "left"))
+              (mkBind "SUPER + SHIFT + L" (moveDir "right"))
+              (mkBind "SUPER + SHIFT + K" (moveDir "up"))
+              (mkBind "SUPER + SHIFT + J" (moveDir "down"))
+            ]
+            ++ workspaceNumbers
+            ++ [
+              (mkBind "SUPER + S" ''hl.dsp.workspace.toggle_special("scratchpad")'')
+            ]
+            ++ moveToWorkspaceNumbers
+            ++ [
+              (mkBind "SUPER + SHIFT + S" ''hl.dsp.window.move({ workspace = "special:scratchpad" })'')
 
-              # Switch workspaces with mainMod + [0-9]
-              "${modKey}, 1, workspace, 1"
-              "${modKey}, 2, workspace, 2"
-              "${modKey}, 3, workspace, 3"
-              "${modKey}, 4, workspace, 4"
-              "${modKey}, 5, workspace, 5"
-              "${modKey}, 6, workspace, 6"
-              "${modKey}, 7, workspace, 7"
-              "${modKey}, 8, workspace, 8"
-              "${modKey}, 9, workspace, 9"
-              "${modKey}, 0, workspace, 10"
-              "${modKey}, S, togglespecialworkspace, special:scratchpad"
-
-              # Move active window to a workspace with mainMod + SHIFT + [0-9]
-              "${modKey}_SHIFT, 1, movetoworkspace, 1"
-              "${modKey}_SHIFT, 2, movetoworkspace, 2"
-              "${modKey}_SHIFT, 3, movetoworkspace, 3"
-              "${modKey}_SHIFT, 4, movetoworkspace, 4"
-              "${modKey}_SHIFT, 5, movetoworkspace, 5"
-              "${modKey}_SHIFT, 6, movetoworkspace, 6"
-              "${modKey}_SHIFT, 7, movetoworkspace, 7"
-              "${modKey}_SHIFT, 8, movetoworkspace, 8"
-              "${modKey}_SHIFT, 9, movetoworkspace, 9"
-              "${modKey}_SHIFT, 0, movetoworkspace, 10"
-              "${modKey}_SHIFT, S, movetoworkspace, special:scratchpad"
-
-              # Scroll through existing workspaces with mainMod + scroll
-              "${modKey}, mouse_down, workspace, e+1"
-              "${modKey}, mouse_up, workspace, e-1"
+              # Scroll through existing workspaces
+              (mkBind "SUPER + mouse_down" ''hl.dsp.focus({ workspace = "e+1" })'')
+              (mkBind "SUPER + mouse_up" ''hl.dsp.focus({ workspace = "e-1" })'')
 
               # Screenshot
-              ", Print, exec, ${screenshot} copy area"
-            ];
-          # Mouse
-          bindm = [
-            # Move windows with mainMod + LMB and dragging
-            "${modKey}, mouse:272, movewindow"
-          ];
-          # Repeat - Locked
-          bindel =
-            let
-              brightness = lib.getExe pkgs.brightnessctl;
-            in
-            [
-              # Volume
-              ", XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0"
-              ", XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0"
-              "${modKey}, XF86AudioRaiseVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0"
-              "${modKey}, XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0"
+              (mkBind "Print" (execDsp "${screenshot} copy area"))
 
-              # Brightness
-              ", XF86MonBrightnessUp, exec, ${brightness} set 5%+"
-              ", XF86MonBrightnessDown, exec, ${brightness} set 5%-"
-            ];
-          # Locked
-          bindl =
-            let
-              media = lib.getExe pkgs.playerctl;
-            in
-            [
-              # Mute Volume
-              ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
+              # Move windows with SUPER + LMB and dragging
+              (mkBindOpts "SUPER + mouse:272" "hl.dsp.window.drag()" { mouse = true; })
 
-              # Media
-              ", XF86AudioPlay, exec, ${media} play-pause"
-              ", XF86AudioPrev, exec, ${media} previous"
-              ", XF86AudioNext, exec, ${media} next"
-              ", XF86AudioNext, exec, ${media} next"
-              ", XF86AudioStop, exec, ${media} stop"
+              # Volume (repeat, works while locked)
+              (mkBindOpts "XF86AudioRaiseVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0") {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "XF86AudioLowerVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0") {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "SUPER + XF86AudioRaiseVolume"
+                (execDsp "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0")
+                {
+                  locked = true;
+                  repeating = true;
+                }
+              )
+              (mkBindOpts "SUPER + XF86AudioLowerVolume"
+                (execDsp "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0")
+                {
+                  locked = true;
+                  repeating = true;
+                }
+              )
+
+              # Brightness (repeat, works while locked)
+              (mkBindOpts "XF86MonBrightnessUp" (execDsp "${brightness} set 5%+") {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "XF86MonBrightnessDown" (execDsp "${brightness} set 5%-") {
+                locked = true;
+                repeating = true;
+              })
+
+              # Mute + media (works while locked)
+              (mkBindOpts "XF86AudioMute" (execDsp "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") {
+                locked = true;
+              })
+              (mkBindOpts "XF86AudioPlay" (execDsp "${media} play-pause") { locked = true; })
+              (mkBindOpts "XF86AudioPrev" (execDsp "${media} previous") { locked = true; })
+              (mkBindOpts "XF86AudioNext" (execDsp "${media} next") { locked = true; })
+              (mkBindOpts "XF86AudioStop" (execDsp "${media} stop") { locked = true; })
             ];
         };
     };

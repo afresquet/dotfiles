@@ -15,7 +15,7 @@
     outputs.homeManagerModules.stylix
   ];
 
-  gtk.gtk4.theme = null;
+  gtk.gtk4.theme = lib.mkForce null;
 
   home.username = config.username;
   home.homeDirectory = lib.mkDefault (

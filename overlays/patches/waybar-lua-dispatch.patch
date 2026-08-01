@@ -1,0 +1,40 @@
+diff --git a/src/modules/hyprland/workspace.cpp b/src/modules/hyprland/workspace.cpp
+index 4cdd891..1e3bb2b 100644
+--- a/src/modules/hyprland/workspace.cpp
++++ b/src/modules/hyprland/workspace.cpp
+@@ -69,22 +69,29 @@ std::optional<WindowRepr> Workspace::closeWindow(WindowAddress const& addr) {
+ bool Workspace::handleClicked(GdkEventButton* bt) const {
+   if (bt->type == GDK_BUTTON_PRESS) {
+     try {
++      // Hyprland >= 0.54 with a Lua config interprets `dispatch <arg>` as Lua
++      // (`hl.dispatch(<arg>)`), so the legacy plain-string dispatchers no
++      // longer parse and clicking a workspace does nothing. Emit the new
++      // `hl.dsp.*` dispatcher API instead (mapping from upstream Waybar #5013).
+       if (id() > 0) {  // normal
+         if (m_workspaceManager.moveToMonitor()) {
+-          m_ipc.getSocket1Reply("dispatch focusworkspaceoncurrentmonitor " + std::to_string(id()));
++          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"" + std::to_string(id()) +
++                                "\", monitor = \"current\" })");
+         } else {
+-          m_ipc.getSocket1Reply("dispatch workspace " + std::to_string(id()));
++          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"" + std::to_string(id()) +
++                                "\" })");
+         }
+       } else if (!isSpecial()) {  // named (this includes persistent)
+         if (m_workspaceManager.moveToMonitor()) {
+-          m_ipc.getSocket1Reply("dispatch focusworkspaceoncurrentmonitor name:" + name());
++          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"name:" + name() +
++                                "\", monitor = \"current\" })");
+         } else {
+-          m_ipc.getSocket1Reply("dispatch workspace name:" + name());
++          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"name:" + name() + "\" })");
+         }
+       } else if (id() != -99) {  // named special
+-        m_ipc.getSocket1Reply("dispatch togglespecialworkspace " + name());
++        m_ipc.getSocket1Reply("/dispatch hl.dsp.workspace.toggle_special(\"" + name() + "\")");
+       } else {  // special
+-        m_ipc.getSocket1Reply("dispatch togglespecialworkspace");
++        m_ipc.getSocket1Reply("/dispatch hl.dsp.workspace.toggle_special()");
+       }
+       return true;
+     } catch (const std::exception& e) {
