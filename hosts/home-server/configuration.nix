@@ -21,6 +21,7 @@ in
     outputs.nixosModules.services.tailscale
     outputs.nixosModules.services.pihole
     outputs.nixosModules.services.home-assistant
+    outputs.nixosModules.services.zigbee
     outputs.nixosModules.services.caddy
     outputs.nixosModules.services.bluetooth
     outputs.nixosModules.services.qbittorrent
@@ -54,6 +55,10 @@ in
   home-assistant-container = {
     enable = true;
     hacs.enable = true;
+  };
+  zigbee = {
+    enable = true;
+    device = "/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_121080dc0ca1ef11824eaaa361ce3355-if00-port0";
   };
   reverseProxy.enable = true;
 

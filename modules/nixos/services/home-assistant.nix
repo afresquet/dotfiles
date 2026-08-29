@@ -76,6 +76,18 @@ in
       "d ${cfg.dataDir} 0755 root root -"
     ];
 
+    # HA's HomeKit Bridge integration assigns each bridge a TCP port starting
+    # at 21063 and incrementing. mDNS (UDP 5353) is enough for iOS to discover
+    # the bridge, but pairing/communication is TCP — without these open, iOS
+    # sees the announce, gets a connection refused, and shows
+    # "device not accessible". Range covers ~11 bridges, plenty.
+    networking.firewall.allowedTCPPortRanges = [
+      {
+        from = 21063;
+        to = 21073;
+      }
+    ];
+
     virtualisation.podman = {
       enable = true;
       autoPrune.enable = true;
