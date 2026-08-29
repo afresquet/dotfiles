@@ -19,6 +19,8 @@ in
 
   sunshine.enable = true;
 
+  quickemu.enable = true;
+
   users.users.${config.username}.openssh.authorizedKeys.keys = with keys; [
     afresquet
     alvaroLaptop
