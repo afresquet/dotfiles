@@ -19,6 +19,9 @@ in
       discord
     ];
 
-    allowedUnfree = [ "discord" ];
+    allowedUnfree = [
+      "discord"
+      "discord-unwrapped"
+    ];
   };
 }
