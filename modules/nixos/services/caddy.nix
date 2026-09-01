@@ -110,7 +110,7 @@ in
       after = lib.mkIf (config.pihole.enable or false) [ "podman-pihole.service" ];
       wants = lib.mkIf (config.pihole.enable or false) [ "podman-pihole.service" ];
       # Default UMask is 0077 → access logs land at 0600, so other services
-      # in the `caddy` group (Promtail, etc.) can't tail them. 0027 → 0640.
+      # in the `caddy` group can't tail them. 0027 → 0640.
       serviceConfig.UMask = "0027";
       # Existing files keep their old mode after a UMask change; reset them
       # on each start so the group-read bit becomes consistent. `find -exec`

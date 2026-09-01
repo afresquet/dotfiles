@@ -44,8 +44,8 @@ let
       reject_old_samples = true;
       reject_old_samples_max_age = "168h";
       allow_structured_metadata = true;
-      # Default ingestion limits (4 MB/s rate, 6 MB burst) make Promtail
-      # 429 constantly when backfilling existing log files (e.g. the ~50 MB
+      # Default ingestion limits (4 MB/s rate, 6 MB burst) make log shippers
+      # hit 429s when backfilling existing log files (e.g. the ~50 MB
       # of historical Caddy access logs at first start). Bumped for a
       # single-tenant homelab.
       ingestion_rate_mb = 16;

@@ -8,12 +8,12 @@ let
 in
 {
   imports = [
+    ./alloy.nix
     ./exporters.nix
-    ./promtail.nix
   ];
 
   options.monitoring = {
-    enable = lib.mkEnableOption "Prometheus exporters + Promtail (scraped/shipped from the Mac Mini)" // {
+    enable = lib.mkEnableOption "Prometheus exporters and Alloy log shipping" // {
       default = false;
     };
 
@@ -30,8 +30,8 @@ in
       description = ''
         Tailnet host (IP or MagicDNS name) running Prometheus + Grafana + Loki.
         When set, Caddy proxies grafana.home-server and prometheus.home-server
-        to it, a Grafana tile shows up on the dashboard, and Promtail ships
-        logs to Loki here.
+        to it, a Grafana tile shows up on the dashboard, and Alloy ships logs
+        to Loki.
       '';
     };
 

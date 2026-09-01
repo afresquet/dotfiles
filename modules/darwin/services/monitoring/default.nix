@@ -35,8 +35,8 @@ in
       default = "0.0.0.0";
       description = ''
         Address Prometheus / Grafana / Loki bind to. Default exposes them
-        on the tailnet so Caddy on the Pi can reverse-proxy them and
-        Promtail on the Pi can ship logs to Loki.
+        on the tailnet so Caddy on the Pi can reverse-proxy them and log
+        shippers can reach Loki.
       '';
     };
 
