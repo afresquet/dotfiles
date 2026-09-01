@@ -106,7 +106,7 @@ in
       enable = true;
       listenPort = cfg.port;
       openFirewall = false;
-      environmentFile = config.age.secrets.homepage-api-keys.path;
+      environmentFiles = [ config.age.secrets.homepage-api-keys.path ];
       allowedHosts = "home-server,dashboard.home-server";
 
       settings = {

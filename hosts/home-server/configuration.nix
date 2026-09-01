@@ -108,6 +108,7 @@ in
     "cgroup_enable=memory"
     "cgroup_memory=1"
   ];
+  boot.zfs.forceImportRoot = false;
 
   # Disable the system-wide NSS cache daemon (nsncd). It runs in the host's
   # network namespace and resolves all NSS lookups via the host's resolv.conf,
