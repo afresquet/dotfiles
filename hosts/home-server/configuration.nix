@@ -67,6 +67,25 @@ in
   nixpkgs.overlays = [
     outputs.overlays.additions
     outputs.overlays.modifications
+    (
+      final: _:
+      let
+        cachedPkgs = inputs.nixpkgs-home-server.legacyPackages.${final.stdenv.hostPlatform.system};
+      in
+      {
+        inherit (cachedPkgs)
+          bazarr
+          grafana-alloy
+          jellyfin
+          prowlarr
+          qbittorrent-nox
+          radarr
+          readarr
+          seerr
+          sonarr
+          ;
+      }
+    )
   ];
 
   networking.hostName = config.hostname;

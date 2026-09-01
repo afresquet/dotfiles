@@ -103,7 +103,7 @@ in
     };
     services.prowlarr.enable = true;
     services.bazarr.enable = true;
-    services.jellyseerr.enable = true;
+    services.seerr.enable = true;
 
     virtualisation.oci-containers = {
       backend = "podman";

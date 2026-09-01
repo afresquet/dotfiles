@@ -3,6 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-home-server.url = "github:nixos/nixpkgs/f0e996ff59c7624eba9db8972e8f1623a69d3b83";
     systems.url = "github:nix-systems/default";
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
@@ -157,7 +158,7 @@
         "pi@Home-Server" = homeManagerConfiguration {
           module = ./hosts/home-server/home.nix;
 
-          pkgs = import nixpkgs {
+          pkgs = import inputs.nixpkgs-home-server {
             system = "aarch64-linux";
 
             overlays = [
