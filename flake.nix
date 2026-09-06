@@ -3,7 +3,7 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-home-server.url = "github:nixos/nixpkgs/f0e996ff59c7624eba9db8972e8f1623a69d3b83";
+    nixpkgs-home-server.url = "github:nixos/nixpkgs/590d72952b052366ecf4060c8bf711d7f2b0d249";
     systems.url = "github:nix-systems/default";
     nix-darwin = {
       url = "github:LnL7/nix-darwin";
