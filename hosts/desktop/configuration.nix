@@ -20,6 +20,7 @@ in
   sunshine.enable = true;
 
   quickemu.enable = true;
+  openlogi.enable = true;
 
   users.users.${config.username}.openssh.authorizedKeys.keys = with keys; [
     afresquet

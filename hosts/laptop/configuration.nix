@@ -16,6 +16,7 @@ in
   ];
 
   services.libinput.touchpad.disableWhileTyping = true;
+  openlogi.enable = true;
 
   users.users.${config.username}.openssh.authorizedKeys.keys = with keys; [
     afresquet
