@@ -1,6 +1,21 @@
 # https://discourse.nixos.org/t/bambu-studio-any-working-method/62272/29
-final: prev: {
-  bambu-studio = prev.appimageTools.wrapType2 rec {
+final: prev:
+let
+  desktopItem = prev.makeDesktopItem {
+    name = "BambuStudio";
+    desktopName = "Bambu Studio";
+    exec = "bambu-studio %U";
+    categories = [ "Graphics" "Utility" ];
+    mimeTypes = [
+      "x-scheme-handler/bambustudio"
+      "model/3mf"
+      "application/vnd.ms-3mfdocument"
+      "application/prs.wavefront-obj"
+      "application/x-amf"
+    ];
+  };
+
+  app = prev.appimageTools.wrapType2 rec {
     name = "BambuStudio";
     pname = "bambu-studio";
     version = "02.04.00.70";
@@ -26,5 +41,17 @@ final: prev: {
         gst_all_1.gst-plugins-good
         webkitgtk_4_1
       ];
+
+  };
+in
+{
+  # Keep the executable and its MakerWorld URI-handler desktop entry together
+  # in one installable `bambu-studio` package.
+  bambu-studio = prev.symlinkJoin {
+    name = "BambuStudio";
+    paths = [ app desktopItem ];
+    meta = (app.meta or { }) // {
+      mainProgram = "bambu-studio";
+    };
   };
 }

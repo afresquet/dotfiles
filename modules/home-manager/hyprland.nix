@@ -179,6 +179,11 @@ in
               (mkLuaInline (
                 "function()\n"
                 + lib.concatMapStringsSep "\n" (cmd: "  hl.exec_cmd(${builtins.toJSON cmd})") startupCommands
+                + "\n\n  hl.on(\"window.open\", function(window)\n"
+                + "    if window.class == \"BambuStudio\" then\n"
+                + "      hl.dispatch(hl.dsp.focus({ workspace = \"name:bambu-studio\" }))\n"
+                + "    end\n"
+                + "  end)"
                 + "\nend"
               ))
             ];
@@ -206,6 +211,15 @@ in
               (rule "twitter" twitter)
               (rule "bambu-studio" bambu-studio)
             ];
+
+          # MakerWorld launches Bambu Studio directly through its URI handler,
+          # bypassing `on_created_empty`. Route that window to the same workspace.
+          window_rule = [
+            {
+              match.class = "^BambuStudio$";
+              workspace = "name:bambu-studio";
+            }
+          ];
 
           bind =
             let
@@ -299,7 +313,10 @@ in
               (mkBind "SUPER + mouse_up" ''hl.dsp.focus({ workspace = "e-1" })'')
 
               # Screenshot
-              (mkBind "Print" (execDsp "${screenshot} copy area"))
+              # Force a rectangular Slurp selection. Grim's window-target capture
+              # (`-T`), which Grimblast chooses on a window click, can hang on
+              # Hyprland 0.56 and leaves the screenshot lock behind.
+              (mkBind "Print" (execDsp "SLURP_RECTS= ${screenshot} copy area"))
 
               # Move windows with SUPER + LMB and dragging
               (mkBindOpts "SUPER + mouse:272" "hl.dsp.window.drag()" { mouse = true; })

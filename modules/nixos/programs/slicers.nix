@@ -15,6 +15,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    xdg.mime.defaultApplications = {
+      "x-scheme-handler/bambustudio" = "BambuStudio.desktop";
+    };
+
     environment.systemPackages = with pkgs; [
       bambu-studio
       cura
