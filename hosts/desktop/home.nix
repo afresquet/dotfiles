@@ -33,8 +33,7 @@
       bambu-studio = primaryMonitorRule;
 
       discord = secondaryMonitorRule;
-      whatsapp = secondaryMonitorRule;
-      music = secondaryMonitorRule;
+      messaging = secondaryMonitorRule;
       _1password = secondaryMonitorRule;
     };
 }

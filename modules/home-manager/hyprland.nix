@@ -33,8 +33,7 @@ in
           discord = workspaceExtraRulesOption;
           steam = workspaceExtraRulesOption;
           obsidian = workspaceExtraRulesOption;
-          whatsapp = workspaceExtraRulesOption;
-          music = workspaceExtraRulesOption;
+          messaging = workspaceExtraRulesOption;
           _1password = workspaceExtraRulesOption;
           twitter = workspaceExtraRulesOption;
           bambu-studio = workspaceExtraRulesOption;
@@ -68,8 +67,10 @@ in
           discord = lib.getExe pkgs.discord;
           steam = lib.getExe pkgs.steam;
           obsidian = lib.getExe pkgs.obsidian;
-          whatsapp = ''${browser} --app="https://web.whatsapp.com"'';
-          music = ''${browser} --app="https://music.youtube.com/"'';
+          telegram = lib.getExe pkgs.telegram-desktop;
+          # Create both messaging clients together so Hyprland tiles them
+          # side-by-side in the messaging workspace.
+          messaging = "sh -c '${browser} --app=\"https://web.whatsapp.com\" & exec ${telegram}'";
           _1password = lib.getExe pkgs._1password-gui;
           twitter = ''${browser} --app="https://x.com/"'';
           bambu-studio = lib.getExe pkgs.bambu-studio;
@@ -200,8 +201,7 @@ in
               (rule "discord" discord)
               (rule "steam" steam)
               (rule "obsidian" obsidian)
-              (rule "whatsapp" whatsapp)
-              (rule "music" music)
+              (rule "messaging" messaging)
               (rule "_1password" _1password)
               (rule "twitter" twitter)
               (rule "bambu-studio" bambu-studio)
@@ -241,8 +241,7 @@ in
               (mkBind "SUPER + F" (wsFocus "file-manager"))
               (mkBind "SUPER + T" (wsFocus "terminal"))
               (mkBind "SUPER + O" (wsFocus "obsidian"))
-              (mkBind "SUPER + W" (wsFocus "whatsapp"))
-              (mkBind "SUPER + M" (wsFocus "music"))
+              (mkBind "SUPER + M" (wsFocus "messaging"))
               (mkBind "SUPER + P" (wsFocus "_1password"))
               (mkBind "SUPER + X" (wsFocus "twitter"))
               (mkBind "SUPER + C" (wsFocus "bambu-studio"))
@@ -254,7 +253,7 @@ in
               (mkBind "SUPER + SHIFT + F" (wsMove "file-manager"))
               (mkBind "SUPER + SHIFT + T" (wsMove "terminal"))
               (mkBind "SUPER + SHIFT + O" (wsMove "obsidian"))
-              (mkBind "SUPER + SHIFT + M" (wsMove "music"))
+              (mkBind "SUPER + SHIFT + M" (wsMove "messaging"))
               (mkBind "SUPER + SHIFT + P" (wsMove "_1password"))
               (mkBind "SUPER + SHIFT + X" (wsMove "twitter"))
               (mkBind "SUPER + SHIFT + C" (wsMove "bambu-studio"))

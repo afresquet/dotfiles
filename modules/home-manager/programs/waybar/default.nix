@@ -53,8 +53,7 @@ in
             browser = "<span font='Font Awesome 6 Brands'></span>";
             file-manager = "";
             terminal = "";
-            music = "";
-            whatsapp = "";
+            messaging = "󰍡";
             obsidian = "";
             _1password = "";
             twitter = "";
