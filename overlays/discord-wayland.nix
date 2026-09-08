@@ -8,5 +8,8 @@ final: prev: {
         --add-flags "--enable-features=UseOzonePlatform" \
         --add-flags "--ozone-platform=wayland"
     '';
+    meta = prev.discord.meta // {
+      mainProgram = "discord";
+    };
   };
 }
