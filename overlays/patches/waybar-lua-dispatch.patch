@@ -1,15 +1,50 @@
+diff --git a/include/modules/hyprland/workspace.hpp b/include/modules/hyprland/workspace.hpp
+index 0240233..f5f5c5f 100644
+--- a/include/modules/hyprland/workspace.hpp
++++ b/include/modules/hyprland/workspace.hpp
+@@ -21,6 +21,24 @@ using WindowAddress = std::string;
+ 
+ namespace waybar::modules::hyprland {
+ 
++// Hyprland 0.56 replaced the numeric `id` field in workspace IPC replies
++// with a string `address`. Keep an internal integer identity so Waybar's
++// existing workspace state machinery works with either IPC schema.
++inline int workspaceId(std::string const& address) {
++  try {
++    return address == "special" ? -99 : std::stoi(address);
++  } catch (std::exception const&) {
++    uint32_t hash = 2166136261u;  // FNV-1a: deterministic for IPC events.
++    for (unsigned char c : address) hash = (hash ^ c) * 16777619u;
++    return -static_cast<int>((hash % 2147483546u) + 1u);
++  }
++}
++
++inline int workspaceId(Json::Value const& workspace) {
++  return workspace["id"].isInt() ? workspace["id"].asInt()
++                                 : workspaceId(workspace["address"].asString());
++}
++
+ class Workspaces;
+ class Workspace {
+  public:
 diff --git a/src/modules/hyprland/workspace.cpp b/src/modules/hyprland/workspace.cpp
-index 4cdd891..1e3bb2b 100644
+index 4cdd891..f92365e 100644
 --- a/src/modules/hyprland/workspace.cpp
 +++ b/src/modules/hyprland/workspace.cpp
-@@ -69,22 +69,29 @@ std::optional<WindowRepr> Workspace::closeWindow(WindowAddress const& addr) {
+@@ -14,7 +14,7 @@ namespace waybar::modules::hyprland {
+ Workspace::Workspace(const Json::Value& workspace_data, Workspaces& workspace_manager,
+                      const Json::Value& clients_data)
+     : m_workspaceManager(workspace_manager),
+-      m_id(workspace_data["id"].asInt()),
++      m_id(workspaceId(workspace_data)),
+       m_name(workspace_data["name"].asString()),
+       m_output(workspace_data["monitor"].asString()),  // TODO:allow using monitor desc
+       m_windows(workspace_data["windows"].asInt()),
+@@ -69,21 +69,24 @@ std::optional<WindowRepr> Workspace::closeWindow(WindowAddress const& addr) {
  bool Workspace::handleClicked(GdkEventButton* bt) const {
    if (bt->type == GDK_BUTTON_PRESS) {
      try {
-+      // Hyprland >= 0.54 with a Lua config interprets `dispatch <arg>` as Lua
-+      // (`hl.dispatch(<arg>)`), so the legacy plain-string dispatchers no
-+      // longer parse and clicking a workspace does nothing. Emit the new
-+      // `hl.dsp.*` dispatcher API instead (mapping from upstream Waybar #5013).
++      // Hyprland Lua configs require Lua dispatcher expressions on IPC.
        if (id() > 0) {  // normal
          if (m_workspaceManager.moveToMonitor()) {
 -          m_ipc.getSocket1Reply("dispatch focusworkspaceoncurrentmonitor " + std::to_string(id()));
@@ -17,8 +52,7 @@ index 4cdd891..1e3bb2b 100644
 +                                "\", monitor = \"current\" })");
          } else {
 -          m_ipc.getSocket1Reply("dispatch workspace " + std::to_string(id()));
-+          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"" + std::to_string(id()) +
-+                                "\" })");
++          m_ipc.getSocket1Reply("/dispatch hl.dsp.focus({ workspace = \"" + std::to_string(id()) + "\" })");
          }
        } else if (!isSpecial()) {  // named (this includes persistent)
          if (m_workspaceManager.moveToMonitor()) {
@@ -37,4 +71,89 @@ index 4cdd891..1e3bb2b 100644
 +        m_ipc.getSocket1Reply("/dispatch hl.dsp.workspace.toggle_special()");
        }
        return true;
-     } catch (const std::exception& e) {
+@@ -97,7 +101,7 @@ bool Workspace::handleClicked(GdkEventButton* bt) const {
+ void Workspace::initializeWindowMap(const Json::Value& clients_data) {
+   m_windowMap.clear();
+   for (auto client : clients_data) {
+-    if (client["workspace"]["id"].asInt() == id()) {
++    if (workspaceId(client["workspace"]) == id()) {
+       insertWindow({client});
+     }
+   }
+diff --git a/src/modules/hyprland/workspaces.cpp b/src/modules/hyprland/workspaces.cpp
+index 5d2903d..7dddc80 100644
+--- a/src/modules/hyprland/workspaces.cpp
++++ b/src/modules/hyprland/workspaces.cpp
+@@ -43,1 +43,1 @@ void Workspaces::init() {
+-  m_activeWorkspaceId = m_ipc.getSocket1JsonReply("activeworkspace")["id"].asInt();
++  m_activeWorkspaceId = workspaceId(m_ipc.getSocket1JsonReply("activeworkspace"));
+@@ -65,2 +65,2 @@ void Workspaces::createWorkspace(Json::Value const& workspace_data,
+   auto workspaceName = workspace_data["name"].asString();
+-  auto workspaceId = workspace_data["id"].asInt();
++  auto workspaceId = hyprland::workspaceId(workspace_data);
+@@ -142,1 +142,1 @@ void Workspaces::extendOrphans(int workspaceId, Json::Value const& clientsJson) {
+-    if (client["workspace"]["id"].asInt() == workspaceId) {
++    if (hyprland::workspaceId(client["workspace"]) == workspaceId) {
+@@ -165,2 +165,2 @@ std::vector<int> Workspaces::getVisibleWorkspaces() {
+-    if (ws.isObject() && ws["id"].isInt()) {
+-      visibleWorkspaces.push_back(ws["id"].asInt());
++    if (ws.isObject()) {
++      visibleWorkspaces.push_back(hyprland::workspaceId(ws));
+@@ -173,2 +173,2 @@ std::vector<int> Workspaces::getVisibleWorkspaces() {
+-    if (sws.isObject() && sws["id"].isInt() && !name.empty()) {
+-      visibleWorkspaces.push_back(sws["id"].asInt());
++    if (sws.isObject() && !name.empty()) {
++      visibleWorkspaces.push_back(hyprland::workspaceId(sws));
+@@ -196,1 +196,1 @@ void Workspaces::initializeWorkspaces() {
+-      extendOrphans(workspaceJson["id"].asInt(), clientsJson);
++      extendOrphans(hyprland::workspaceId(workspaceJson), clientsJson);
+@@ -394,1 +394,1 @@ void Workspaces::onWorkspaceCreated(std::string const& payload, Json::Value con
+-    const auto currentId = workspaceJson["id"].asInt();
++    const auto currentId = hyprland::workspaceId(workspaceJson);
+@@ -430,1 +430,1 @@ void Workspaces::onWorkspaceMoved(std::string const& payload) {
+-  m_activeWorkspaceId = (m_ipc.getSocket1JsonReply("activeworkspace"))["id"].asInt();
++  m_activeWorkspaceId = hyprland::workspaceId(m_ipc.getSocket1JsonReply("activeworkspace"));
+@@ -997,1 +997,1 @@ void Workspaces::setUrgentWorkspace(std::string const& windowaddress) {
+-      workspaceId = clientJson["workspace"]["id"].asInt();
++      workspaceId = hyprland::workspaceId(clientJson["workspace"]);
+diff --git a/src/modules/hyprland/workspaces.cpp b/src/modules/hyprland/workspaces.cpp
+--- a/src/modules/hyprland/workspaces.cpp
++++ b/src/modules/hyprland/workspaces.cpp
+@@ -360,4 +360,8 @@ void Workspaces::onWorkspaceActivated(std::string const& payload) {
+   if (workspaceId.has_value()) {
+     m_activeWorkspaceId = *workspaceId;
+   }
++
++  // Named workspaces are created asynchronously. Re-read the authoritative
++  // list after activation so their create/destroy events cannot be lost.
++  initializeWorkspaces();
+ }
+diff --git a/src/modules/hyprland/workspaces.cpp b/src/modules/hyprland/workspaces.cpp
+--- a/src/modules/hyprland/workspaces.cpp
++++ b/src/modules/hyprland/workspaces.cpp
+@@ -1056,5 +1056,11 @@ void Workspaces::updateWorkspaceStates() {
+   auto updatedWorkspaces = m_ipc.getSocket1JsonReply("workspaces");
+ 
+-  auto currentWorkspace = m_ipc.getSocket1JsonReply("activeworkspace");
++  auto monitors = m_ipc.getSocket1JsonReply("monitors");
++  auto currentMonitor = std::ranges::find_if(monitors, [this](Json::Value const& monitor) {
++    return monitor["name"].asString() == m_bar.output->name;
++  });
++  auto currentWorkspace = currentMonitor != monitors.end()
++                              ? (*currentMonitor)["activeWorkspace"]
++                              : m_ipc.getSocket1JsonReply("activeworkspace");
+   std::string currentWorkspaceName =
+       currentWorkspace.isMember("name") ? currentWorkspace["name"].asString() : "";
+diff --git a/src/modules/hyprland/workspaces.cpp b/src/modules/hyprland/workspaces.cpp
+--- a/src/modules/hyprland/workspaces.cpp
++++ b/src/modules/hyprland/workspaces.cpp
+@@ -1145,9 +1145,4 @@ std::optional<int> Workspaces::parseWorkspaceId(std::string const& workspaceIdStr) {
+-  try {
+-    return workspaceIdStr == "special" ? -99 : std::stoi(workspaceIdStr);
+-  } catch (std::exception const& e) {
+-    spdlog::debug("Workspace \"{}\" is not bound to an id: {}", workspaceIdStr, e.what());
+-    return std::nullopt;
+-  }
++  return hyprland::workspaceId(workspaceIdStr);
+ }
+ 
