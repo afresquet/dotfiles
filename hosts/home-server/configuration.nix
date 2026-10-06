@@ -61,6 +61,12 @@ in
     device = "/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_121080dc0ca1ef11824eaaa361ce3355-if00-port0";
   };
   reverseProxy.enable = true;
+  # `extraUpFlags` is only applied when an unauthenticated node runs
+  # `tailscale up`. Reconcile routes on every activation for an already
+  # authenticated server as well.
+  services.tailscale.extraSetFlags = [
+    "--advertise-routes=192.168.0.37/32"
+  ];
 
   _module.args.nixos-raspberrypi = inputs.nixos-raspberrypi;
 
