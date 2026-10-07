@@ -8,11 +8,11 @@
 }:
 {
   imports = [
-    outputs.homeManagerModules.cli.default
-    outputs.homeManagerModules.programs.default
-    outputs.homeManagerModules.polyfills.default
-    outputs.homeManagerModules.hyprland
-    outputs.homeManagerModules.stylix
+    outputs.homeModules.cli.default
+    outputs.homeModules.programs.default
+    outputs.homeModules.polyfills.default
+    outputs.homeModules.hyprland
+    outputs.homeModules.stylix
   ];
 
   gtk.gtk4.theme = lib.mkForce null;

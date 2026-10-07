@@ -25,8 +25,6 @@
     agenix = {
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
-      inputs.darwin.follows = "nix-darwin";
-      inputs.home-manager.follows = "home-manager";
     };
     vpn-confinement.url = "github:Maroka-chan/VPN-Confinement";
   };
@@ -101,7 +99,7 @@
 
       darwinModules = import ./modules/darwin libAndUtils;
 
-      homeManagerModules = import ./modules/home-manager libAndUtils;
+      homeModules = import ./modules/home-manager libAndUtils;
 
       nixosConfigurations = {
         Alvaro-Desktop = nixosSystem {

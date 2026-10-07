@@ -6,8 +6,8 @@
 }:
 {
   imports = [
-    outputs.homeManagerModules.cli.default
-    outputs.homeManagerModules.polyfills.default
+    outputs.homeModules.cli.default
+    outputs.homeModules.polyfills.default
 
     ./settings.nix
   ];
