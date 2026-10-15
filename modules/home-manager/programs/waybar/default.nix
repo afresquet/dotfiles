@@ -31,6 +31,7 @@ in
         modules-left = [ "hyprland/workspaces" ];
         modules-center = [ ];
         modules-right = [
+          "hyprland/language"
           "tray"
           "privacy"
           "pulseaudio"
@@ -66,6 +67,13 @@ in
             ".* - ([a-zA-Z]*)" = "$1";
             "([a-zA-Z]*) - .*" = "$1";
           };
+        };
+        "hyprland/language" = {
+          # Shows US or UA; hover for the full layout name. Alt+Shift switches
+          # layouts, and clicking this indicator provides a mouse alternative.
+          format = "{short}";
+          tooltip-format = "{long}\nAlt+Shift to switch";
+          on-click = "hyprctl switchxkblayout current next";
         };
         tray = {
           spacing = 10;

@@ -9,9 +9,9 @@
   services.xserver = {
     enable = true;
     xkb = {
-      layout = "us";
-      variant = "altgr-intl";
-      options = "lv3:ralt_switch";
+      layout = "us,ua";
+      variant = "altgr-intl,";
+      options = "ctrl:nocaps,lv3:ralt_switch,grp:alt_shift_toggle";
     };
   };
 }

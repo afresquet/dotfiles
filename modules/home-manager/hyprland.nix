@@ -141,9 +141,11 @@ in
             };
             animations.enabled = false;
             input = {
-              kb_layout = "us";
-              kb_variant = "altgr-intl";
-              kb_options = "ctrl:nocaps,lv3:ralt_switch";
+              # Alt+Shift switches between English and Ukrainian. Keep the
+              # international US variant only on the US layout.
+              kb_layout = "us,ua";
+              kb_variant = "altgr-intl,";
+              kb_options = "ctrl:nocaps,lv3:ralt_switch,grp:alt_shift_toggle";
               touchpad = {
                 natural_scroll = true;
                 scroll_factor = 0.5;
