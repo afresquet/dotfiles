@@ -198,6 +198,8 @@ in
     programs.claude-code = {
       enable = true;
 
+      mutableSettings = true;
+
       settings = {
         theme = "dark";
         agentPushNotifEnabled = true;

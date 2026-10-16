@@ -26,6 +26,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     vpn-confinement.url = "github:Maroka-chan/VPN-Confinement";
+    hunk = {
+      url = "github:modem-dev/hunk";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
