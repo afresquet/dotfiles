@@ -89,7 +89,16 @@ in
             _args = [ keys (mkLuaInline dispatch) opts ];
           };
           execDsp = cmd: "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
-          wsFocus = name: ''hl.dsp.focus({ workspace = "name:${name}" })'';
+          # Hyprland 0.56 creates workspaces from `focus` as non-empty, so
+          # `on_created_empty` never fires. Launch the program here instead.
+          wsFocus = name: program: ''
+            function()
+              local created = hl.get_workspace("name:${name}") == nil
+              hl.dispatch(hl.dsp.focus({ workspace = "name:${name}" }))
+              if created then
+                hl.dispatch(${execDsp program})
+              end
+            end'';
           wsMove = name: ''hl.dsp.window.move({ workspace = "name:${name}" })'';
           focusDir = dir: ''hl.dsp.focus({ direction = "${dir}" })'';
           moveDir = dir: ''hl.dsp.window.move({ direction = "${dir}" })'';
@@ -193,29 +202,23 @@ in
 
           workspace_rule =
             let
-              rule =
-                name: package:
-                {
-                  workspace = "name:${name}";
-                  on_created_empty = package;
-                }
-                // cfg.workspace.extraRules.${name};
+              rule = name: { workspace = "name:${name}"; } // cfg.workspace.extraRules.${name};
             in
             [
-              (rule "browser" browser)
-              (rule "file-manager" fileManager)
-              (rule "terminal" terminal)
-              (rule "discord" discord)
-              (rule "steam" steam)
-              (rule "obsidian" obsidian)
-              (rule "messaging" messaging)
-              (rule "_1password" _1password)
-              (rule "twitter" twitter)
-              (rule "bambu-studio" bambu-studio)
+              (rule "browser")
+              (rule "file-manager")
+              (rule "terminal")
+              (rule "discord")
+              (rule "steam")
+              (rule "obsidian")
+              (rule "messaging")
+              (rule "_1password")
+              (rule "twitter")
+              (rule "bambu-studio")
             ];
 
           # MakerWorld launches Bambu Studio directly through its URI handler,
-          # bypassing `on_created_empty`. Route that window to the same workspace.
+          # bypassing the workspace keybind. Route that window to the same workspace.
           window_rule = [
             {
               match.class = "^BambuStudio$";
@@ -251,16 +254,16 @@ in
             moveWorkspaceToMonitor
             ++ [
               # Focus named workspaces
-              (mkBind "SUPER + B" (wsFocus "browser"))
-              (mkBind "SUPER + D" (wsFocus "discord"))
-              (mkBind "SUPER + G" (wsFocus "steam"))
-              (mkBind "SUPER + F" (wsFocus "file-manager"))
-              (mkBind "SUPER + T" (wsFocus "terminal"))
-              (mkBind "SUPER + O" (wsFocus "obsidian"))
-              (mkBind "SUPER + M" (wsFocus "messaging"))
-              (mkBind "SUPER + P" (wsFocus "_1password"))
-              (mkBind "SUPER + X" (wsFocus "twitter"))
-              (mkBind "SUPER + C" (wsFocus "bambu-studio"))
+              (mkBind "SUPER + B" (wsFocus "browser" browser))
+              (mkBind "SUPER + D" (wsFocus "discord" discord))
+              (mkBind "SUPER + G" (wsFocus "steam" steam))
+              (mkBind "SUPER + F" (wsFocus "file-manager" fileManager))
+              (mkBind "SUPER + T" (wsFocus "terminal" terminal))
+              (mkBind "SUPER + O" (wsFocus "obsidian" obsidian))
+              (mkBind "SUPER + M" (wsFocus "messaging" messaging))
+              (mkBind "SUPER + P" (wsFocus "_1password" _1password))
+              (mkBind "SUPER + X" (wsFocus "twitter" twitter))
+              (mkBind "SUPER + C" (wsFocus "bambu-studio" bambu-studio))
 
               # Move active window to named workspaces
               (mkBind "SUPER + SHIFT + B" (wsMove "browser"))

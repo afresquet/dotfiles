@@ -76,7 +76,7 @@ in
     (
       final: _:
       let
-        cachedPkgs = inputs.nixpkgs-home-server.legacyPackages.${final.stdenv.hostPlatform.system};
+        cachedPkgs = inputs.nixpkgs.legacyPackages.${final.stdenv.hostPlatform.system};
       in
       {
         inherit (cachedPkgs)
