@@ -18,6 +18,8 @@
 
   programs.home-manager.enable = true;
 
+  programs.helix.settings.editor.clipboard-provider = "termcode";
+
   git = {
     email = "29437693+afresquet@users.noreply.github.com";
     signingKey = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";

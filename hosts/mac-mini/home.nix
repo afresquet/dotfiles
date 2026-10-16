@@ -12,6 +12,8 @@
 
   stylix.opacity.terminal = 0.95;
 
+  programs.helix.settings.editor.clipboard-provider = "termcode";
+
   home.activation = {
     rsync-home-manager-applications = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       rsyncArgs="--archive --checksum --chmod=-w --copy-unsafe-links --delete"
