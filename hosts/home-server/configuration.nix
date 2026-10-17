@@ -175,6 +175,7 @@ in
       alvaroDesktop
       alvaroLaptop
       alvarosMacMini
+      alvaroPhone
     ];
   };
 

@@ -17,6 +17,7 @@ in
     afresquet
     alvaroDesktop
     alvaroLaptop
+    alvaroPhone
   ];
 
   system.primaryUser = "afresquet";

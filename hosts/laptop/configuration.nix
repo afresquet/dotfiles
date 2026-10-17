@@ -22,5 +22,6 @@ in
     afresquet
     alvaroDesktop
     alvarosMacMini
+    alvaroPhone
   ];
 }
