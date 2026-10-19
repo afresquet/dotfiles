@@ -6,5 +6,10 @@
 
   btop.rocmSupport = true;
 
+  hyprlock = {
+    enable = true;
+    fingerprint = true;
+  };
+
   waybar.statsIcon = "";
 }

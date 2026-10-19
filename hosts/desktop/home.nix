@@ -9,6 +9,8 @@
 
   btop.rocmSupport = true;
 
+  hyprlock.enable = true;
+
   hyprland.workspace.extraRules =
     let
       primaryMonitor = builtins.elemAt config.monitors 0;

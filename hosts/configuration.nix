@@ -32,6 +32,9 @@
     xwayland.enable = true;
   };
 
+  # PAM service for the home-manager hyprlock module.
+  security.pam.services.hyprlock = { };
+
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
