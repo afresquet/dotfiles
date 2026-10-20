@@ -36,6 +36,7 @@
 
       discord = secondaryMonitorRule;
       messaging = secondaryMonitorRule;
+      music = secondaryMonitorRule;
       _1password = secondaryMonitorRule;
     };
 }

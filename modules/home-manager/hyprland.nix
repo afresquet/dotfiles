@@ -36,6 +36,7 @@ in
           messaging = workspaceExtraRulesOption;
           _1password = workspaceExtraRulesOption;
           twitter = workspaceExtraRulesOption;
+          music = workspaceExtraRulesOption;
           bambu-studio = workspaceExtraRulesOption;
         };
     };
@@ -73,6 +74,7 @@ in
           messaging = "sh -c '${browser} --app=\"https://web.whatsapp.com\" & exec ${telegram}'";
           _1password = lib.getExe pkgs._1password-gui;
           twitter = ''${browser} --app="https://x.com/"'';
+          music = ''${browser} --app="https://music.apple.com/"'';
           bambu-studio = lib.getExe pkgs.bambu-studio;
 
           rofi = lib.getExe config.programs.rofi.package;
@@ -214,6 +216,7 @@ in
               (rule "messaging")
               (rule "_1password")
               (rule "twitter")
+              (rule "music")
               (rule "bambu-studio")
             ];
 
@@ -263,6 +266,7 @@ in
               (mkBind "SUPER + M" (wsFocus "messaging" messaging))
               (mkBind "SUPER + P" (wsFocus "_1password" _1password))
               (mkBind "SUPER + X" (wsFocus "twitter" twitter))
+              (mkBind "SUPER + A" (wsFocus "music" music))
               (mkBind "SUPER + C" (wsFocus "bambu-studio" bambu-studio))
 
               # Move active window to named workspaces
@@ -275,6 +279,7 @@ in
               (mkBind "SUPER + SHIFT + M" (wsMove "messaging"))
               (mkBind "SUPER + SHIFT + P" (wsMove "_1password"))
               (mkBind "SUPER + SHIFT + X" (wsMove "twitter"))
+              (mkBind "SUPER + SHIFT + A" (wsMove "music"))
               (mkBind "SUPER + SHIFT + C" (wsMove "bambu-studio"))
 
               (mkBind "SUPER + Escape" "hl.dsp.window.close()")

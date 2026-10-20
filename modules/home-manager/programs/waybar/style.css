@@ -55,6 +55,7 @@ button:hover {
 #backlight,
 #network,
 #pulseaudio,
+#mpris,
 #tray {
   padding: 0 10px;
 }

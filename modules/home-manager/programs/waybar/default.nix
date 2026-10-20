@@ -29,7 +29,7 @@ in
         height = 30;
         spacing = 4;
         modules-left = [ "hyprland/workspaces" ];
-        modules-center = [ ];
+        modules-center = [ "mpris" ];
         modules-right = [
           "hyprland/language"
           "tray"
@@ -58,6 +58,7 @@ in
             obsidian = "";
             _1password = "";
             twitter = "";
+            music = "󰝚";
             bambu-studio = "";
           };
         };
@@ -67,6 +68,20 @@ in
             ".* - ([a-zA-Z]*)" = "$1";
             "([a-zA-Z]*) - .*" = "$1";
           };
+        };
+        mpris = {
+          format = "{status_icon} {dynamic}";
+          dynamic-len = 40;
+          dynamic-order = [
+            "title"
+            "artist"
+          ];
+          status-icons = {
+            playing = "";
+            paused = "";
+            stopped = "";
+          };
+          tooltip-format = "{player}: {dynamic}\nClick: play/pause · Middle: previous · Right: next";
         };
         "hyprland/language" = {
           # Shows US or UA; hover for the full layout name. Alt+Shift switches
@@ -241,5 +256,7 @@ in
       };
       style = builtins.readFile ./style.css;
     };
+
+    services.playerctld.enable = true;
   };
 }
