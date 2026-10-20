@@ -177,6 +177,30 @@ let
     '';
   };
 
+  direnvExportScript = pkgs.writeShellApplication {
+    name = "claude-direnv-export";
+    runtimeInputs = [
+      pkgs.jq
+      config.programs.direnv.package
+    ];
+    text = ''
+      input=$(cat)
+      dir=$(jq -r '.new_cwd // .cwd // empty' <<<"$input")
+      if [ -n "''${CLAUDE_ENV_FILE:-}" ] && [ -n "$dir" ] && cd "$dir"; then
+        direnv export bash >> "$CLAUDE_ENV_FILE" 2>/dev/null || true
+      fi
+    '';
+  };
+
+  direnvExportHook = {
+    hooks = [
+      {
+        type = "command";
+        command = lib.getExe direnvExportScript;
+      }
+    ];
+  };
+
   fetchUsageHook = {
     matcher = "";
     hooks = [
@@ -211,6 +235,8 @@ in
         hooks = {
           PreToolUse = [ fetchUsageHook ];
           Stop = [ fetchUsageHook ];
+          SessionStart = [ direnvExportHook ];
+          CwdChanged = [ direnvExportHook ];
         };
       };
     };
