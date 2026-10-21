@@ -376,5 +376,9 @@ in
             ];
         };
     };
+
+    # Polkit agent for prompts like 1Password's system-auth unlock
+    # (fingerprint via the polkit-1 PAM stack).
+    services.hyprpolkitagent.enable = true;
   };
 }
