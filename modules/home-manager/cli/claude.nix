@@ -56,11 +56,12 @@ let
       seven_d_raw=$(printf '%s' "$usage_json" | jq -r '.seven_day.utilization // empty' 2>/dev/null || true)
       five_h_reset=$(printf '%s' "$usage_json" | jq -r '.five_hour.resets_at // ""' 2>/dev/null || true)
       seven_d_reset=$(printf '%s' "$usage_json" | jq -r '.seven_day.resets_at // ""' 2>/dev/null || true)
+      fable=$(printf '%s' "$usage_json" | jq -r 'first(.limits[]? | select(.kind == "weekly_scoped" and .scope.model.display_name == "Fable") | .percent) // empty' 2>/dev/null || true)
 
       if [ -n "$five_h_raw" ] && [ -n "$seven_d_raw" ]; then
         five_h=$(printf "%.0f" "$five_h_raw")
         seven_d=$(printf "%.0f" "$seven_d_raw")
-        printf '%s\n%s\n%s\n%s\n' "$five_h" "$seven_d" "$five_h_reset" "$seven_d_reset" > "$CACHE_FILE"
+        printf '%s\n%s\n%s\n%s\n%s\n' "$five_h" "$seven_d" "$five_h_reset" "$seven_d_reset" "$fable" > "$CACHE_FILE"
       fi
     '';
   };
@@ -93,12 +94,14 @@ let
       seven_d=""
       five_h_reset=""
       seven_d_reset=""
+      fable=""
 
       if [ -f "$CACHE_FILE" ]; then
         five_h=$(sed -n '1p' "$CACHE_FILE")
         seven_d=$(sed -n '2p' "$CACHE_FILE")
         five_h_reset=$(sed -n '3p' "$CACHE_FILE")
         seven_d_reset=$(sed -n '4p' "$CACHE_FILE")
+        fable=$(sed -n '5p' "$CACHE_FILE")
       else
         ${lib.getExe fetchUsageScript} >/dev/null 2>&1 &
       fi
@@ -166,6 +169,10 @@ let
             printf " \033[2m\033[38;2;156;162;175m(%s)\033[0m" "$delta"
           fi
         fi
+      fi
+      if [ -n "$fable" ]; then
+        if [ -n "$five_h" ] || [ -n "$seven_d" ]; then printf "%b" "$SEP"; fi
+        printf "\033[38;2;156;162;175mfable %s%%\033[0m" "$fable"
       fi
       if [ -n "$ctx_str" ]; then
         printf "\033[90m | \033[0m"
