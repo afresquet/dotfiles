@@ -88,7 +88,15 @@ in
         };
 
         frontend.port = cfg.port;
-        advanced.log_level = "info";
+        advanced = {
+          log_level = "info";
+          # Without these, a sensor that dropped off the network keeps
+          # showing its last LQI and state forever. last_seen adds a
+          # timestamp; availability marks battery devices offline after 25h
+          # of silence (HA entities go unavailable).
+          last_seen = "ISO_8601";
+        };
+        availability.enabled = true;
       };
     };
 

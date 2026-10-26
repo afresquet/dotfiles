@@ -1,0 +1,94 @@
+# Nix-managed HA package (home-assistant-container.packages). Edit here.
+#
+# Once Nyx has finished eating (no bowl vibration for 5 minutes), run the
+# vacuum's "Pet area cleaning" shortcut. At 2 minutes, the phones of whoever
+# is home get a heads-up with a button to skip it. With nobody home it just
+# cleans.
+
+automation:
+  - id: nyx_food_clean
+    alias: "Nyx food: clean pet area"
+    # Every trigger restarts the run: a vibration restarts the countdown, and
+    # a skip cancels it.
+    mode: restart
+    triggers:
+      # The raw action fires on every vibration. The binary_sensor would miss
+      # vibrations while it's already on.
+      - trigger: mqtt
+        id: vibration
+        topic: zigbee2mqtt/Nyx Food/action
+        payload: vibration
+      - trigger: event
+        id: skip
+        event_type: mobile_app_notification_action
+        event_data:
+          action: NYX_SKIP_CLEAN
+    variables:
+      people:
+        - person: person.alvaro
+          notify: notify.mobile_app_alvaros_iphone
+        - person: person.iryna
+          notify: notify.mobile_app_irynas_iphone
+    actions:
+      - if:
+          - condition: trigger
+            id: skip
+        then:
+          # Clear it everywhere: someone may have left since it was sent.
+          - repeat:
+              for_each: "{{ people | map(attribute='notify') | list }}"
+              sequence:
+                - action: "{{ repeat.item }}"
+                  data:
+                    message: clear_notification
+                    data:
+                      tag: nyx-clean
+          - stop: Skipped
+      - delay:
+          minutes: 2
+      # Don't hijack a clean that's already running.
+      - condition: state
+        entity_id: vacuum.l50_pro_ultra
+        state: docked
+      - variables:
+          home_phones: >-
+            {{ people | selectattr('person', 'is_state', 'home')
+               | map(attribute='notify') | list }}
+      - repeat:
+          for_each: "{{ home_phones }}"
+          sequence:
+            - action: "{{ repeat.item }}"
+              data:
+                title: "\U0001F436 Nyx ate"
+                message: Cleaning the pet area in 3 minutes
+                data:
+                  tag: nyx-clean
+                  # Gets through Focus modes, like the laundry reminders.
+                  push:
+                    interruption-level: time-sensitive
+                    # iOS default chime. Without a sound key the app delivers silently.
+                    sound: default
+                  actions:
+                    - action: NYX_SKIP_CLEAN
+                      title: Skip cleaning
+      - delay:
+          minutes: 3
+      - condition: state
+        entity_id: vacuum.l50_pro_ultra
+        state: docked
+      - action: dreame_vacuum.vacuum_start_shortcut
+        target:
+          entity_id: vacuum.l50_pro_ultra
+        data:
+          # "Pet area cleaning" (button.l50_pro_ultra_shortcut_1 attributes).
+          shortcut_id: 32
+      # Replace the heads-up (same tag) so there's a record of what happened.
+      - repeat:
+          for_each: "{{ home_phones }}"
+          sequence:
+            - action: "{{ repeat.item }}"
+              data:
+                title: "\U0001F436 Nyx ate"
+                message: Cleaning the pet area
+                data:
+                  tag: nyx-clean

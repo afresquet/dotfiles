@@ -1,0 +1,70 @@
+# Nix-managed HA package (home-assistant-container.packages). Edit here.
+#
+# Dune Weaver rests while nobody is home: drawing is paused and the LEDs go
+# off, and both come back when someone arrives. The quiet-hours schedule is
+# the table's own Still Sands, set in the Dune Weaver app; this never touches
+# the table's settings.
+
+automation:
+  - id: dune_weaver_presence
+    alias: "Dune Weaver: rest while nobody is home"
+    mode: queued
+    triggers:
+      # not_from skips the unknown → home restore on HA restart.
+      - trigger: state
+        id: arrived
+        entity_id:
+          - person.alvaro
+          - person.iryna
+        to: home
+        not_from:
+          - unknown
+          - unavailable
+      - trigger: state
+        id: left
+        entity_id:
+          - person.alvaro
+          - person.iryna
+        from: home
+      # A playlist starts its next pattern on its own, so pause that too.
+      - trigger: state
+        id: started
+        entity_id: sensor.duneweaverpro_state
+        to: Run
+    actions:
+      - variables:
+          nobody_home: >-
+            {{ not (is_state('person.alvaro', 'home') or is_state('person.iryna', 'home')) }}
+      - choose:
+          - conditions:
+              - condition: trigger
+                id: arrived
+            sequence:
+              - if:
+                  - condition: state
+                    entity_id: sensor.duneweaverpro_state
+                    state: Hold
+                then:
+                  - action: button.press
+                    target:
+                      entity_id: button.duneweaverpro_resume
+              # During Still Sands the table keeps its LEDs off regardless.
+              - action: light.turn_on
+                target:
+                  entity_id: light.duneweaverpro_leds
+          - conditions:
+              - condition: trigger
+                id: [left, started]
+              - "{{ nobody_home }}"
+            sequence:
+              - if:
+                  - condition: state
+                    entity_id: sensor.duneweaverpro_state
+                    state: Run
+                then:
+                  - action: button.press
+                    target:
+                      entity_id: button.duneweaverpro_pause
+              - action: light.turn_off
+                target:
+                  entity_id: light.duneweaverpro_leds

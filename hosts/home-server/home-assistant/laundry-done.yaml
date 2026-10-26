@@ -1,0 +1,112 @@
+# Nix-managed HA package (home-assistant-container.packages). Edit here.
+
+automation:
+  - id: laundry_done
+    alias: Laundry done
+    description: >-
+      Detect end of wash cycle via vibration. Nag whoever is home until
+      acknowledged; if nobody is home, notify once and resume nagging on arrival.
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.laundry_vibration
+        to: "on"
+    actions:
+      - variables:
+          started: "{{ now().isoformat() }}"
+          people:
+            - person: person.alvaro
+              notify: notify.mobile_app_alvaros_iphone
+            - person: person.iryna
+              notify: notify.mobile_app_irynas_iphone
+          all_phones: "{{ people | map(attribute='notify') | list }}"
+      - wait_for_trigger:
+          - trigger: state
+            entity_id: binary_sensor.laundry_vibration
+            to: "off"
+            for:
+              minutes: 10
+      - condition: template
+        value_template: "{{ now() - as_datetime(started) > timedelta(minutes=20) }}"
+      - repeat:
+          sequence:
+            - variables:
+                home_phones: >-
+                  {{ people | selectattr('person', 'is_state', 'home')
+                     | map(attribute='notify') | list }}
+            - if:
+                - condition: template
+                  value_template: "{{ home_phones | length == 0 }}"
+              then:
+                # Nobody home: one heads-up to both, then wait for an arrival.
+                - repeat:
+                    for_each: "{{ all_phones }}"
+                    sequence:
+                      - action: "{{ repeat.item }}"
+                        data:
+                          title: "\U0001F9FA Laundry done"
+                          message: I'll remind you when you get home
+                          data:
+                            tag: laundry-done
+                            push:
+                              sound: default
+                            actions:
+                              - action: LAUNDRY_EMPTIED
+                                title: Took it out
+                - wait_for_trigger:
+                    - trigger: event
+                      id: ack
+                      event_type: mobile_app_notification_action
+                      event_data:
+                        action: LAUNDRY_EMPTIED
+                    - trigger: state
+                      id: arrived
+                      entity_id:
+                        - person.alvaro
+                        - person.iryna
+                      to: home
+              else:
+                # Nag only the phones of people at home, every 10 minutes.
+                - repeat:
+                    for_each: "{{ home_phones }}"
+                    sequence:
+                      - action: "{{ repeat.item }}"
+                        data:
+                          title: "\U0001F9FA Laundry done"
+                          message: Take it out before it gets musty
+                          data:
+                            tag: laundry-done
+                            push:
+                              interruption-level: time-sensitive
+                              sound: default
+                            actions:
+                              - action: LAUNDRY_EMPTIED
+                                title: Took it out
+                - wait_for_trigger:
+                    - trigger: event
+                      id: ack
+                      event_type: mobile_app_notification_action
+                      event_data:
+                        action: LAUNDRY_EMPTIED
+                    # Someone arriving gets pinged right away, not at the next cycle.
+                    - trigger: state
+                      id: arrived
+                      entity_id:
+                        - person.alvaro
+                        - person.iryna
+                      to: home
+                  timeout:
+                    minutes: 10
+                  continue_on_timeout: true
+          until:
+            - condition: template
+              value_template: "{{ wait.trigger is not none and wait.trigger.id == 'ack' }}"
+      - repeat:
+          for_each: "{{ all_phones }}"
+          sequence:
+            - action: "{{ repeat.item }}"
+              data:
+                message: clear_notification
+                data:
+                  tag: laundry-done
+    mode: single
+    max_exceeded: silent

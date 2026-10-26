@@ -29,6 +29,16 @@ let
         - weather
   '';
 
+  # HA packages (https://www.home-assistant.io/docs/configuration/packages/),
+  # one YAML file each, loaded from <dataDir>/packages. The directory is fully
+  # Nix-owned: it's wiped and repopulated on every start.
+  packagesDir = pkgs.linkFarm "ha-packages" (
+    lib.mapAttrsToList (name: path: {
+      name = "${name}.yaml";
+      inherit path;
+    }) cfg.packages
+  );
+
   # Minimal hand-written HA dashboard. No good Prometheus-based HA dashboard
   # exists on grafana.com (most are InfluxDB). Stored as a static JSON file
   # so UI edits round-trip via `export-grafana-dashboard`.
@@ -53,6 +63,18 @@ in
         description = "Container image to run.";
       };
 
+      packages = lib.mkOption {
+        type = lib.types.attrsOf lib.types.path;
+        default = { };
+        example = lib.literalExpression "{ dune_weaver = ./home-assistant/dune-weaver.yaml; }";
+        description = ''
+          Home Assistant packages, as name → YAML file. Installed into
+          <dataDir>/packages and loaded via `homeassistant: packages:`.
+          Entities and automations defined here are read-only in the UI.
+        '';
+      };
+
+
       hacs = {
         enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
 
@@ -72,6 +94,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        # HA skips a package whose name isn't a slug, logging only an error.
+        assertion = lib.all (n: builtins.match "[a-z0-9_]+" n != null) (lib.attrNames cfg.packages);
+        message = "home-assistant-container.packages names must match [a-z0-9_]+ (use underscores, not dashes).";
+      }
+    ];
+
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0755 root root -"
     ];
@@ -155,6 +185,36 @@ in
       '';
     };
 
+    systemd.services.home-assistant-packages = lib.mkIf (cfg.packages != { }) {
+      description = "Install Nix-managed Home Assistant packages";
+      wantedBy = [ "podman-home-assistant.service" ];
+      before = [ "podman-home-assistant.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+      };
+      script = ''
+        rm -rf ${cfg.dataDir}/packages
+        install -d -m 0755 ${cfg.dataDir}/packages
+        cp -L ${packagesDir}/*.yaml ${cfg.dataDir}/packages/
+        chmod 0644 ${cfg.dataDir}/packages/*.yaml
+
+        config=${cfg.dataDir}/configuration.yaml
+        # Same idempotent-append approach as the prometheus include below,
+        # seeding default_config on a fresh install. Bail out loudly if a
+        # `homeassistant:` block was added by hand, rather than writing a
+        # duplicate key HA would refuse to parse.
+        [ -f "$config" ] || printf 'default_config:\n' > "$config"
+        if ! ${pkgs.gnugrep}/bin/grep -Eq '^homeassistant:' "$config"; then
+          printf '\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nhomeassistant:\n  packages: !include_dir_named packages\n' \
+            >> "$config"
+        elif ! ${pkgs.gnugrep}/bin/grep -Eq '^\s+packages: !include_dir_named packages' "$config"; then
+          echo "configuration.yaml has a homeassistant: block without the packages include" >&2
+          exit 1
+        fi
+      '';
+    };
+
     # ─── Monitoring ───
     # HA's built-in /api/prometheus endpoint serves metrics for every entity.
     # Requires a long-lived access token (LLAT) on the scraper + a `prometheus:`
@@ -196,7 +256,8 @@ in
 
     # Container needs to restart when our integration config changes.
     systemd.services.podman-home-assistant.restartTriggers =
-      lib.mkIf monitoringEnabled [ prometheusYaml ];
+      lib.optional monitoringEnabled prometheusYaml
+      ++ lib.optional (cfg.packages != { }) packagesDir;
 
     monitoring.exporters.home-assistant = lib.mkIf monitoringEnabled {
       port = 8123;

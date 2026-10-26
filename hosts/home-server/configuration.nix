@@ -55,6 +55,11 @@ in
   home-assistant-container = {
     enable = true;
     hacs.enable = true;
+    packages = {
+      dune_weaver = ./home-assistant/dune-weaver.yaml;
+      laundry_done = ./home-assistant/laundry-done.yaml;
+      nyx_food = ./home-assistant/nyx-food.yaml;
+    };
   };
   zigbee = {
     enable = true;
