@@ -16,7 +16,6 @@ in
 
     outputs.nixosModules.polyfills.default
     outputs.nixosModules.services.ssh
-    outputs.nixosModules.services.pki
     outputs.nixosModules.services.avahi
     outputs.nixosModules.services.tailscale
     outputs.nixosModules.services.pihole
