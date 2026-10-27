@@ -35,6 +35,14 @@
   # PAM service for the home-manager hyprlock module.
   security.pam.services.hyprlock = { };
 
+  # Power button: a short press suspends; holding it for ~5s does a clean
+  # poweroff (logind's default long-press action is "ignore", so without this
+  # the only hold behaviour is the firmware's hard cut after ~10s).
+  services.logind.settings.Login = {
+    HandlePowerKey = "suspend";
+    HandlePowerKeyLongPress = "poweroff";
+  };
+
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
