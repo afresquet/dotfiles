@@ -234,6 +234,10 @@ in
       settings = {
         theme = "dark";
         agentPushNotifEnabled = true;
+        attribution = {
+          commit = "";
+          pr = "";
+        };
         statusLine = {
           type = "command";
           command = lib.getExe statusLineScript;
