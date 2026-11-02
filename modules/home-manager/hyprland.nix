@@ -43,6 +43,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    stylix.cursor = {
+      package = pkgs.bibata-cursors-black-corners;
+      name = "Bibata-Modern-Classic-Black-Corners";
+      size = 24;
+    };
+
     wayland.windowManager.hyprland = {
       enable = true;
 

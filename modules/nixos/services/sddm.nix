@@ -7,7 +7,7 @@
 let
   cfg = config.sddm;
 
-  cursors = pkgs.catppuccin-cursors.mochaMauve;
+  cursors = pkgs.bibata-cursors-black-corners;
 in
 {
   options = {
@@ -37,7 +37,7 @@ in
         # NixOS only sets a cursor for the default Breeze theme; without one
         # the greeter has no pointer at all.
         Theme = {
-          CursorTheme = "catppuccin-mocha-mauve-cursors";
+          CursorTheme = "Bibata-Modern-Classic-Black-Corners";
           CursorSize = 24;
         };
         # The SDDM daemon doesn't get the session's XCURSOR_PATH, so point the
