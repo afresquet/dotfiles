@@ -30,6 +30,7 @@
       url = "github:modem-dev/hunk";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    skills.url = "path:./flakes/skills";
   };
 
   outputs =

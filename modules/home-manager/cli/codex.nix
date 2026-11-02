@@ -12,6 +12,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.codex.enable = true;
+    programs.codex = {
+      enable = true;
+
+      mutableSettings = true;
+    };
   };
 }
