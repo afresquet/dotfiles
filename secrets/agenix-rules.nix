@@ -44,6 +44,12 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  # Desktop MAC address for wake-desktop: raw single-line file.
+  "desktop-mac.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
   "explo-env.age".publicKeys = [
     keys.afresquet
     keys.homeServer

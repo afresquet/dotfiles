@@ -108,6 +108,16 @@ in
   };
   networking.nameservers = [ "127.0.0.1" ];
 
+  age.secrets.desktop-mac = {
+    file = ../../secrets/desktop-mac.age;
+    owner = config.username;
+  };
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "wake-desktop" ''
+      exec ${lib.getExe pkgs.wakeonlan} "$(<${config.age.secrets.desktop-mac.path})"
+    '')
+  ];
+
   time.timeZone = "Europe/Madrid";
 
   # Raspberry Pi kernels ship with the memory cgroup controller disabled by

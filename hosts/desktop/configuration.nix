@@ -19,6 +19,20 @@ in
 
   sunshine.enable = true;
 
+  networking.interfaces.enp9s0.wakeOnLan.enable = true;
+
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (
+        subject.user == "${config.username}" &&
+        (action.id == "org.freedesktop.login1.suspend" ||
+          action.id == "org.freedesktop.login1.suspend-multiple-sessions")
+      ) {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   quickemu.enable = true;
   openlogi.enable = true;
 

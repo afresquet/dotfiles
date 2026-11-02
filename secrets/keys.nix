@@ -1,4 +1,4 @@
-# Public SSH keys — not secret, but kept next to `secrets.nix`.
+# Public SSH keys — not secret, but kept next to `agenix-rules.nix`.
 #
 # Two classes of keys:
 # - User keys (per-device personal ed25519 pubkeys) — go into
