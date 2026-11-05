@@ -41,5 +41,6 @@ in
     alvaroLaptop
     alvarosMacMini
     alvaroPhone
+    alvaroPhoneShortcuts
   ];
 }

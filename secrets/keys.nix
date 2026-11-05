@@ -16,6 +16,7 @@
   homeServer = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIC7Uq8d/AuGxFNLdN1Ukyw62JaqVIK8b1bWUcJV0hbIJ afresquet@home-server";
   # Client-only: authorized on every host, but nothing is authorized on it.
   alvaroPhone = "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBKDL0xpENguv/qT2Pz8OFwBBqm0R9UHiWGO6MUCMSfxqCD8cFuPCEr5FOewueJfb8DtKJ7VYPdmWTkbYzn9DcXY= afresquet@phone";
+  alvaroPhoneShortcuts = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOJz5acmGzXRX+LhkcCBaARdCNcjjo2AOZ2UJbbwX6bD Shortcuts on Alvaro’s iPhone";
 
   # Host keys — contents of /etc/ssh/ssh_host_ed25519_key.pub on each box.
   alvaroDesktopHost = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDN3fAAWJ0exzIxDA/Gwu9erAqXMbsCfG7CUEmytEyIL root@nixos";

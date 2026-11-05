@@ -36,5 +36,6 @@ in
     alvaroDesktop
     alvarosMacMini
     alvaroPhone
+    alvaroPhoneShortcuts
   ];
 }
