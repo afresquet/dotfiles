@@ -27,6 +27,7 @@ in
     outputs.nixosModules.services.arr
     outputs.nixosModules.services.navidrome
     outputs.nixosModules.services.git-server
+    outputs.nixosModules.services.agent-telegram
     outputs.nixosModules.services.slskd
     outputs.nixosModules.services.explo
     outputs.nixosModules.services.jellyfin
@@ -42,6 +43,10 @@ in
   arrStack.enable = true;
   navidrome.enable = true;
   gitServer.enable = true;
+  agentTelegram = {
+    enable = true;
+    secretFile = ../../secrets/agent-telegram-home-server.age;
+  };
   slskd.enable = true;
   explo.enable = true;
   jellyfin.enable = true;

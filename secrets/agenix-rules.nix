@@ -55,4 +55,16 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  # Telegram bot for agent alerts and the Telegram-connected Claude session,
+  # one bot per machine. TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines.
+  "agent-telegram-home-server.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
+  "agent-telegram-mac-mini.age".publicKeys = [
+    keys.afresquet
+    keys.alvarosMacMini
+    keys.alvarosMacMiniHost
+  ];
 }

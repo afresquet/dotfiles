@@ -20,6 +20,8 @@
 
   programs.helix.settings.editor.clipboard-provider = "termcode";
 
+  agentTelegram.enable = true;
+
   git = {
     email = "29437693+afresquet@users.noreply.github.com";
     signingKey = "${config.home.homeDirectory}/.ssh/id_ed25519.pub";
