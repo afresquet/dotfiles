@@ -37,5 +37,6 @@ in
     alvarosMacMini
     alvaroPhone
     alvaroPhoneShortcuts
+    heeler
   ];
 }

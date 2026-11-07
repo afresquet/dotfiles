@@ -42,7 +42,11 @@ in
   qbittorrent.enable = true;
   arrStack.enable = true;
   navidrome.enable = true;
-  gitServer.enable = true;
+  gitServer = {
+    enable = true;
+    # Heeler only needs terminal access, not repo admin.
+    adminKeys = lib.remove keys.heeler config.users.users.${config.username}.openssh.authorizedKeys.keys;
+  };
   agentTelegram = {
     enable = true;
     secretFile = ../../secrets/agent-telegram-home-server.age;
@@ -218,6 +222,7 @@ in
       alvarosMacMini
       alvaroPhone
       alvaroPhoneShortcuts
+      heeler
     ];
   };
 

@@ -19,6 +19,7 @@ in
     alvaroLaptop
     alvaroPhone
     alvaroPhoneShortcuts
+    heeler
   ];
 
   system.primaryUser = "afresquet";
