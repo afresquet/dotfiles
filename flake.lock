@@ -761,6 +761,22 @@
         "type": "github"
       }
     },
+    "nixpkgs-herdr": {
+      "locked": {
+        "lastModified": 1794077511,
+        "narHash": "sha256-yKyj6MErq/xY6v6cTqhmRNYdpbWTtzSJEa5sXcPf7XM=",
+        "owner": "rohan879",
+        "repo": "nixpkgs",
+        "rev": "a2008e937ced490810d4b4fe6250c73139671983",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rohan879",
+        "repo": "nixpkgs",
+        "rev": "a2008e937ced490810d4b4fe6250c73139671983",
+        "type": "github"
+      }
+    },
     "nixpkgs-lib": {
       "locked": {
         "lastModified": 1769909678,
@@ -878,6 +894,7 @@
         "nixos-hardware": "nixos-hardware",
         "nixos-raspberrypi": "nixos-raspberrypi",
         "nixpkgs": "nixpkgs_4",
+        "nixpkgs-herdr": "nixpkgs-herdr",
         "skills": "skills",
         "stylix": "stylix",
         "systems": "systems_4",

@@ -38,6 +38,7 @@ in
           twitter = workspaceExtraRulesOption;
           music = workspaceExtraRulesOption;
           bambu-studio = workspaceExtraRulesOption;
+          herdr = workspaceExtraRulesOption;
         };
     };
   };
@@ -92,6 +93,7 @@ in
           twitter = webApp "X";
           music = webApp "Apple Music";
           bambu-studio = lib.getExe pkgs.bambu-studio;
+          herdr = lib.getExe config.herdr-desktop.package;
 
           rofi = lib.getExe config.programs.rofi.package;
           launcher = "${rofi} -show drun";
@@ -236,6 +238,7 @@ in
               (rule "twitter")
               (rule "music")
               (rule "bambu-studio")
+              (rule "herdr")
             ];
 
           # MakerWorld launches Bambu Studio directly through its URI handler,
@@ -286,6 +289,7 @@ in
               (mkBind "SUPER + X" (wsFocus "twitter" twitter))
               (mkBind "SUPER + A" (wsFocus "music" music))
               (mkBind "SUPER + C" (wsFocus "bambu-studio" bambu-studio))
+              (mkBind "SUPER + Z" (wsFocus "herdr" herdr))
 
               # Move active window to named workspaces
               (mkBind "SUPER + SHIFT + B" (wsMove "browser"))
@@ -299,6 +303,7 @@ in
               (mkBind "SUPER + SHIFT + X" (wsMove "twitter"))
               (mkBind "SUPER + SHIFT + A" (wsMove "music"))
               (mkBind "SUPER + SHIFT + C" (wsMove "bambu-studio"))
+              (mkBind "SUPER + SHIFT + Z" (wsMove "herdr"))
 
               (mkBind "SUPER + Escape" "hl.dsp.window.close()")
               (mkBind "SUPER + V" ''hl.dsp.window.float({ action = "toggle" })'')

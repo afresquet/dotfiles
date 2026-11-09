@@ -60,6 +60,7 @@ in
             twitter = "";
             music = "󰝚";
             bambu-studio = "";
+            herdr = "󱙺";
           };
         };
         "hyprland/window" = {

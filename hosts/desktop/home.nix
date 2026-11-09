@@ -5,6 +5,8 @@
     ./settings.nix
   ];
 
+  herdr-desktop.enable = true;
+
   stylix.opacity.terminal = 0.85;
 
   btop.rocmSupport = true;
@@ -33,6 +35,7 @@
       obsidian = primaryMonitorRule;
       steam = primaryMonitorRule;
       bambu-studio = primaryMonitorRule;
+      herdr = primaryMonitorRule;
 
       discord = secondaryMonitorRule;
       messaging = secondaryMonitorRule;

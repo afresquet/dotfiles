@@ -4,6 +4,8 @@
     ./settings.nix
   ];
 
+  herdr-desktop.enable = true;
+
   btop.rocmSupport = true;
 
   hyprlock = {
