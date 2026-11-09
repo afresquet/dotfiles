@@ -1,24 +1,7 @@
 {
   "nodes": {
-    "grepika": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1786551769,
-        "narHash": "sha256-ZI7WEsKBpOx//QFovX6u0xvtD4bDJvbxAR+JGkLqVjc=",
-        "owner": "adamthewilliam",
-        "repo": "grepika",
-        "rev": "f035a182b6b23047a00f79058e76fc64820a4c2b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "adamthewilliam",
-        "repo": "grepika",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
-        "grepika": "grepika",
         "tilth": "tilth"
       }
     },
