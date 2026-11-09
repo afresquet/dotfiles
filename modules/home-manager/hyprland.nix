@@ -157,6 +157,7 @@ in
             "SUPER + SHIFT + slash" = "This cheat sheet";
             "SUPER + SHIFT + W" = "Toggle Waybar";
             "SUPER + N" = "Notification center";
+            "SUPER + SHIFT + V" = "Clipboard history";
             "SUPER + H" = "Focus left (or arrows)";
             "SUPER + L" = "Focus right";
             "SUPER + K" = "Focus up";
@@ -574,6 +575,9 @@ in
               mkBind "SUPER + N" (
                 execDsp "${lib.getExe' config.services.swaync.package "swaync-client"} --toggle-panel --skip-wait"
               )
+            )
+            ++ lib.optional config.cliphist.enable (
+              mkBind "SUPER + SHIFT + V" (execDsp (lib.getExe config.cliphist.picker))
             )
             ++ workspaceNumbers
             ++ [
