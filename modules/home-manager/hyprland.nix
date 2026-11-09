@@ -102,24 +102,151 @@ in
           brightness = lib.getExe pkgs.brightnessctl;
           media = lib.getExe pkgs.playerctl;
 
+          # Shown by the SUPER + ? cheat sheet; binds without one are left out.
+          bindDescriptions = {
+            "SUPER + B" = "Browser";
+            "SUPER + T" = "Terminal";
+            "SUPER + D" = "Discord";
+            "SUPER + M" = "Music";
+            "SUPER + C" = "Herdr";
+            "SUPER + O" = "Open… (then a letter)";
+            "SUPER + SHIFT + B" = "Move window to browser";
+            "SUPER + SHIFT + T" = "Move window to terminal";
+            "SUPER + SHIFT + D" = "Move window to Discord";
+            "SUPER + SHIFT + M" = "Move window to music";
+            "SUPER + SHIFT + C" = "Move window to Herdr";
+            "SUPER + Q" = "Close window";
+            "SUPER + V" = "Toggle floating";
+            "SUPER + F" = "Toggle fullscreen";
+            "SUPER + SHIFT + F" = "Toggle maximized";
+            "SUPER + E" = "Toggle split direction";
+            "SUPER + Tab" = "Previous workspace";
+            "SUPER + grave" = "Next window";
+            "SUPER + SHIFT + grave" = "Previous window";
+            "SUPER + bracketleft" = "Focus previous monitor";
+            "SUPER + bracketright" = "Focus next monitor";
+            "SUPER + Return" = "New terminal";
+            "SUPER + Space" = "App launcher";
+            "SUPER + period" = "Emoji picker";
+            "SUPER + SHIFT + slash" = "This cheat sheet";
+            "SUPER + SHIFT + W" = "Toggle Waybar";
+            "SUPER + H" = "Focus left (or arrows)";
+            "SUPER + L" = "Focus right";
+            "SUPER + K" = "Focus up";
+            "SUPER + J" = "Focus down";
+            "SUPER + SHIFT + H" = "Move window left (or arrows)";
+            "SUPER + SHIFT + L" = "Move window right";
+            "SUPER + SHIFT + K" = "Move window up";
+            "SUPER + SHIFT + J" = "Move window down";
+            "SUPER + CTRL + H" = "Shrink width (or arrows)";
+            "SUPER + CTRL + L" = "Grow width";
+            "SUPER + CTRL + K" = "Shrink height";
+            "SUPER + CTRL + J" = "Grow height";
+            "SUPER + Escape" = "Lock screen";
+            "SUPER + 1" = "Workspace 1–10 (1…0)";
+            "SUPER + SHIFT + 1" = "Move window to workspace 1–10 (1…0)";
+            "SUPER + ALT + 1" = "Move workspace to monitor 1, 2…";
+            "SUPER + S" = "Toggle scratchpad";
+            "SUPER + SHIFT + S" = "Move window to scratchpad";
+            "Print" = "Screenshot area";
+            "SHIFT + Print" = "Screenshot window";
+            "SUPER + Print" = "Screenshot monitor";
+            "SUPER + mouse:272" = "Drag to move window";
+            "SUPER + mouse:273" = "Drag to resize window";
+          };
+
           # Keybind helpers: arg 1 is a key string ("SUPER + B"), arg 2 a
           # dispatcher (raw Lua `hl.dsp.*`), optional arg 3 a table of flags.
-          mkBind = keys: dispatch: { _args = [ keys (mkLuaInline dispatch) ]; };
           mkBindOpts = keys: dispatch: opts: {
-            _args = [ keys (mkLuaInline dispatch) opts ];
+            _args = [
+              keys
+              (mkLuaInline dispatch)
+              (
+                opts
+                // lib.optionalAttrs (bindDescriptions ? ${keys}) {
+                  description = bindDescriptions.${keys};
+                }
+              )
+            ];
           };
+          mkBind = keys: dispatch: mkBindOpts keys dispatch { };
+
+          # Lists the binds that have a description, from the live config.
+          cheatSheet = pkgs.writeShellScript "hypr-keybinds" ''
+            ${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} binds -j \
+              | ${lib.getExe pkgs.jq} -r '
+                def mods: [
+                  (if . / 64 | floor % 2 == 1 then "SUPER" else empty end),
+                  (if . / 4 | floor % 2 == 1 then "CTRL" else empty end),
+                  (if . / 8 | floor % 2 == 1 then "ALT" else empty end),
+                  (if . % 2 == 1 then "SHIFT" else empty end)
+                ];
+                .[] | select(.has_description)
+                | ((.modmask | mods) + [.key] | join(" + ")) as $keys
+                | (if .submap == "" then $keys else "SUPER + O, \($keys)" end) as $keys
+                | "\($keys)\t\(.description)"' \
+              | ${lib.getExe' pkgs.util-linux "column"} -t -s $'\t' \
+              | ${rofi} -dmenu -i -no-custom -p Keybinds
+          '';
           execDsp = cmd: "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
           # Hyprland 0.56 creates workspaces from `focus` as non-empty, so
           # `on_created_empty` never fires. Launch the program here instead.
-          wsFocus = name: program: ''
-            function()
-              local created = hl.get_workspace("name:${name}") == nil
-              hl.dispatch(hl.dsp.focus({ workspace = "name:${name}" }))
-              if created then
-                hl.dispatch(${execDsp program})
-              end
+          wsFocusBody = name: program: ''
+            local created = hl.get_workspace("name:${name}") == nil
+            hl.dispatch(hl.dsp.focus({ workspace = "name:${name}" }))
+            if created then
+              hl.dispatch(${execDsp program})
             end'';
+          wsFocus = name: program: "function()\n${wsFocusBody name program}\nend";
           wsMove = name: ''hl.dsp.window.move({ workspace = "name:${name}" })'';
+
+          # Occasional apps live behind SUPER + O ("open"), then a letter;
+          # SHIFT + letter sends the active window there instead.
+          appsSubmap = [
+            {
+              key = "S";
+              name = "steam";
+              desc = "Steam";
+              program = steam;
+            }
+            {
+              key = "B";
+              name = "bambu-studio";
+              desc = "Bambu Studio";
+              program = bambu-studio;
+            }
+            {
+              key = "O";
+              name = "obsidian";
+              desc = "Obsidian";
+              program = obsidian;
+            }
+            {
+              key = "X";
+              name = "twitter";
+              desc = "X";
+              program = twitter;
+            }
+            {
+              key = "P";
+              name = "_1password";
+              desc = "1Password";
+              program = _1password;
+            }
+            {
+              key = "F";
+              name = "file-manager";
+              desc = "File manager";
+              program = fileManager;
+            }
+            {
+              key = "M";
+              name = "messaging";
+              desc = "Messaging";
+              program = messaging;
+            }
+          ];
+          submapReset = ''hl.dispatch(hl.dsp.submap("reset"))'';
           focusDir = dir: ''hl.dsp.focus({ direction = "${dir}" })'';
           moveDir = dir: ''hl.dsp.window.move({ direction = "${dir}" })'';
 
@@ -250,6 +377,28 @@ in
             }
           ];
 
+          define_submap = {
+            _args = [
+              "open"
+              (mkLuaInline (
+                "function()\n"
+                + lib.concatMapStrings (app: ''
+                  hl.bind("${app.key}", function()
+                  ${submapReset}
+                  ${wsFocusBody app.name app.program}
+                  end, { description = ${builtins.toJSON app.desc} })
+                  hl.bind("SHIFT + ${app.key}", function()
+                  ${submapReset}
+                  hl.dispatch(${wsMove app.name})
+                  end, { description = ${builtins.toJSON "Move window to ${app.desc}"} })
+                '') appsSubmap
+                + ''
+                  hl.bind("Escape", hl.dsp.submap("reset"), { description = "Leave open menu" })
+                  end''
+              ))
+            ];
+          };
+
           bind =
             let
               moveWorkspaceToMonitor = lib.imap1 (
@@ -274,43 +423,90 @@ in
                 in
                 mkBind "SUPER + SHIFT + ${key}" "hl.dsp.window.move({ workspace = ${toString n} })"
               ) 10;
+
+              # Resize (repeat) with SUPER + CTRL + arrows or H/J/K/L
+              resizeBinds =
+                lib.concatMap
+                  (
+                    {
+                      keys,
+                      x,
+                      y,
+                    }:
+                    map (
+                      key:
+                      mkBindOpts "SUPER + CTRL + ${key}"
+                        "hl.dsp.window.resize({ x = ${toString x}, y = ${toString y}, relative = true })"
+                        { repeating = true; }
+                    ) keys
+                  )
+                  [
+                    {
+                      keys = [
+                        "left"
+                        "H"
+                      ];
+                      x = -40;
+                      y = 0;
+                    }
+                    {
+                      keys = [
+                        "right"
+                        "L"
+                      ];
+                      x = 40;
+                      y = 0;
+                    }
+                    {
+                      keys = [
+                        "up"
+                        "K"
+                      ];
+                      x = 0;
+                      y = -40;
+                    }
+                    {
+                      keys = [
+                        "down"
+                        "J"
+                      ];
+                      x = 0;
+                      y = 40;
+                    }
+                  ];
             in
             moveWorkspaceToMonitor
             ++ [
-              # Focus named workspaces
+              # Focus daily workspaces; the rest are in the "apps" submap
               (mkBind "SUPER + B" (wsFocus "browser" browser))
-              (mkBind "SUPER + D" (wsFocus "discord" discord))
-              (mkBind "SUPER + G" (wsFocus "steam" steam))
-              (mkBind "SUPER + F" (wsFocus "file-manager" fileManager))
               (mkBind "SUPER + T" (wsFocus "terminal" terminal))
-              (mkBind "SUPER + O" (wsFocus "obsidian" obsidian))
-              (mkBind "SUPER + M" (wsFocus "messaging" messaging))
-              (mkBind "SUPER + P" (wsFocus "_1password" _1password))
-              (mkBind "SUPER + X" (wsFocus "twitter" twitter))
-              (mkBind "SUPER + A" (wsFocus "music" music))
-              (mkBind "SUPER + C" (wsFocus "bambu-studio" bambu-studio))
-              (mkBind "SUPER + Z" (wsFocus "herdr" herdr))
+              (mkBind "SUPER + D" (wsFocus "discord" discord))
+              (mkBind "SUPER + M" (wsFocus "music" music))
+              (mkBind "SUPER + C" (wsFocus "herdr" herdr))
+              (mkBind "SUPER + O" ''hl.dsp.submap("open")'')
 
-              # Move active window to named workspaces
+              # Move active window to daily workspaces
               (mkBind "SUPER + SHIFT + B" (wsMove "browser"))
-              (mkBind "SUPER + SHIFT + D" (wsMove "discord"))
-              (mkBind "SUPER + SHIFT + G" (wsMove "steam"))
-              (mkBind "SUPER + SHIFT + F" (wsMove "file-manager"))
               (mkBind "SUPER + SHIFT + T" (wsMove "terminal"))
-              (mkBind "SUPER + SHIFT + O" (wsMove "obsidian"))
-              (mkBind "SUPER + SHIFT + M" (wsMove "messaging"))
-              (mkBind "SUPER + SHIFT + P" (wsMove "_1password"))
-              (mkBind "SUPER + SHIFT + X" (wsMove "twitter"))
-              (mkBind "SUPER + SHIFT + A" (wsMove "music"))
-              (mkBind "SUPER + SHIFT + C" (wsMove "bambu-studio"))
-              (mkBind "SUPER + SHIFT + Z" (wsMove "herdr"))
+              (mkBind "SUPER + SHIFT + D" (wsMove "discord"))
+              (mkBind "SUPER + SHIFT + M" (wsMove "music"))
+              (mkBind "SUPER + SHIFT + C" (wsMove "herdr"))
 
-              (mkBind "SUPER + Escape" "hl.dsp.window.close()")
+              # Window actions
+              (mkBind "SUPER + Q" "hl.dsp.window.close()")
               (mkBind "SUPER + V" ''hl.dsp.window.float({ action = "toggle" })'')
-              (mkBind "SUPER + F11" ''hl.dsp.window.fullscreen({ mode = "maximized" })'')
+              (mkBind "SUPER + F" ''hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" })'')
+              (mkBind "SUPER + SHIFT + F" ''hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })'')
+              (mkBind "SUPER + E" ''hl.dsp.layout("togglesplit")'')
+              (mkBind "SUPER + Tab" ''hl.dsp.focus({ workspace = "previous" })'')
+              (mkBind "SUPER + grave" "hl.dsp.window.cycle_next()")
+              (mkBind "SUPER + SHIFT + grave" "hl.dsp.window.cycle_next({ next = false })")
+              (mkBind "SUPER + bracketleft" ''hl.dsp.focus({ monitor = "-1" })'')
+              (mkBind "SUPER + bracketright" ''hl.dsp.focus({ monitor = "+1" })'')
               (mkBind "SUPER + Return" (execDsp terminal))
               (mkBind "SUPER + Space" (execDsp launcher))
               (mkBind "SUPER + period" (execDsp emoji))
+              (mkBind "SUPER + SHIFT + slash" (execDsp "${cheatSheet}"))
               (mkBind "SUPER + SHIFT + W" (execDsp "pkill ${builtins.baseNameOf menuBar} || ${menuBar}"))
 
               # Move focus
@@ -333,6 +529,8 @@ in
               (mkBind "SUPER + SHIFT + K" (moveDir "up"))
               (mkBind "SUPER + SHIFT + J" (moveDir "down"))
             ]
+            ++ resizeBinds
+            ++ lib.optional config.hyprlock.enable (mkBind "SUPER + Escape" (execDsp "loginctl lock-session"))
             ++ workspaceNumbers
             ++ [
               (mkBind "SUPER + S" ''hl.dsp.workspace.toggle_special("scratchpad")'')
@@ -349,20 +547,28 @@ in
               # Force a rectangular Slurp selection. Grim's window-target capture
               # (`-T`), which Grimblast chooses on a window click, can hang on
               # Hyprland 0.56 and leaves the screenshot lock behind.
-              (mkBind "Print" (execDsp "SLURP_RECTS= ${screenshot} copy area"))
+              # Each one is copied and saved to the pictures folder.
+              (mkBind "Print" (execDsp "SLURP_RECTS= ${screenshot} copysave area"))
+              (mkBind "SHIFT + Print" (execDsp "${screenshot} copysave active"))
+              (mkBind "SUPER + Print" (execDsp "${screenshot} copysave output"))
 
-              # Move windows with SUPER + LMB and dragging
+              # Move and resize windows with SUPER + LMB/RMB and dragging
               (mkBindOpts "SUPER + mouse:272" "hl.dsp.window.drag()" { mouse = true; })
+              (mkBindOpts "SUPER + mouse:273" "hl.dsp.window.resize()" { mouse = true; })
 
               # Volume (repeat, works while locked)
-              (mkBindOpts "XF86AudioRaiseVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0") {
-                locked = true;
-                repeating = true;
-              })
-              (mkBindOpts "XF86AudioLowerVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0") {
-                locked = true;
-                repeating = true;
-              })
+              (mkBindOpts "XF86AudioRaiseVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0")
+                {
+                  locked = true;
+                  repeating = true;
+                }
+              )
+              (mkBindOpts "XF86AudioLowerVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0")
+                {
+                  locked = true;
+                  repeating = true;
+                }
+              )
               (mkBindOpts "SUPER + XF86AudioRaiseVolume"
                 (execDsp "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0")
                 {

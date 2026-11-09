@@ -28,7 +28,10 @@ in
         layer = "top";
         height = 30;
         spacing = 4;
-        modules-left = [ "hyprland/workspaces" ];
+        modules-left = [
+          "hyprland/workspaces"
+          "hyprland/submap"
+        ];
         modules-center = [ "mpris" ];
         modules-right = [
           "hyprland/language"
@@ -62,6 +65,11 @@ in
             bambu-studio = "";
             herdr = "󱙺";
           };
+        };
+        # Shown only while a submap (SUPER + O "open") is active.
+        "hyprland/submap" = {
+          format = "󰘳 {}";
+          tooltip = false;
         };
         "hyprland/window" = {
           separate-outputs = true;
