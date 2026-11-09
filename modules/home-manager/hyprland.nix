@@ -69,6 +69,16 @@ in
 
           # Programs launched on their named workspaces.
           browser = lib.getExe config.browser;
+          webApp =
+            name:
+            let
+              inherit (config.programs.firefoxpwa) package profiles;
+              sites = lib.concatMapAttrs (_: profile: profile.sites) profiles;
+              ulid = lib.findFirst (ulid: sites.${ulid}.name == name) (throw "no firefoxpwa site named ${name}") (
+                builtins.attrNames sites
+              );
+            in
+            "${lib.getExe package} site launch ${ulid}";
           fileManager = lib.getExe config.fileManager;
           terminal = lib.getExe config.terminal;
           discord = lib.getExe pkgs.discord;
@@ -77,10 +87,10 @@ in
           telegram = lib.getExe pkgs.telegram-desktop;
           # Create both messaging clients together so Hyprland tiles them
           # side-by-side in the messaging workspace.
-          messaging = "sh -c '${browser} --app=\"https://web.whatsapp.com\" & exec ${telegram}'";
+          messaging = "sh -c '${webApp "WhatsApp"} & exec ${telegram}'";
           _1password = lib.getExe pkgs._1password-gui;
-          twitter = ''${browser} --app="https://x.com/"'';
-          music = ''${browser} --app="https://music.apple.com/"'';
+          twitter = webApp "X";
+          music = webApp "Apple Music";
           bambu-studio = lib.getExe pkgs.bambu-studio;
 
           rofi = lib.getExe config.programs.rofi.package;

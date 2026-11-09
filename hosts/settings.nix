@@ -47,7 +47,6 @@
     shell = lib.mkDefault pkgs.nushell;
     terminal = lib.mkDefault pkgs.ghostty;
     editor = lib.mkDefault pkgs.helix;
-    browser = lib.mkDefault pkgs.brave;
     fileManager = lib.mkDefault pkgs.nautilus;
 
     tailnet.domain = "tail606ad7.ts.net";

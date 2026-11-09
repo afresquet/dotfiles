@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  pkgs,
   ...
 }:
 let
@@ -9,10 +8,10 @@ let
 in
 {
   options = {
-    brave.enable = lib.mkEnableOption "Brave Browser" // {
+    brave.enable = lib.mkEnableOption "Brave Browser (Homebrew cask)" // {
       default = true;
     };
   };
 
-  config = lib.mkIf cfg.enable { environment.systemPackages = [ pkgs.brave ]; };
+  config = lib.mkIf cfg.enable { homebrew.casks = [ "brave-browser" ]; };
 }
