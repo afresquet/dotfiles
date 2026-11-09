@@ -186,7 +186,8 @@ in
                 | (if .submap == "" then $keys else "SUPER + O, \($keys)" end) as $keys
                 | "\($keys)\t\(.description)"' \
               | ${lib.getExe' pkgs.util-linux "column"} -t -s $'\t' \
-              | ${rofi} -dmenu -i -no-custom -p Keybinds
+              | ${rofi} -dmenu -i -no-custom -no-show-icons -p 󰌌 \
+                  -theme-str 'window { width: 820px; } listview { lines: 14; }'
           '';
           execDsp = cmd: "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
           # Hyprland 0.56 creates workspaces from `focus` as non-empty, so
