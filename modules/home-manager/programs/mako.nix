@@ -1,11 +1,17 @@
-{ lib, config, isLinux, ... }:
+{
+  lib,
+  config,
+  isLinux,
+  ...
+}:
 let
   cfg = config.mako;
 in
 {
   options = {
+    # Off when SwayNotificationCenter handles notifications.
     mako.enable = lib.mkEnableOption "Mako" // {
-      default = isLinux;
+      default = isLinux && !config.swaync.enable;
     };
   };
 

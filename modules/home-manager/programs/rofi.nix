@@ -21,14 +21,13 @@ in
 
     programs.rofi = {
       enable = true;
-      font = "${config.stylix.fonts.monospace.name} 11";
-
-      extraConfig = {
+      settings = {
+        font = "${config.stylix.fonts.monospace.name} 11";
         show-icons = true;
-        # Papirus only for rofi, so the launcher has app icons.
+        # Same icon theme as GTK (set through Stylix).
         icon-theme = "Papirus-Dark";
-        display-drun = "";
-        display-run = "";
+        display-drun = "󰀻";
+        display-run = "󰆍";
         display-emoji = "󰞅";
         drun-display-format = "{name}";
       };

@@ -102,6 +102,32 @@ in
           brightness = lib.getExe pkgs.brightnessctl;
           media = lib.getExe pkgs.playerctl;
 
+          # Volume, mic and brightness keys go through swayosd for the popup.
+          osd = lib.getExe' config.services.swayosd.package "swayosd-client";
+          keyCmd =
+            if config.swayosd.enable then
+              {
+                volumeUp = "${osd} --output-volume +5";
+                volumeDown = "${osd} --output-volume -5";
+                mute = "${osd} --output-volume mute-toggle";
+                micUp = "${osd} --input-volume +5";
+                micDown = "${osd} --input-volume -5";
+                micMute = "${osd} --input-volume mute-toggle";
+                brightnessUp = "${osd} --brightness +5";
+                brightnessDown = "${osd} --brightness -5";
+              }
+            else
+              {
+                volumeUp = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0";
+                volumeDown = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0";
+                mute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
+                micUp = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0";
+                micDown = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0";
+                micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
+                brightnessUp = "${brightness} set 5%+";
+                brightnessDown = "${brightness} set 5%-";
+              };
+
           # Shown by the SUPER + ? cheat sheet; binds without one are left out.
           bindDescriptions = {
             "SUPER + B" = "Browser";
@@ -130,6 +156,7 @@ in
             "SUPER + period" = "Emoji picker";
             "SUPER + SHIFT + slash" = "This cheat sheet";
             "SUPER + SHIFT + W" = "Toggle Waybar";
+            "SUPER + N" = "Notification center";
             "SUPER + H" = "Focus left (or arrows)";
             "SUPER + L" = "Focus right";
             "SUPER + K" = "Focus up";
@@ -378,6 +405,17 @@ in
             }
           ];
 
+          # Blur behind the bar, launcher, notifications, OSD and power menu, so
+          # their translucent backgrounds stay readable. ignore_alpha skips the
+          # fully transparent space around Waybar's pills.
+          layer_rule = [
+            {
+              match.namespace = "^(waybar|rofi|swaync-control-center|swaync-notification-window|swayosd|logout_dialog)$";
+              blur = true;
+              ignore_alpha = 0.3;
+            }
+          ];
+
           define_submap = {
             _args = [
               "open"
@@ -532,6 +570,11 @@ in
             ]
             ++ resizeBinds
             ++ lib.optional config.hyprlock.enable (mkBind "SUPER + Escape" (execDsp "loginctl lock-session"))
+            ++ lib.optional config.swaync.enable (
+              mkBind "SUPER + N" (
+                execDsp "${lib.getExe' config.services.swaync.package "swaync-client"} --toggle-panel --skip-wait"
+              )
+            )
             ++ workspaceNumbers
             ++ [
               (mkBind "SUPER + S" ''hl.dsp.workspace.toggle_special("scratchpad")'')
@@ -558,45 +601,38 @@ in
               (mkBindOpts "SUPER + mouse:273" "hl.dsp.window.resize()" { mouse = true; })
 
               # Volume (repeat, works while locked)
-              (mkBindOpts "XF86AudioRaiseVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0")
-                {
-                  locked = true;
-                  repeating = true;
-                }
-              )
-              (mkBindOpts "XF86AudioLowerVolume" (execDsp "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0")
-                {
-                  locked = true;
-                  repeating = true;
-                }
-              )
-              (mkBindOpts "SUPER + XF86AudioRaiseVolume"
-                (execDsp "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0")
-                {
-                  locked = true;
-                  repeating = true;
-                }
-              )
-              (mkBindOpts "SUPER + XF86AudioLowerVolume"
-                (execDsp "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0")
-                {
-                  locked = true;
-                  repeating = true;
-                }
-              )
-
-              # Brightness (repeat, works while locked)
-              (mkBindOpts "XF86MonBrightnessUp" (execDsp "${brightness} set 5%+") {
+              (mkBindOpts "XF86AudioRaiseVolume" (execDsp keyCmd.volumeUp) {
                 locked = true;
                 repeating = true;
               })
-              (mkBindOpts "XF86MonBrightnessDown" (execDsp "${brightness} set 5%-") {
+              (mkBindOpts "XF86AudioLowerVolume" (execDsp keyCmd.volumeDown) {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "SUPER + XF86AudioRaiseVolume" (execDsp keyCmd.micUp) {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "SUPER + XF86AudioLowerVolume" (execDsp keyCmd.micDown) {
+                locked = true;
+                repeating = true;
+              })
+
+              # Brightness (repeat, works while locked)
+              (mkBindOpts "XF86MonBrightnessUp" (execDsp keyCmd.brightnessUp) {
+                locked = true;
+                repeating = true;
+              })
+              (mkBindOpts "XF86MonBrightnessDown" (execDsp keyCmd.brightnessDown) {
                 locked = true;
                 repeating = true;
               })
 
               # Mute + media (works while locked)
-              (mkBindOpts "XF86AudioMute" (execDsp "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle") {
+              (mkBindOpts "XF86AudioMute" (execDsp keyCmd.mute) {
+                locked = true;
+              })
+              (mkBindOpts "XF86AudioMicMute" (execDsp keyCmd.micMute) {
                 locked = true;
               })
               (mkBindOpts "XF86AudioPlay" (execDsp "${media} play-pause") { locked = true; })

@@ -1,94 +1,123 @@
+/* Colors come from Stylix (@base00…@base0F, Catppuccin Mocha). The look
+   matches rofi: dark base, raised pills, 10px corners, blue (base0D) accent. */
+
 * {
-  /* `otf-font-awesome` is required to be installed for icons */
-  font-family: "Hack Nerd Font Mono", "Font Awesome 6 Free", sans-serif;
+  font-family: "Hack Nerd Font Mono";
   font-size: 13px;
+  min-height: 0;
 }
 
 window#waybar {
-  background-color: rgba(43, 48, 59, 0.5);
-  border-bottom: 1px solid rgba(100, 114, 125, 0.1);
-  color: #ffffff;
-  transition-property: background-color;
-  transition-duration: 0.5s;
+  background: transparent;
+  color: @base05;
 }
 
-window#waybar.hidden {
-  opacity: 0.2;
+/* Every top-level module or group is its own pill. */
+#workspaces,
+#submap,
+#status,
+#group-status,
+#session,
+#group-session {
+  background: alpha(@base00, 0.92);
+  border: 1px solid @base01;
+  border-radius: 10px;
+  padding: 0 4px;
 }
 
-button {
-  /* Use box-shadow instead of border so the text isn't offset */
-  box-shadow: inset 0 -3px transparent;
-  /* Avoid rounded borders under each button name */
-  border: none;
-  border-radius: 0;
+/* Modules inside the pills */
+#language,
+#tray,
+#privacy,
+#pulseaudio,
+#network,
+#bluetooth,
+#backlight,
+#battery,
+#custom-stats-icon,
+#temperature,
+#disk,
+#memory,
+#custom-gpu,
+#cpu,
+#clock,
+#custom-notification {
+  padding: 0 8px;
 }
 
-/* https://github.com/Alexays/Waybar/wiki/FAQ#the-workspace-buttons-have-a-strange-hover-effect */
-button:hover {
-  background: inherit;
-  box-shadow: inset 0 -1px #ffffff;
-}
-
+/* Workspaces */
 #workspaces button {
-  padding: 0 5px;
-  color: #ffffff;
+  padding: 0 8px;
+  margin: 4px 2px;
+  border: none;
+  border-radius: 7px;
+  box-shadow: none;
+  background: transparent;
+  color: @base04;
 }
 
 #workspaces button:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: @base01;
+  color: @base05;
 }
 
-#workspaces button.focused {
-  box-shadow: inset 0 -3px #ffffff;
+#workspaces button.active {
+  background: @base0D;
+  color: @base00;
 }
 
-#clock,
-#language,
-#battery,
-#bluetooth,
-#cpu,
-#memory,
-#disk,
-#custom-stats-icon,
-#temperature,
-#backlight,
-#network,
-#pulseaudio,
-#mpris,
-#tray {
-  padding: 0 10px;
+#workspaces button.urgent {
+  background: @base08;
+  color: @base00;
 }
 
-#window,
-#workspaces {
-  margin: 0 4px;
+/* SUPER + O menu indicator */
+#submap {
+  background: @base0D;
+  border-color: @base0D;
+  color: @base00;
+  padding: 0 12px;
 }
 
-/* If workspaces is the leftmost module, omit left margin */
-.modules-left > widget:first-child > #workspaces {
-  margin-left: 0;
+/* Quiet states are dimmed, problems use the palette's warning colors. */
+#pulseaudio:not(.mic).muted,
+#pulseaudio.mic.source-muted,
+#network.disconnected,
+#network.linked,
+#bluetooth.off,
+#bluetooth.disabled {
+  color: @base03;
 }
 
-/* If workspaces is the rightmost module, omit right margin */
-.modules-right > widget:last-child > #workspaces {
-  margin-right: 0;
+#bluetooth.connected,
+#battery.charging,
+#battery.plugged {
+  color: @base0D;
 }
 
-@keyframes blink {
+#battery.warning:not(.charging) {
+  color: @base0A;
+}
+
+@keyframes pulse {
   to {
-    color: #000000;
+    color: @base03;
   }
 }
 
-/* Using steps() instead of linear as a timing function to limit cpu usage */
-#battery.critical:not(.charging) {
-  color: #ffffff;
-  animation-name: blink;
-  animation-duration: 0.5s;
-  animation-timing-function: steps(12);
+#battery.critical:not(.charging),
+#temperature.critical {
+  color: @base08;
+  animation-name: pulse;
+  animation-duration: 1s;
+  animation-timing-function: ease-in-out;
   animation-iteration-count: infinite;
   animation-direction: alternate;
+}
+
+#privacy-item {
+  padding: 0 4px;
+  color: @base09;
 }
 
 #tray > .passive {
@@ -99,15 +128,53 @@ button:hover {
   -gtk-icon-effect: highlight;
 }
 
-#privacy {
-  padding: 0;
+/* Stats drawer and the clock read as secondary info. */
+#custom-stats-icon {
+  color: @base0D;
 }
 
-#privacy-item {
-  padding: 0 5px;
-  color: #cf5700;
+#temperature,
+#disk,
+#memory,
+#custom-gpu,
+#cpu {
+  color: @base04;
+}
+
+#clock {
+  font-weight: bold;
+}
+
+/* Notification bell: blue when something is waiting, dim in DND */
+#custom-notification.notification,
+#custom-notification.inhibited-notification {
+  color: @base0D;
+}
+
+#custom-notification.dnd-none,
+#custom-notification.dnd-notification,
+#custom-notification.dnd-inhibited-none,
+#custom-notification.dnd-inhibited-notification {
+  color: @base03;
 }
 
 #custom-session {
-  margin-right: 16px;
+  padding: 0 12px 0 8px;
+  color: @base08;
+}
+
+#custom-session:hover {
+  color: @base05;
+}
+
+/* Tooltips like rofi's window */
+tooltip {
+  background: alpha(@base00, 0.95);
+  border: 2px solid @base0D;
+  border-radius: 10px;
+}
+
+tooltip label {
+  color: @base05;
+  padding: 4px;
 }
