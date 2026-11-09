@@ -122,6 +122,8 @@ in
           moveDir = dir: ''hl.dsp.window.move({ direction = "${dir}" })'';
 
           startupCommands = [
+            "/run/wrappers/bin/gnome-keyring-daemon --start --components=secrets"
+
             # Wallpaper
             "${awww}-daemon"
             "${awww} img ~/dotfiles/assets/wallpaper.png -t none"
