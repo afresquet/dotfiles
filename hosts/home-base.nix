@@ -9,6 +9,7 @@
   imports = [
     outputs.homeModules.cli.default
     outputs.homeModules.polyfills.default
+    outputs.homeModules.services.default
   ];
 
   home.username = config.username;
