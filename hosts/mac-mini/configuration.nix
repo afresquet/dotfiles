@@ -1,5 +1,6 @@
 {
   config,
+  inputs,
   outputs,
   ...
 }:
@@ -8,6 +9,7 @@ let
 in
 {
   imports = [
+    inputs.determinate.darwinModules.default
     outputs.darwinModules.programs.default
     outputs.darwinModules.services.default
 
@@ -71,8 +73,33 @@ in
     outputs.overlays.modifications
   ];
 
-  # Determinate manages the Nix installation; let it own nix.conf.
-  nix.enable = false;
+  # Determinate manages the Nix installation and owns nix.conf; our settings
+  # go to /etc/nix/nix.custom.conf through its module.
+  determinateNix = {
+    enable = true;
+    customSettings = {
+      # The Pi cache is set here for everyone because the user is not a
+      # trusted Nix user (that is root in all but name), so a flake's own
+      # `nixConfig` caches are ignored. Without it the Pi kernel and firmware
+      # get compiled from source.
+      extra-substituters = [ "https://nixos-raspberrypi.cachix.org" ];
+      extra-trusted-public-keys = [
+        "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+      ];
+      # Everything built here is signed with this key, so the Pis accept
+      # packages copied from this Mac (their `trusted-public-keys` has
+      # `alvaros-mac-mini-1`) without trusting a user. The file is root's,
+      # mode 600, and is not in this repo.
+      secret-key-files = [ "/etc/nix/signing-key.sec" ];
+    };
+
+    # The Linux builder VM (Pi images) defaults to 8 GiB / 1 CPU, which gets
+    # the Rust compiler OOM-killed on surrealdb-core. 12 GiB of the Mac's 16.
+    determinateNixd.builder = {
+      memoryBytes = 12 * 1024 * 1024 * 1024;
+      cpuCount = 4;
+    };
+  };
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog
