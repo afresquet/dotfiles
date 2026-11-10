@@ -43,6 +43,10 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    determinate = {
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     vpn-confinement.url = "github:Maroka-chan/VPN-Confinement";
     hunk = {
       url = "github:modem-dev/hunk";
@@ -214,6 +218,13 @@
           };
           modules = [ ./hosts/mac-mini/configuration.nix ];
         };
+
+        mac-afresquet = nix-darwin.lib.darwinSystem {
+          specialArgs = {
+            inherit inputs outputs;
+          };
+          modules = [ ./hosts/work/configuration.nix ];
+        };
       };
 
       homeConfigurations = {
@@ -250,7 +261,7 @@
           pkgs = mkPkgs "aarch64-darwin";
         };
 
-        "alvaro.fresquet@Alvaros-MacBook-Pro.local" = homeManagerConfiguration {
+        "alvaro.fresquet@mac-afresquet" = homeManagerConfiguration {
           module = ./hosts/work/home.nix;
 
           pkgs = mkPkgs "aarch64-darwin";

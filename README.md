@@ -10,7 +10,7 @@ only gets home-manager.
 | `Alvaro-Laptop` (Framework 13) | NixOS, x86_64 | `nixosConfigurations.Alvaro-Laptop` | `homeConfigurations."afresquet@Alvaro-Laptop"` |
 | `Home-Server` (Raspberry Pi 5) | NixOS, aarch64 | `nixosConfigurations.Home-Server` | `homeConfigurations."pi@Home-Server"` |
 | `Alvaros-Mac-mini` | nix-darwin, aarch64 | `darwinConfigurations.Alvaros-Mac-mini` | `homeConfigurations."afresquet@Alvaros-Mac-mini"` |
-| work MacBook | macOS, aarch64 | none | `homeConfigurations."alvaro.fresquet@Alvaros-MacBook-Pro.local"` |
+| `mac-afresquet` (work MacBook) | nix-darwin, aarch64 | `darwinConfigurations.mac-afresquet` | `homeConfigurations."alvaro.fresquet@mac-afresquet"` |
 
 ## Layout
 
