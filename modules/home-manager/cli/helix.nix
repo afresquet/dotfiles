@@ -244,8 +244,6 @@ in
         bash-language-server
         # docker
         dockerfile-language-server
-        # markdown
-        marksman
         # toml
         taplo
         # yaml
