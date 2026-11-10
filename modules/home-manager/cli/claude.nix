@@ -27,34 +27,37 @@ let
     runtimeEnv.LC_ALL = "C.UTF-8";
     text = ''
       ${cacheSetup}
-      TOKEN_CACHE="$CACHE_DIR/token"
-      TOKEN_TTL=900
-      # Hooks call this on every tool use; only hit the API once per minute.
+      ATTEMPT_FILE="$CACHE_DIR/attempt"
+      LOCK_DIR="$CACHE_DIR/lock"
+      # Hooks call this on every tool use, from every session; only hit the
+      # API once per minute, whether or not the last attempt succeeded.
       USAGE_TTL=60
 
       age() {
         echo $(( $(date -u +%s) - $(stat -c %Y "$1" 2>/dev/null || echo 0) ))
       }
 
-      if [ -f "$CACHE_FILE" ] && [ "$(age "$CACHE_FILE")" -lt "$USAGE_TTL" ]; then
+      if [ -f "$ATTEMPT_FILE" ] && [ "$(age "$ATTEMPT_FILE")" -lt "$USAGE_TTL" ]; then
         exit 0
       fi
 
-      token=""
-      if [ -f "$TOKEN_CACHE" ] && [ "$(age "$TOKEN_CACHE")" -lt "$TOKEN_TTL" ]; then
-        token=$(cat "$TOKEN_CACHE" 2>/dev/null || true)
+      if [ -d "$LOCK_DIR" ] && [ "$(age "$LOCK_DIR")" -ge 30 ]; then
+        rmdir "$LOCK_DIR" 2>/dev/null || true
       fi
+      mkdir "$LOCK_DIR" 2>/dev/null || exit 0
+      trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+      touch "$ATTEMPT_FILE"
+      rm -f "$CACHE_DIR/token"
 
+      creds=""
+      if [ -f "$HOME/.claude/.credentials.json" ]; then
+        creds=$(cat "$HOME/.claude/.credentials.json")
+      elif [ -x /usr/bin/security ]; then
+        creds=$(/usr/bin/security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null || true)
+      fi
+      token=$(jq -r '.claudeAiOauth.accessToken // empty' <<<"$creds" 2>/dev/null || true)
       if [ -z "$token" ]; then
-        creds_file="$HOME/.claude/.credentials.json"
-        if [ ! -f "$creds_file" ]; then
-          exit 0
-        fi
-        token=$(jq -r '.claudeAiOauth.accessToken // empty' "$creds_file" 2>/dev/null || true)
-        if [ -z "$token" ]; then
-          exit 0
-        fi
-        printf '%s' "$token" > "$TOKEN_CACHE"
+        exit 0
       fi
 
       usage_json=$(curl -s -m 3 \
@@ -77,7 +80,8 @@ let
       if [ -n "$five_h_raw" ] && [ -n "$seven_d_raw" ]; then
         five_h=$(printf "%.0f" "$five_h_raw")
         seven_d=$(printf "%.0f" "$seven_d_raw")
-        printf '%s\n%s\n%s\n%s\n%s\n' "$five_h" "$seven_d" "$five_h_reset" "$seven_d_reset" "$fable" > "$CACHE_FILE"
+        printf '%s\n%s\n%s\n%s\n%s\n' "$five_h" "$seven_d" "$five_h_reset" "$seven_d_reset" "$fable" > "$CACHE_FILE.tmp"
+        mv -f "$CACHE_FILE.tmp" "$CACHE_FILE"
       fi
     '';
   };
@@ -113,11 +117,7 @@ let
       fable=""
 
       if [ -f "$CACHE_FILE" ]; then
-        five_h=$(sed -n '1p' "$CACHE_FILE")
-        seven_d=$(sed -n '2p' "$CACHE_FILE")
-        five_h_reset=$(sed -n '3p' "$CACHE_FILE")
-        seven_d_reset=$(sed -n '4p' "$CACHE_FILE")
-        fable=$(sed -n '5p' "$CACHE_FILE")
+        { read -r five_h; read -r seven_d; read -r five_h_reset; read -r seven_d_reset; read -r fable; } <"$CACHE_FILE" || true
       else
         ${lib.getExe fetchUsageScript} >/dev/null 2>&1 &
       fi
