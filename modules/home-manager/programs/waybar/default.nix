@@ -35,6 +35,10 @@ in
         margin-left = 8;
         margin-right = 8;
         spacing = 8;
+        # The center is empty, so let the sides use its space; with a fixed
+        # center the right side is capped at half the width and squeezes the
+        # language label to "…" on the laptop.
+        fixed-center = false;
         modules-left = [
           "hyprland/workspaces"
           "hyprland/submap"
