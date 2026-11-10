@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.vpn;
-  monitoringEnabled = config.monitoring.enable or false;
+  monitoringEnabled = config.monitoring.enable;
   exporterPort = 9586;
 
   # Hand-written dashboard, kept as a static JSON file so UI edits can be
@@ -17,7 +17,10 @@ let
   wireguardDashboardJson = ./monitoring/dashboards/wireguard.json;
 in
 {
-  imports = [ inputs.vpn-confinement.nixosModules.default ];
+  imports = [
+    inputs.vpn-confinement.nixosModules.default
+    ./monitoring/options.nix
+  ];
 
   options.vpn = {
     enable = lib.mkEnableOption "Mullvad WireGuard namespace (vpn-confinement)" // {
@@ -46,7 +49,11 @@ in
       portMappings = lib.mkIf monitoringEnabled [
         # Expose the wireguard exporter on the host so the Mac can scrape it.
         # The exporter has to live inside the namespace because wg0 is here.
-        { from = exporterPort; to = exporterPort; protocol = "tcp"; }
+        {
+          from = exporterPort;
+          to = exporterPort;
+          protocol = "tcp";
+        }
       ];
     };
 

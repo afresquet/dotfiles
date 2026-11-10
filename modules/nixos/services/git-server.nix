@@ -69,22 +69,24 @@ in
     # The nixpkgs unit sets ExecPaths=/var/lib/soft-serve/repos without
     # creating it, so the sandbox fails to set up (226/NAMESPACE) on a fresh
     # install. Newer nixpkgs adds it to StateDirectory like this.
-    systemd.services.soft-serve.serviceConfig.StateDirectory = lib.mkForce "soft-serve soft-serve/repos";
+    systemd.services.soft-serve.serviceConfig.StateDirectory =
+      lib.mkForce "soft-serve soft-serve/repos";
 
-    systemd.services.soft-serve.serviceConfig.ExecStartPost = pkgs.writeShellScript "soft-serve-lock-down" ''
-      db=${stateDir}/soft-serve.db
-      for _ in $(seq 50); do
-        if ${sqlite} "$db" "SELECT 1 FROM settings WHERE key = 'anon_access'" 2>/dev/null | grep -q 1; then
-          exec ${sqlite} -cmd ".timeout 5000" "$db" "
-            UPDATE settings SET value = 'no-access', updated_at = CURRENT_TIMESTAMP WHERE key = 'anon_access';
-            UPDATE settings SET value = 'false', updated_at = CURRENT_TIMESTAMP WHERE key = 'allow_keyless';
-          "
-        fi
-        sleep 0.2
-      done
-      echo "soft-serve settings table never appeared" >&2
-      exit 1
-    '';
+    systemd.services.soft-serve.serviceConfig.ExecStartPost =
+      pkgs.writeShellScript "soft-serve-lock-down" ''
+        db=${stateDir}/soft-serve.db
+        for _ in $(seq 50); do
+          if ${sqlite} "$db" "SELECT 1 FROM settings WHERE key = 'anon_access'" 2>/dev/null | grep -q 1; then
+            exec ${sqlite} -cmd ".timeout 5000" "$db" "
+              UPDATE settings SET value = 'no-access', updated_at = CURRENT_TIMESTAMP WHERE key = 'anon_access';
+              UPDATE settings SET value = 'false', updated_at = CURRENT_TIMESTAMP WHERE key = 'allow_keyless';
+            "
+          fi
+          sleep 0.2
+        done
+        echo "soft-serve settings table never appeared" >&2
+        exit 1
+      '';
 
     networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
 

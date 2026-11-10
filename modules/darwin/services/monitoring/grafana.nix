@@ -40,35 +40,60 @@ let
   '';
 
   mkDashboard =
-    { id ? null, revision ? null, url ? null, hash ? null, json ? null, name, extraFilter ? "." }:
+    {
+      id ? null,
+      revision ? null,
+      url ? null,
+      hash ? null,
+      json ? null,
+      name,
+      extraFilter ? ".",
+    }:
     let
       raw =
-        if json != null then json
-        else pkgs.fetchurl {
-          url = if url != null
-            then url
-            else "https://grafana.com/api/dashboards/${toString id}/revisions/${toString revision}/download";
-          inherit hash;
-        };
-    in pkgs.runCommand "grafana-dashboard-${name}.json" {
-      nativeBuildInputs = [ pkgs.jq ];
-    } ''
-      # Two-phase: render to a tmp file, then sanity-check the result is a
-      # JSON dashboard object before committing to $out. Catches extraFilter
-      # mistakes (returning null, an array, dropping the whole document) at
-      # build time instead of at Grafana load time, where they'd just be a
-      # silent "dashboard not found".
-      jq '${fixDashboard} | ${extraFilter}' ${raw} > dashboard.json
-      jq -e 'type == "object" and has("title") and (has("panels") or has("rows"))' \
-        dashboard.json > /dev/null \
-        || { echo "dashboard ${name}: post-filter output is not a Grafana dashboard object" >&2; exit 1; }
-      mv dashboard.json $out
-    '';
+        if json != null then
+          json
+        else
+          pkgs.fetchurl {
+            url =
+              if url != null then
+                url
+              else
+                "https://grafana.com/api/dashboards/${toString id}/revisions/${toString revision}/download";
+            inherit hash;
+          };
+    in
+    pkgs.runCommand "grafana-dashboard-${name}.json"
+      {
+        nativeBuildInputs = [ pkgs.jq ];
+      }
+      ''
+        # Two-phase: render to a tmp file, then sanity-check the result is a
+        # JSON dashboard object before committing to $out. Catches extraFilter
+        # mistakes (returning null, an array, dropping the whole document) at
+        # build time instead of at Grafana load time, where they'd just be a
+        # silent "dashboard not found".
+        jq '${fixDashboard} | ${extraFilter}' ${raw} > dashboard.json
+        jq -e 'type == "object" and has("title") and (has("panels") or has("rows"))' \
+          dashboard.json > /dev/null \
+          || { echo "dashboard ${name}: post-filter output is not a Grafana dashboard object" >&2; exit 1; }
+        mv dashboard.json $out
+      '';
 
   dashboards = pkgs.linkFarm "grafana-dashboards" (
     lib.mapAttrsToList (name: d: {
       name = "${name}.json";
-      path = mkDashboard { inherit (d) id revision url hash json extraFilter; inherit name; };
+      path = mkDashboard {
+        inherit (d)
+          id
+          revision
+          url
+          hash
+          json
+          extraFilter
+          ;
+        inherit name;
+      };
     }) piDashboards
   );
 
@@ -79,19 +104,21 @@ let
       name = "datasources/${key}.yaml";
       inherit path;
     }) cfg._datasources
-    ++ [{
-      name = "dashboards/dashboards.yaml";
-      path = pkgs.writeText "dashboards-provider.yaml" ''
-        apiVersion: 1
-        providers:
-          - name: home-server
-            folder: Home Server
-            type: file
-            allowUiUpdates: true
-            options:
-              path: ${dashboards}
-      '';
-    }]
+    ++ [
+      {
+        name = "dashboards/dashboards.yaml";
+        path = pkgs.writeText "dashboards-provider.yaml" ''
+          apiVersion: 1
+          providers:
+            - name: home-server
+              folder: Home Server
+              type: file
+              allowUiUpdates: true
+              options:
+                path: ${dashboards}
+        '';
+      }
+    ]
   );
 
   grafanaConfig = pkgs.writeText "grafana.ini" ''
@@ -132,17 +159,22 @@ in
       serviceConfig = {
         Label = "com.grafana.grafana";
         # See wait4path rationale on the prometheus daemon.
-        ProgramArguments = let exe = "${pkgs.grafana}/bin/grafana"; in [
-          "/bin/sh" "-c"
-          ''
-            /bin/wait4path "$0"
-            exec "$0" "$@"
-          ''
-          exe
-          "server"
-          "--config=${grafanaConfig}"
-          "--homepath=${pkgs.grafana}/share/grafana"
-        ];
+        ProgramArguments =
+          let
+            exe = "${pkgs.grafana}/bin/grafana";
+          in
+          [
+            "/bin/sh"
+            "-c"
+            ''
+              /bin/wait4path "$0"
+              exec "$0" "$@"
+            ''
+            exe
+            "server"
+            "--config=${grafanaConfig}"
+            "--homepath=${pkgs.grafana}/share/grafana"
+          ];
         WorkingDirectory = "${cfg.grafanaDataDir}/data";
         RunAtLoad = true;
         KeepAlive = true;

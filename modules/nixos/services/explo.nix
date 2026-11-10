@@ -6,13 +6,13 @@
 }:
 let
   cfg = config.explo;
-  slskdEnabled = config.slskd.enable or false;
+  slskdEnabled = config.slskd.enable;
   # When slskd is wg-confined (default), Explo (host network) reaches it via
   # the namespace's host-side bridge address rather than 127.0.0.1.
   slskdUrl =
     if slskdEnabled then
       "http://${
-        if (config.vpn.enable or false) then
+        if config.vpn.enable then
           config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
         else
           "127.0.0.1"
@@ -21,7 +21,13 @@ let
       null;
 in
 {
-  imports = [ inputs.agenix.nixosModules.default ];
+  imports = [
+    inputs.agenix.nixosModules.default
+    ./caddy.nix
+    ./dashboard.nix
+    ./slskd.nix
+    ./vpn.nix
+  ];
 
   options.explo = {
     enable = lib.mkEnableOption "Explo — ListenBrainz-driven Discover-Weekly-style downloader" // {
@@ -83,7 +89,7 @@ in
     virtualisation.oci-containers = {
       backend = "podman";
       containers.explo = {
-        image = cfg.image;
+        inherit (cfg) image;
         autoStart = true;
         volumes = [
           # Container-private state: :U lets podman chown to the container's

@@ -78,20 +78,7 @@ in
           warp-on-scroll = false;
           sort-by = "id";
           format = "{icon}";
-          format-icons = {
-            discord = "";
-            steam = "";
-            browser = "";
-            file-manager = "";
-            terminal = "";
-            messaging = "󰍡";
-            obsidian = "";
-            _1password = "";
-            twitter = "";
-            music = "󰝚";
-            bambu-studio = "";
-            herdr = "󱙺";
-          };
+          format-icons = lib.mapAttrs (_: ws: ws.icon) config.hyprland.workspaces;
         };
         # Shown only while a submap (SUPER + O "open") is active.
         "hyprland/submap" = {
@@ -174,8 +161,8 @@ in
           {
             format = "󰛳 {ifname}";
             format-wifi = "{icon} {signalStrength}%";
-            format-ethernet = "󰈀";
-            format-linked = "󰈀 No IP";
+            format-ethernet = "<span size='xx-large'>󰈀</span>";
+            format-linked = "<span size='xx-large'>󰈀</span> No IP";
             format-disconnected = "󰤮";
             format-icons = [
               "󰤯"
@@ -340,7 +327,9 @@ in
           on-click = lib.getExe config.wlogout.launcher;
         };
       };
-      style = builtins.readFile ./style.css;
+      style = builtins.replaceStrings [ "@monospace@" ] [ config.stylix.fonts.monospace.name ] (
+        builtins.readFile ./style.css
+      );
     };
 
     services.playerctld.enable = true;

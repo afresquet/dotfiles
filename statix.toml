@@ -1,0 +1,3 @@
+# Mirrors the treefmt config in flake.nix so a bare `statix check` agrees
+# with `nix flake check`.
+disabled = ["repeated_keys"]

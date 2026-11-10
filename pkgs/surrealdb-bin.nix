@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   fetchzip,
   autoPatchelfHook,
@@ -6,14 +7,13 @@
   gcc-unwrapped,
   ...
 }:
-stdenv.mkDerivation rec {
-  name = "surrealdb-bin";
-  pname = "surreal";
+stdenv.mkDerivation (finalAttrs: {
+  pname = "surrealdb-bin";
   version = "2.1.4";
 
   src = fetchzip {
-    url = "https://github.com/surrealdb/surrealdb/releases/download/v${version}/surreal-v${version}.linux-amd64.tgz";
-    sha256 = "sha256-pNsp8RF6CgjRgbpf6oYhseaUve3FTWJz6MAwuyWcEpk=";
+    url = "https://github.com/surrealdb/surrealdb/releases/download/v${finalAttrs.version}/surreal-v${finalAttrs.version}.linux-amd64.tgz";
+    hash = "sha256-pNsp8RF6CgjRgbpf6oYhseaUve3FTWJz6MAwuyWcEpk=";
   };
 
   nativeBuildInputs = [ autoPatchelfHook ];
@@ -28,4 +28,12 @@ stdenv.mkDerivation rec {
     install -m755 surreal $out/bin
     runHook postInstall
   '';
-}
+
+  meta = {
+    description = "SurrealDB server and CLI, prebuilt binary";
+    homepage = "https://surrealdb.com";
+    license = lib.licenses.bsl11;
+    platforms = [ "x86_64-linux" ];
+    mainProgram = "surreal";
+  };
+})

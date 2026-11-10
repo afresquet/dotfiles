@@ -1,4 +1,9 @@
-{ lib, config, isLinux, ... }:
+{
+  lib,
+  config,
+  isLinux,
+  ...
+}:
 let
   cfg = config.obs-studio;
 in

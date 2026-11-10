@@ -9,9 +9,13 @@ let
   # Tailnet-only Caddy listener exposing /metrics. The admin endpoint
   # (port 2019) stays bound to localhost for security.
   metricsPort = 9101;
-  monitoringEnabled = config.monitoring.enable or false;
+  monitoringEnabled = config.monitoring.enable;
 in
 {
+  imports = [
+    ./monitoring/options.nix
+  ];
+
   options.reverseProxy = {
     enable = lib.mkEnableOption "Caddy reverse proxy" // {
       default = false;
@@ -83,17 +87,18 @@ in
           metrics
         }
       '';
-      virtualHosts = lib.mapAttrs' (
-        _name: svc:
-        lib.nameValuePair "http://${lib.concatStringsSep ", http://" ([ svc.host ] ++ svc.aliases)}" {
-          extraConfig = "reverse_proxy ${svc.upstream}";
-        }
-      ) cfg.services
-      # Dedicated tailnet-only listener for /metrics. The Caddy admin
-      # endpoint (2019) stays localhost-only; this exposes just metrics.
-      // lib.optionalAttrs monitoringEnabled {
-        ":${toString metricsPort}".extraConfig = "metrics /metrics";
-      };
+      virtualHosts =
+        lib.mapAttrs' (
+          _name: svc:
+          lib.nameValuePair "http://${lib.concatStringsSep ", http://" ([ svc.host ] ++ svc.aliases)}" {
+            extraConfig = "reverse_proxy ${svc.upstream}";
+          }
+        ) cfg.services
+        # Dedicated tailnet-only listener for /metrics. The Caddy admin
+        # endpoint (2019) stays localhost-only; this exposes just metrics.
+        // lib.optionalAttrs monitoringEnabled {
+          ":${toString metricsPort}".extraConfig = "metrics /metrics";
+        };
     };
 
     # Contribute Caddy's metrics endpoint to the monitoring registry so the
@@ -103,12 +108,7 @@ in
       port = metricsPort;
     };
 
-    # Caddy resolves hostname upstreams (e.g. *.ts.net) at startup via the
-    # Pi's resolver — which now points at Pi-hole. Order Caddy after the
-    # Pi-hole container so that lookup doesn't race the resolver coming up.
     systemd.services.caddy = {
-      after = lib.mkIf (config.pihole.enable or false) [ "podman-pihole.service" ];
-      wants = lib.mkIf (config.pihole.enable or false) [ "podman-pihole.service" ];
       # Default UMask is 0077 → access logs land at 0600, so other services
       # in the `caddy` group can't tail them. 0027 → 0640.
       serviceConfig.UMask = "0027";

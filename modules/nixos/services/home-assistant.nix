@@ -11,7 +11,7 @@ let
     hash = cfg.hacs.hash;
     stripRoot = false;
   };
-  monitoringEnabled = config.monitoring.enable or false;
+  monitoringEnabled = config.monitoring.enable;
 
   # Body of HA's `prometheus:` integration. Drops as the include target so
   # we own the metric filter declaratively without touching configuration.yaml.
@@ -45,6 +45,12 @@ let
   haDashboardJson = ./monitoring/dashboards/home-assistant.json;
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+    ./monitoring/options.nix
+  ];
+
   options = {
     home-assistant-container = {
       enable = lib.mkEnableOption "Home Assistant (container)" // {
@@ -73,7 +79,6 @@ in
           Entities and automations defined here are read-only in the UI.
         '';
       };
-
 
       hacs = {
         enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
@@ -144,7 +149,7 @@ in
     virtualisation.oci-containers = {
       backend = "podman";
       containers.home-assistant = {
-        image = cfg.image;
+        inherit (cfg) image;
         autoStart = true;
         volumes = [
           "${cfg.dataDir}:/config"
@@ -256,8 +261,7 @@ in
 
     # Container needs to restart when our integration config changes.
     systemd.services.podman-home-assistant.restartTriggers =
-      lib.optional monitoringEnabled prometheusYaml
-      ++ lib.optional (cfg.packages != { }) packagesDir;
+      lib.optional monitoringEnabled prometheusYaml ++ lib.optional (cfg.packages != { }) packagesDir;
 
     monitoring.exporters.home-assistant = lib.mkIf monitoringEnabled {
       port = 8123;

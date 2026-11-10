@@ -5,7 +5,7 @@
   ...
 }:
 let
-  src = inputs.skills.tilth;
+  src = inputs.tilth;
   cargoToml = lib.importTOML "${src}/Cargo.toml";
 in
 rustPlatform.buildRustPackage {

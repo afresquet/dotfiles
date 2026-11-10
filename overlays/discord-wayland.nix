@@ -1,4 +1,4 @@
-final: prev: {
+_final: prev: {
   discord = prev.symlinkJoin {
     name = "discord";
     paths = [ prev.discord ];

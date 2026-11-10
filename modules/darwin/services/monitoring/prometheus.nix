@@ -24,14 +24,14 @@ let
   ) (lib.attrValues (piConfig.reverseProxy.services or { }));
   hostsToProbe = cfg.probeUrls;
 
-  prometheusConfig = pkgs.writeText "prometheus.yml" (builtins.toJSON {
-    global = {
-      scrape_interval = cfg.scrapeInterval;
-      external_labels.monitor = "mac-mini";
-    };
+  prometheusConfig = pkgs.writeText "prometheus.yml" (
+    builtins.toJSON {
+      global = {
+        scrape_interval = cfg.scrapeInterval;
+        external_labels.monitor = "mac-mini";
+      };
 
-    scrape_configs =
-      [
+      scrape_configs = [
         {
           job_name = "prometheus";
           static_configs = [ { targets = [ "127.0.0.1:${toString port}" ]; } ];
@@ -40,14 +40,18 @@ let
       # One job per /metrics-style exporter the Pi contributes. Each entry
       # carries its own port, metricsPath, optional bearer auth, and any
       # metric_relabel_configs (e.g. cAdvisor's name-from-cgroup synthesis).
-      ++ lib.mapAttrsToList (name: exp: {
-        job_name = name;
-        metrics_path = exp.metricsPath;
-        static_configs = [ { targets = [ "${cfg.targetHost}:${toString exp.port}" ]; } ];
-        metric_relabel_configs = exp.metricRelabelConfigs;
-      } // lib.optionalAttrs (exp.bearerTokenFile != null) {
-        bearer_token_file = exp.bearerTokenFile;
-      }) scrapeExporters
+      ++ lib.mapAttrsToList (
+        name: exp:
+        {
+          job_name = name;
+          metrics_path = exp.metricsPath;
+          static_configs = [ { targets = [ "${cfg.targetHost}:${toString exp.port}" ]; } ];
+          metric_relabel_configs = exp.metricRelabelConfigs;
+        }
+        // lib.optionalAttrs (exp.bearerTokenFile != null) {
+          bearer_token_file = exp.bearerTokenFile;
+        }
+      ) scrapeExporters
       # Special-case the blackbox job: it scrapes blackbox's /probe with each
       # probe URL passed as a target parameter.
       ++ lib.optional (hostsToProbe != [ ]) {
@@ -56,20 +60,29 @@ let
         params.module = [ "http_2xx" ];
         static_configs = [ { targets = hostsToProbe; } ];
         relabel_configs = [
-          { source_labels = [ "__address__" ]; target_label = "__param_target"; }
-          { source_labels = [ "__param_target" ]; target_label = "instance"; }
-          { target_label = "__address__"; replacement = "${cfg.targetHost}:${toString blackboxPort}"; }
+          {
+            source_labels = [ "__address__" ];
+            target_label = "__param_target";
+          }
+          {
+            source_labels = [ "__param_target" ];
+            target_label = "instance";
+          }
+          {
+            target_label = "__address__";
+            replacement = "${cfg.targetHost}:${toString blackboxPort}";
+          }
         ];
       };
-  });
+    }
+  );
 in
 {
   options.monitoring = {
     probeUrls = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = derivedProbeUrls;
-      defaultText = lib.literalExpression
-        "derived from piConfig.reverseProxy.services (each entry's host + probePath)";
+      defaultText = lib.literalExpression "derived from piConfig.reverseProxy.services (each entry's host + probePath)";
       description = ''
         Full URLs blackbox should probe over HTTP. By default this is built
         from the Pi's reverseProxy.services attrset — each Pi service module
@@ -120,19 +133,24 @@ in
         # land the daemon in launchd's penalty box (where KeepAlive stops
         # rescuing it). Wrapping in /bin/sh — always present pre-mount —
         # lets us block on wait4path until /nix actually appears, then exec.
-        ProgramArguments = let exe = "${pkgs.prometheus}/bin/prometheus"; in [
-          "/bin/sh" "-c"
-          ''
-            /bin/wait4path "$0"
-            exec "$0" "$@"
-          ''
-          exe
-          "--config.file=${prometheusConfig}"
-          "--storage.tsdb.path=${cfg.prometheusDataDir}"
-          "--storage.tsdb.retention.time=${cfg.retention}"
-          "--web.listen-address=${cfg.bindAddress}:${toString port}"
-          "--web.external-url=http://prometheus.home-server/"
-        ];
+        ProgramArguments =
+          let
+            exe = "${pkgs.prometheus}/bin/prometheus";
+          in
+          [
+            "/bin/sh"
+            "-c"
+            ''
+              /bin/wait4path "$0"
+              exec "$0" "$@"
+            ''
+            exe
+            "--config.file=${prometheusConfig}"
+            "--storage.tsdb.path=${cfg.prometheusDataDir}"
+            "--storage.tsdb.retention.time=${cfg.retention}"
+            "--web.listen-address=${cfg.bindAddress}:${toString port}"
+            "--web.external-url=http://prometheus.home-server/"
+          ];
         WorkingDirectory = cfg.prometheusDataDir;
         RunAtLoad = true;
         KeepAlive = true;

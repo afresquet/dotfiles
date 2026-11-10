@@ -1,4 +1,4 @@
-{ config, ... }:
+{ lib, config, ... }:
 {
   imports = [
     ../home.nix
@@ -13,33 +13,27 @@
 
   hyprlock.enable = true;
 
-  hyprland.workspace.extraRules =
+  hyprland.workspaces =
     let
-      primaryMonitor = builtins.elemAt config.monitors 0;
-      primaryMonitorRule = {
-        monitor = primaryMonitor.name;
-      };
-
-      secondaryMonitor = builtins.elemAt config.monitors 1;
-      secondaryMonitorRule = {
-        monitor = secondaryMonitor.name;
-      };
-
-      # tertiaryMonitor = builtins.elemAt config.monitors 2;
-      # tertiaryMonitorRule = { monitor = tertiaryMonitor.name; };
+      onMonitor =
+        index: names:
+        lib.genAttrs names (_: {
+          extraRules.monitor = (builtins.elemAt config.monitors index).name;
+        });
     in
-    {
-      browser = primaryMonitorRule;
-      terminal = primaryMonitorRule;
-      file-manager = primaryMonitorRule;
-      obsidian = primaryMonitorRule;
-      steam = primaryMonitorRule;
-      bambu-studio = primaryMonitorRule;
-      herdr = primaryMonitorRule;
-
-      discord = secondaryMonitorRule;
-      messaging = secondaryMonitorRule;
-      music = secondaryMonitorRule;
-      _1password = secondaryMonitorRule;
-    };
+    onMonitor 0 [
+      "browser"
+      "terminal"
+      "file-manager"
+      "obsidian"
+      "steam"
+      "bambu-studio"
+      "herdr"
+    ]
+    // onMonitor 1 [
+      "discord"
+      "messaging"
+      "music"
+      "_1password"
+    ];
 }

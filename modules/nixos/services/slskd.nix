@@ -5,18 +5,21 @@
 }:
 let
   cfg = config.slskd;
-  vpnEnabled = config.vpn.enable or false;
+  vpnEnabled = config.vpn.enable;
   # Per-service opt-out: VPN may be enabled globally but slskd specifically
   # runs on the host (e.g. trading privacy for inbound peer reachability,
   # since Mullvad doesn't port-forward).
   useNamespace = vpnEnabled && cfg.useVpn;
   namespaceAddr =
-    if useNamespace then
-      config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
-    else
-      "127.0.0.1";
+    if useNamespace then config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress else "127.0.0.1";
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+    ./vpn.nix
+  ];
+
   options.slskd = {
     enable = lib.mkEnableOption "slskd Soulseek client" // {
       default = false;
@@ -120,13 +123,14 @@ in
     virtualisation.oci-containers = {
       backend = "podman";
       containers.slskd = {
-        image = cfg.image;
+        inherit (cfg) image;
         autoStart = true;
         volumes = [
           "${cfg.dataDir}:/app"
           "${cfg.downloadsDir}:/downloads"
           "${cfg.incompleteDir}:/incomplete"
-        ] ++ lib.optional (cfg.sharedMusicDir != null) "${cfg.sharedMusicDir}:/music:ro";
+        ]
+        ++ lib.optional (cfg.sharedMusicDir != null) "${cfg.sharedMusicDir}:/music:ro";
         environment = {
           TZ = config.time.timeZone;
           # The slskd image's /entrypoint.sh does `umask "$SLSKD_UMASK"` before
@@ -143,7 +147,8 @@ in
           # NVMe and can blow up the root partition on a big haul.
           SLSKD_DOWNLOADS_DIR = "/downloads";
           SLSKD_INCOMPLETE_DIR = "/incomplete";
-        } // lib.optionalAttrs (cfg.sharedMusicDir != null) {
+        }
+        // lib.optionalAttrs (cfg.sharedMusicDir != null) {
           # Advertise /music as a share. The bind mount is :ro so slskd can't
           # write here even if it tried — the share is purely outbound serving.
           SLSKD_SHARED_DIR = "/music";
@@ -155,9 +160,7 @@ in
           # When off VPN: host network so the peer port is reachable directly
           # on the LAN interface (router port-forward required for inbound
           # peers from the open internet).
-          (if useNamespace
-            then "--network=ns:/var/run/netns/${config.vpn.namespace}"
-            else "--network=host")
+          (if useNamespace then "--network=ns:/var/run/netns/${config.vpn.namespace}" else "--network=host")
           "--dns=1.1.1.1"
           "--cgroups=split"
         ];

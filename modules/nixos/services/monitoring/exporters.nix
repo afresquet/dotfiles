@@ -65,23 +65,25 @@ in
         enable = true;
         listenAddress = "0.0.0.0";
         port = ports.blackbox;
-        configFile = pkgs.writeText "blackbox.yml" (builtins.toJSON {
-          modules = {
-            http_2xx = {
-              prober = "http";
-              timeout = "5s";
-              http = {
-                preferred_ip_protocol = "ip4";
-                valid_status_codes = [ ];
+        configFile = pkgs.writeText "blackbox.yml" (
+          builtins.toJSON {
+            modules = {
+              http_2xx = {
+                prober = "http";
+                timeout = "5s";
+                http = {
+                  preferred_ip_protocol = "ip4";
+                  valid_status_codes = [ ];
+                };
+              };
+              icmp = {
+                prober = "icmp";
+                timeout = "5s";
+                icmp.preferred_ip_protocol = "ip4";
               };
             };
-            icmp = {
-              prober = "icmp";
-              timeout = "5s";
-              icmp.preferred_ip_protocol = "ip4";
-            };
-          };
-        });
+          }
+        );
       };
     };
 
@@ -92,10 +94,18 @@ in
     };
 
     monitoring.exporters = {
-      node = { port = ports.node; };
-      systemd = { port = ports.systemd; };
-      smartctl = { port = ports.smartctl; };
-      process = { port = ports.process; };
+      node = {
+        port = ports.node;
+      };
+      systemd = {
+        port = ports.systemd;
+      };
+      smartctl = {
+        port = ports.smartctl;
+      };
+      process = {
+        port = ports.process;
+      };
       cadvisor = {
         port = ports.cadvisor;
         # podman containers are launched with `--cgroups=split` (see each
@@ -114,7 +124,9 @@ in
       };
       # Blackbox is included so the Mac knows its port; the Mac generates
       # the special "use blackbox to probe URLs" job structure separately.
-      blackbox = { port = ports.blackbox; };
+      blackbox = {
+        port = ports.blackbox;
+      };
     };
 
     monitoring.dashboards = {

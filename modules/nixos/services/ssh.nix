@@ -10,7 +10,14 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Enable the OpenSSH daemon.
-    services.openssh.enable = true;
+    services.openssh = {
+      enable = true;
+      # Keys only: keyboard-interactive would otherwise still offer a PAM
+      # password prompt with PasswordAuthentication off.
+      settings = {
+        PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+      };
+    };
   };
 }

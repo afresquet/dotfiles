@@ -35,6 +35,13 @@ let
     "${lib.concatStringsSep "." (lib.take 3 parts)}.0/24";
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+    ./monitoring/options.nix
+    ./vpn.nix
+  ];
+
   options.qbittorrent = {
     enable = lib.mkEnableOption "qBittorrent" // {
       default = false;
@@ -88,7 +95,7 @@ in
         # write the source file).
         UMask = "0002";
       };
-      vpnConfinement = lib.mkIf (config.vpn.enable or false) {
+      vpnConfinement = lib.mkIf config.vpn.enable {
         enable = true;
         vpnNamespace = config.vpn.namespace;
       };
@@ -96,10 +103,12 @@ in
 
     services.qbittorrent = {
       enable = true;
-      profileDir = cfg.profileDir;
-      webuiPort = cfg.webuiPort;
-      torrentingPort = cfg.torrentingPort;
-      openFirewall = true;
+      inherit (cfg) profileDir;
+      inherit (cfg) webuiPort;
+      inherit (cfg) torrentingPort;
+      # The peer port lives inside the VPN namespace (opened there via
+      # openVPNPorts); a hole in the host firewall would go unused.
+      openFirewall = false;
       serverConfig = {
         Preferences = {
           "WebUI\\HostHeaderValidation" = false;
@@ -109,7 +118,7 @@ in
           # Skip auth for the wg bridge subnet so the prometheus exporter
           # (running on the host) can scrape without credentials. The bridge
           # is internal-only — nothing on the LAN can reach this subnet.
-          "WebUI\\AuthSubnetWhitelistEnabled" = (config.vpn.enable or false);
+          "WebUI\\AuthSubnetWhitelistEnabled" = config.vpn.enable;
           "WebUI\\AuthSubnetWhitelist" = bridgeSubnet;
         };
         BitTorrent = {
@@ -145,7 +154,7 @@ in
       widget = {
         type = "qbittorrent";
         url =
-          if (config.vpn.enable or false) then
+          if config.vpn.enable then
             "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString cfg.webuiPort}"
           else
             "http://127.0.0.1:${toString cfg.webuiPort}";
@@ -160,7 +169,7 @@ in
       # (vpn-confinement only DNATs PREROUTING traffic). Proxy via the
       # namespace's bridge-side address instead.
       upstream =
-        if (config.vpn.enable or false) then
+        if config.vpn.enable then
           "${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString cfg.webuiPort}"
         else
           "127.0.0.1:${toString cfg.webuiPort}";
@@ -176,14 +185,15 @@ in
     systemd.services.prometheus-qbittorrent-exporter = {
       description = "Prometheus qBittorrent exporter";
       wantedBy = [ "multi-user.target" ];
-      after = [ "qbittorrent.service" ] ++ lib.optional (config.vpn.enable or false) "wg.service";
+      after = [ "qbittorrent.service" ] ++ lib.optional config.vpn.enable "wg.service";
       serviceConfig = {
         ExecStart = "${pkgs.prometheus-qbittorrent-exporter}/bin/qbit-exp";
         Environment = [
           "QBITTORRENT_BASE_URL=http://${
-            if (config.vpn.enable or false)
-            then config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
-            else "127.0.0.1"
+            if config.vpn.enable then
+              config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+            else
+              "127.0.0.1"
           }:${toString cfg.webuiPort}"
           "QBITTORRENT_USERNAME=admin"
           # Auth bypass on the wg bridge subnet means any password is accepted.
@@ -202,10 +212,10 @@ in
       };
     };
 
-    monitoring.exporters.qbittorrent = lib.mkIf (config.monitoring.enable or false) {
+    monitoring.exporters.qbittorrent = lib.mkIf config.monitoring.enable {
       port = 17871;
     };
-    monitoring.dashboards.qbittorrent = lib.mkIf (config.monitoring.enable or false) {
+    monitoring.dashboards.qbittorrent = lib.mkIf config.monitoring.enable {
       # Nixpkgs `prometheus-qbittorrent-exporter` ships martabal's fork
       # (binary `qbit-exp`), not caseyscarborough's — different metric set,
       # so the grafana.com dashboards (14708, 15116) have broken panels.
@@ -215,7 +225,7 @@ in
       hash = "sha256-GFH+qQv7A9KGb0HW2NuBvv3YA4lEiEL0BcAftd/7vnc=";
     };
 
-    vpnNamespaces = lib.mkIf (config.vpn.enable or false) {
+    vpnNamespaces = lib.mkIf config.vpn.enable {
       ${config.vpn.namespace} = {
         portMappings = [
           {

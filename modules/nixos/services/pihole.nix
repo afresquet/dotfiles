@@ -7,12 +7,8 @@
 }:
 let
   cfg = config.pihole;
-  proxy =
-    config.reverseProxy or {
-      enable = false;
-      services = { };
-      dnsTarget = null;
-    };
+  proxy = config.reverseProxy;
+  monitoringEnabled = config.monitoring.enable;
   proxyHostnames = lib.concatLists (
     lib.mapAttrsToList (_: svc: [ svc.host ] ++ svc.aliases) proxy.services
   );
@@ -20,8 +16,8 @@ let
   # runtime (substituted into the rendered FTLCONF_dns_hosts env file when the
   # IP is auto-discovered from tailscaled).
   dnsHostEntries = ip: lib.concatStringsSep ";" (map (h: "${ip} ${h}") proxyHostnames);
-  shouldServeProxyDns = (proxy.enable or false) && proxyHostnames != [ ];
-  hasStaticDnsTarget = (proxy.dnsTarget or null) != null;
+  shouldServeProxyDns = proxy.enable && proxyHostnames != [ ];
+  hasStaticDnsTarget = proxy.dnsTarget != null;
 
   # Forward queries for the user's Tailscale MagicDNS suffix to tailscaled's
   # local resolver, so hostnames like alvaros-mac-mini.<suffix> resolve from
@@ -32,7 +28,12 @@ let
   '';
 in
 {
-  imports = [ inputs.agenix.nixosModules.default ];
+  imports = [
+    inputs.agenix.nixosModules.default
+    ./caddy.nix
+    ./dashboard.nix
+    ./monitoring/options.nix
+  ];
 
   options = {
     pihole = {
@@ -92,6 +93,14 @@ in
       # systemd's default /run cleanup.
       "d /run/pihole 0755 root root -"
     ];
+
+    # Caddy resolves hostname upstreams (e.g. *.ts.net) at startup via the
+    # Pi's resolver, which is this container. Order Caddy after it so the
+    # lookup doesn't race the resolver coming up.
+    systemd.services.caddy = lib.mkIf proxy.enable {
+      after = [ "podman-pihole.service" ];
+      wants = [ "podman-pihole.service" ];
+    };
 
     systemd.services.podman-pihole.restartTriggers = [
       tailnetDnsConf
@@ -170,7 +179,7 @@ in
     # Pi-hole exposes its own Prometheus exporter and a community Grafana
     # dashboard. The Mac's monitoring module aggregates these via piConfig,
     # so this is the only place that knows about pihole-flavored monitoring.
-    services.prometheus.exporters.pihole = {
+    services.prometheus.exporters.pihole = lib.mkIf monitoringEnabled {
       enable = true;
       listenAddress = "0.0.0.0";
       port = 9617;
@@ -182,7 +191,7 @@ in
     # Translate the agenix-stored Pi-hole 6 admin password
     # (FTLCONF_webserver_api_password=…) into the PIHOLE_PASSWORD env var the
     # eko/pihole-exporter binary expects. Keeps us from re-keying secrets.
-    systemd.services.pihole-exporter-env = {
+    systemd.services.pihole-exporter-env = lib.mkIf monitoringEnabled {
       description = "Translate Pi-hole web password into PIHOLE_PASSWORD env";
       wantedBy = [ "prometheus-pihole-exporter.service" ];
       before = [ "prometheus-pihole-exporter.service" ];
@@ -201,12 +210,12 @@ in
     };
 
     systemd.services.prometheus-pihole-exporter.serviceConfig.EnvironmentFile =
-      "/run/pihole-exporter/env";
+      lib.mkIf monitoringEnabled "/run/pihole-exporter/env";
 
-    monitoring.exporters.pihole = {
+    monitoring.exporters.pihole = lib.mkIf monitoringEnabled {
       port = 9617;
     };
-    monitoring.dashboards.pihole = {
+    monitoring.dashboards.pihole = lib.mkIf monitoringEnabled {
       id = 10176;
       revision = 3;
       hash = "sha256-MB4J1WAqLlV2eMFG67sYUbhJk3g1LnfjU+iEWejgyKE=";

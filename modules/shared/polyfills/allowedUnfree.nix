@@ -1,4 +1,10 @@
 # https://github.com/NixOS/nixpkgs/issues/55674
+#
+# Modules append the unfree package names they need to `allowedUnfree`
+# instead of flipping `allowUnfree` globally. Standalone home-manager
+# instantiates its own nixpkgs with its own `nixpkgs.config`, so a home
+# config can't see the NixOS predicate; flake.nix passes the host's list in
+# as `nixosAllowedUnfree` so packages the system allows stay allowed.
 { lib, config, ... }:
 {
   options = {

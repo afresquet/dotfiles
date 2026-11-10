@@ -45,7 +45,9 @@ in
   gitServer = {
     enable = true;
     # Heeler only needs terminal access, not repo admin.
-    adminKeys = lib.remove keys.heeler config.users.users.${config.username}.openssh.authorizedKeys.keys;
+    adminKeys =
+      lib.remove keys.heeler
+        config.users.users.${config.username}.openssh.authorizedKeys.keys;
   };
   agentTelegram = {
     enable = true;
@@ -183,12 +185,6 @@ in
   ];
 
   services.openssh = {
-    # Keys only: keyboard-interactive would otherwise still offer a PAM
-    # password prompt with PasswordAuthentication off.
-    settings = {
-      PasswordAuthentication = false;
-      KbdInteractiveAuthentication = false;
-    };
     # Tailscale SSH takes over port 22 on the tailnet and ignores authorized
     # keys, so key-based clients that can't speak to it (iOS Shortcuts) use
     # OpenSSH on 2222, reachable from the tailnet only.

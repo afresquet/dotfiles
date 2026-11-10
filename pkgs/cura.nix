@@ -5,10 +5,13 @@
   appimageTools,
   ...
 }:
-
-appimageTools.wrapType2 rec {
+let
   pname = "cura";
   version = "5.7.1";
+  description = "Ultimaker Cura Printing Slicing Software";
+in
+appimageTools.wrapType2 {
+  inherit pname version;
 
   src = fetchurl {
     url = "https://github.com/Ultimaker/Cura/releases/download/${version}/UltiMaker-Cura-${version}-linux-X64.AppImage";
@@ -17,21 +20,21 @@ appimageTools.wrapType2 rec {
 
   desktopItems = [
     (makeDesktopItem {
-      name = "cura";
-      exec = "cura";
+      name = pname;
+      exec = pname;
       terminal = false;
       desktopName = "Ultimaker Cura";
-      comment = meta.description;
+      comment = description;
       categories = [ "Utility" ];
     })
   ];
 
-  meta = with lib; {
-    description = "Ultimaker Cura Printing Slicing Software";
+  meta = {
+    inherit description;
     homepage = "https://ultimaker.com/es/software/ultimaker-cura/";
-    changelog = "https://github.com/Ultimaker/Cura/releases/tag/${finalAttrs.version}";
-    license = licenses.lgpl3Plus;
-    platforms = platforms.linux;
-    mainProgram = "cura";
+    changelog = "https://github.com/Ultimaker/Cura/releases/tag/${version}";
+    license = lib.licenses.lgpl3Plus;
+    platforms = lib.platforms.linux;
+    mainProgram = pname;
   };
 }

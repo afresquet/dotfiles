@@ -7,6 +7,11 @@ let
   cfg = config.jellyfin;
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+  ];
+
   options.jellyfin = {
     enable = lib.mkEnableOption "Jellyfin media server" // {
       default = false;

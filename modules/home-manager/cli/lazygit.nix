@@ -20,13 +20,13 @@ in
 
         os =
           let
-            helix = lib.getExe config.editor;
+            editor = lib.getExe config.editor;
           in
           {
-            edit = "${helix} -- {{filename}}";
-            editAtLine = "${helix} -- {{filename}}:{{line}}";
-            editAtLineAndWait = "${helix} -- {{filename}}:{{line}}";
-            openDirInEditor = "${helix} -- {{dir}}";
+            edit = "${editor} -- {{filename}}";
+            editAtLine = "${editor} -- {{filename}}:{{line}}";
+            editAtLineAndWait = "${editor} -- {{filename}}:{{line}}";
+            openDirInEditor = "${editor} -- {{dir}}";
             editInTerminal = true;
           };
       };

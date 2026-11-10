@@ -1,9 +1,21 @@
 { lib, pkgs, ... }:
+let
+  inherit (lib) mkOption types;
+in
 {
-  options = with lib; {
+  options = {
     hostname = mkOption { type = types.str; };
     username = mkOption { type = types.str; };
     description = mkOption { type = types.str; };
+    desktop = mkOption {
+      type = types.bool;
+      default = true;
+      description = "Whether this host has a graphical session. Headless hosts skip GUI-only tooling.";
+    };
+    dotfilesDir = mkOption {
+      type = types.str;
+      description = "Checkout of this flake on the host; what `nh` rebuilds from.";
+    };
     shell = mkOption { type = types.package; };
     terminal = mkOption { type = types.package; };
     editor = mkOption { type = types.package; };
@@ -23,11 +35,15 @@
             refreshRate = mkOption { type = types.float; };
             x = mkOption { type = types.int; };
             y = mkOption { type = types.int; };
-            scale = mkOption { default = "auto"; };
+            scale = mkOption {
+              type = types.either types.str types.number;
+              default = "auto";
+            };
             enable = mkOption { type = types.bool; };
           };
         }
       );
+      default = [ ];
     };
     tailnet.domain = mkOption {
       type = types.str;

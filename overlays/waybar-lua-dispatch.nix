@@ -3,7 +3,7 @@
 # address-based schema and Lua dispatcher. Upstream master has the fixes
 # (Alexays/Waybar b591c8a and follow-ups) but no release includes them yet, so
 # this throws on any waybar bump as a reminder to check and drop the patch.
-final: prev: {
+_final: prev: {
   waybar =
     if prev.waybar.version == "0.15.0" then
       prev.waybar.overrideAttrs (old: {

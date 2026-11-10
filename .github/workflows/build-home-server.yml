@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 120
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Reclaim disk space
         run: |
@@ -18,7 +18,7 @@ jobs:
           df -h /
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@main
+        uses: DeterminateSystems/nix-installer-action@v23
         with:
           extra-conf: |
             extra-substituters = https://nixos-raspberrypi.cachix.org
@@ -37,7 +37,7 @@ jobs:
           fi
           ls -lah /tmp/artifact/
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: home-server-sd-image
           path: /tmp/artifact/*

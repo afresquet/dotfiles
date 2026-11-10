@@ -1,11 +1,16 @@
-{ lib, config, isLinux, ... }:
+{
+  lib,
+  config,
+  isLinux,
+  ...
+}:
 let
   cfg = config.foot;
 in
 {
   options = {
     foot.enable = lib.mkEnableOption "foot" // {
-      default = isLinux;
+      default = isLinux && config.desktop;
     };
   };
 

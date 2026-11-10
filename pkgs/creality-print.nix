@@ -28,12 +28,12 @@ appimageTools.wrapType2 rec {
     })
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Creality 3D Printing Slicing Software";
     homepage = "https://www.creality.com";
     changelog = "https://github.com/CrealityOfficial/CrealityPrint/releases/tag/v${releaseNotesVersion}";
-    license = licenses.gpl3Only;
-    platforms = platforms.linux;
+    license = lib.licenses.gpl3Only;
+    platforms = lib.platforms.linux;
     mainProgram = "creality-print";
   };
 }

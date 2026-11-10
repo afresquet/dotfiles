@@ -12,7 +12,7 @@ in
   config = lib.mkIf cfg.enable {
     programs.nh = {
       enable = true;
-      flake = "/home/${config.username}/dotfiles";
+      flake = config.dotfilesDir;
       clean = {
         enable = true;
         extraArgs = "--keep-since 4d --keep 3 --no-gcroots";

@@ -7,6 +7,16 @@
 let
   cfg = config.claude;
 
+  # Usage and OAuth token caches live in a per-user directory rather than the
+  # shared /tmp: $XDG_RUNTIME_DIR on Linux, the per-user $TMPDIR on macOS.
+  # umask 077 covers the directory and every file written below.
+  cacheSetup = ''
+    umask 077
+    CACHE_DIR="''${XDG_RUNTIME_DIR:-''${TMPDIR:-/tmp}}/claude-usage"
+    mkdir -p "$CACHE_DIR"
+    CACHE_FILE="$CACHE_DIR/usage"
+  '';
+
   fetchUsageScript = pkgs.writeShellApplication {
     name = "claude-fetch-usage";
     runtimeInputs = with pkgs; [
@@ -16,16 +26,23 @@ let
     ];
     runtimeEnv.LC_ALL = "C.UTF-8";
     text = ''
-      CACHE_FILE="/tmp/.claude_usage_cache"
-      TOKEN_CACHE="/tmp/.claude_token_cache"
+      ${cacheSetup}
+      TOKEN_CACHE="$CACHE_DIR/token"
       TOKEN_TTL=900
+      # Hooks call this on every tool use; only hit the API once per minute.
+      USAGE_TTL=60
+
+      age() {
+        echo $(( $(date -u +%s) - $(stat -c %Y "$1" 2>/dev/null || echo 0) ))
+      }
+
+      if [ -f "$CACHE_FILE" ] && [ "$(age "$CACHE_FILE")" -lt "$USAGE_TTL" ]; then
+        exit 0
+      fi
 
       token=""
-      if [ -f "$TOKEN_CACHE" ]; then
-        cache_age=$(( $(date -u +%s) - $(stat -c %Y "$TOKEN_CACHE" 2>/dev/null || echo 0) ))
-        if [ "$cache_age" -lt "$TOKEN_TTL" ]; then
-          token=$(cat "$TOKEN_CACHE" 2>/dev/null || true)
-        fi
+      if [ -f "$TOKEN_CACHE" ] && [ "$(age "$TOKEN_CACHE")" -lt "$TOKEN_TTL" ]; then
+        token=$(cat "$TOKEN_CACHE" 2>/dev/null || true)
       fi
 
       if [ -z "$token" ]; then
@@ -38,7 +55,6 @@ let
           exit 0
         fi
         printf '%s' "$token" > "$TOKEN_CACHE"
-        chmod 600 "$TOKEN_CACHE" 2>/dev/null || true
       fi
 
       usage_json=$(curl -s -m 3 \
@@ -89,7 +105,7 @@ let
           || true)
       fi
 
-      CACHE_FILE="/tmp/.claude_usage_cache"
+      ${cacheSetup}
       five_h=""
       seven_d=""
       five_h_reset=""

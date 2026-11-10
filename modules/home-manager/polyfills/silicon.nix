@@ -5,8 +5,21 @@
   config,
   ...
 }:
-with lib;
 let
+  inherit (lib)
+    mkEnableOption
+    mkPackageOption
+    mkOption
+    types
+    literalExpression
+    mkIf
+    mkMerge
+    flip
+    mapAttrsToList
+    escapeShellArg
+    getExe
+    hm
+    ;
   cfg = config.programs.silicon;
 in
 {
@@ -105,18 +118,18 @@ in
     home.packages = [ cfg.package ];
 
     xdg.configFile = mkMerge (
-      [ ({ "silicon/config" = mkIf (cfg.settings != "") { text = cfg.settings; }; }) ]
+      [ { "silicon/config" = mkIf (cfg.settings != "") { text = cfg.settings; }; } ]
       ++ (flip mapAttrsToList cfg.themes (
         name: val: {
           "silicon/themes/${name}.tmTheme" = {
-            source = if isNull val.file then "${val.src}" else "${val.src}/${val.file}";
+            source = if val.file == null then "${val.src}" else "${val.src}/${val.file}";
           };
         }
       ))
       ++ (flip mapAttrsToList cfg.syntaxes (
         name: val: {
           "silicon/syntaxes/${name}.sublime-syntax" = {
-            source = if isNull val.file then "${val.src}" else "${val.src}/${val.file}";
+            source = if val.file == null then "${val.src}" else "${val.src}/${val.file}";
           };
         }
       ))

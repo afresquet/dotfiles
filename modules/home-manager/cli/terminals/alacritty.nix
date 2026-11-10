@@ -5,7 +5,7 @@ in
 {
   options = {
     alacritty.enable = lib.mkEnableOption "Alacritty" // {
-      default = true;
+      default = config.desktop;
     };
   };
 

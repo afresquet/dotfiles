@@ -1,7 +1,12 @@
-{ lib, utils, inputs, ... }:
+{
+  lib,
+  utils,
+  inputs,
+  ...
+}:
 {
   additions =
-    final: prev:
+    final: _prev:
     import ../pkgs {
       inherit (final) pkgs;
       inherit lib utils inputs;

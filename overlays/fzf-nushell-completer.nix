@@ -2,7 +2,7 @@
 # nushell deprecated. Upstream master has migrated to `place` but no release
 # includes it yet, so this throws on any fzf bump as a reminder to check and
 # drop the patch.
-final: prev: {
+_final: prev: {
   fzf =
     if prev.fzf.version == "0.74.5" then
       prev.fzf.overrideAttrs (old: {

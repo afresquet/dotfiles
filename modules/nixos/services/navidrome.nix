@@ -7,6 +7,11 @@ let
   cfg = config.navidrome;
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+  ];
+
   options.navidrome = {
     enable = lib.mkEnableOption "Navidrome Subsonic-compatible music server" // {
       default = false;

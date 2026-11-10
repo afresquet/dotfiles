@@ -16,6 +16,6 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [ pkgs.tilth ];
 
-    skills.sources.tilth = "${inputs.skills.tilth}/skills/SKILL.md";
+    skills.sources.tilth = "${inputs.tilth}/skills/SKILL.md";
   };
 }

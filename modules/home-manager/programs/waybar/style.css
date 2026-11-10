@@ -2,7 +2,7 @@
    matches rofi: dark base, raised pills, 10px corners, blue (base0D) accent. */
 
 * {
-  font-family: "Hack Nerd Font Mono";
+  font-family: "@monospace@";
   font-size: 13px;
   min-height: 0;
 }

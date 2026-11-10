@@ -7,88 +7,57 @@ let
     in
     builtins.elemAt name 0;
 
-  importDirBase =
-    {
-      dir,
-      names ? false,
-    }:
-    let
-      dirEntries = builtins.readDir dir;
-
-      mapDirEntries =
+  # Lists the importable entries of a directory: every `*.nix` file except
+  # `default.nix`, and every subdirectory that has a `default.nix`.
+  dirEntries =
+    dir:
+    builtins.concatLists (
+      lib.mapAttrsToList (
         path: kind:
         if kind == "directory" then
           let
             file = dir + "/${path}/default.nix";
           in
-          if builtins.pathExists file then [ file ] else [ ]
-        else if path == "default.nix" then
-          [ ]
+          lib.optional (builtins.pathExists file) {
+            path = file;
+            name = path;
+            isDirectory = true;
+          }
         else
-          [ (dir + "/${path}") ];
-
-      mapDirEntriesWithNames =
-        path: kind:
-        if kind == "directory" then
-          let
-            file = {
-              path = dir + "/${path}/default.nix";
-              name = path;
-            };
-          in
-          if builtins.pathExists file.path then [ file ] else [ ]
-        else
-          let
-            file = {
-              path = dir + "/${path}";
-              name = getFileNameWithoutExtension path;
-            };
-          in
-          if path == "default.nix" then [ ] else [ file ];
-
-      mapFunction = if !names then mapDirEntries else mapDirEntriesWithNames;
-
-      paths = lib.mapAttrsToList mapFunction dirEntries;
-    in
-    builtins.concatLists paths;
+          lib.optional (path != "default.nix" && lib.hasSuffix ".nix" path) {
+            path = dir + "/${path}";
+            name = getFileNameWithoutExtension path;
+            isDirectory = false;
+          }
+      ) (builtins.readDir dir)
+    );
 in
 rec {
-  importDir = dir: importDirBase { inherit dir; };
+  importDir = dir: map (entry: entry.path) (dirEntries dir);
 
-  importDirWithNames =
-    dir:
-    importDirBase {
-      inherit dir;
-      names = true;
-    };
+  importDirWithNames = dir: map (entry: { inherit (entry) path name; }) (dirEntries dir);
 
+  # Directory entries as an attribute set keyed by file or directory name.
+  # Subdirectories are imported with `args` (they are categories built with
+  # `makeCategory`); plain files are returned as paths, so they are ordinary
+  # modules with no wrapper lambda.
   importDirAsAttrSet =
     {
       dir,
       args ? null,
     }:
-    let
-      moduleFiles = importDirWithNames dir;
-
-      mapModuleFiles =
-        { name, path }:
-        let
-          derivation = if args != null then import path args else import path;
-        in
-        {
-          ${name} = derivation;
-        };
-
-      modules = builtins.map mapModuleFiles moduleFiles;
-    in
-    lib.mergeAttrsList modules;
+    lib.listToAttrs (
+      map (
+        entry:
+        lib.nameValuePair entry.name (
+          if entry.isDirectory && args != null then import entry.path args else entry.path
+        )
+      ) (dirEntries dir)
+    );
 
   makeCategory =
     dir:
-    let
-      modules = importDirAsAttrSet { inherit dir; };
-    in
-    modules
+    importDirAsAttrSet { inherit dir; }
     // {
       default = {
         imports = importDir dir;

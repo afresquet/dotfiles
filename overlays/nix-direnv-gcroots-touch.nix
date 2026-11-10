@@ -6,7 +6,7 @@
 # fails with a reminder once a nixpkgs release no longer contains it.
 # Patched in preFixup because the resholve wrapper copies $src to $out
 # verbatim, so postPatch never reaches the installed file.
-final: prev: {
+_final: prev: {
   nix-direnv = prev.nix-direnv.overrideAttrs (old: {
     preFixup = ''
       direnvrc=$out/share/nix-direnv/direnvrc

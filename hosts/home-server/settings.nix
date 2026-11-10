@@ -4,5 +4,5 @@
   hostname = "Home-Server";
   username = "pi";
   description = "Pi";
-  monitors = [ ];
+  desktop = false;
 }

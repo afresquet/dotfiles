@@ -1,4 +1,10 @@
-{ lib, config, isLinux, pkgs, ... }:
+{
+  lib,
+  config,
+  isLinux,
+  pkgs,
+  ...
+}:
 let
   cfg = config.remmina;
 in

@@ -31,22 +31,29 @@ let
     };
   };
 
-  source = sources.${stdenv.hostPlatform.system} or (throw "apprenticevr: unsupported system ${stdenv.hostPlatform.system}");
+  source =
+    sources.${stdenv.hostPlatform.system}
+      or (throw "apprenticevr: unsupported system ${stdenv.hostPlatform.system}");
 
   src = fetchurl source;
 
-  meta = with lib; {
+  meta = {
     description = "Sideload apps to your Meta Quest";
     homepage = "https://github.com/${repo}";
     changelog = "https://github.com/${repo}/releases/tag/v${version}";
-    license = licenses.mit;
+    license = lib.licenses.mit;
     platforms = builtins.attrNames sources;
     mainProgram = pname;
   };
 in
 if stdenv.hostPlatform.isDarwin then
   stdenv.mkDerivation {
-    inherit pname version src meta;
+    inherit
+      pname
+      version
+      src
+      meta
+      ;
 
     nativeBuildInputs = [ undmg ];
 
@@ -61,7 +68,12 @@ if stdenv.hostPlatform.isDarwin then
   }
 else
   appimageTools.wrapType2 {
-    inherit pname version src meta;
+    inherit
+      pname
+      version
+      src
+      meta
+      ;
 
     desktopItems = [
       (makeDesktopItem {

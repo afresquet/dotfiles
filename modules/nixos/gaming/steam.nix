@@ -36,12 +36,13 @@ in
     ];
 
     environment.sessionVariables = {
-      STEAM_EXTRA_COMPAT_TOOLS_PATHS = "/home/${config.username}/.steam/root/compatibilitytools.d";
+      STEAM_EXTRA_COMPAT_TOOLS_PATHS = "${
+        config.users.users.${config.username}.home
+      }/.steam/root/compatibilitytools.d";
     };
 
     allowedUnfree = [
       "steam"
-      "steam-original"
       "steam-run"
       "steam-unwrapped"
     ];

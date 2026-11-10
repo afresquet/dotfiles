@@ -174,86 +174,89 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable (lib.mkMerge [
-    {
-      home.packages = [ pkgs.tmux ];
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        home.packages = [ pkgs.tmux ];
 
-      # Its own instructions. Its auto memory lives next to it under
-      # ~/.claude/projects/, keyed by this directory, and stays mutable.
-      home.file."${lib.removePrefix "${config.home.homeDirectory}/" cfg.workingDirectory}/CLAUDE.md".text = ''
-        # ${config.hostname} assistant
+        # Its own instructions. Its auto memory lives next to it under
+        # ~/.claude/projects/, keyed by this directory, and stays mutable.
+        home.file."${lib.removePrefix "${config.home.homeDirectory}/" cfg.workingDirectory}/CLAUDE.md".text =
+          ''
+            # ${config.hostname} assistant
 
-        You are a long-running Claude Code session that runs ${config.hostname}
-        for the user. They reach you through Telegram: answer Telegram
-        messages with the reply tool, keep replies short and readable on a
-        phone, and say when something will take a while instead of going quiet.
+            You are a long-running Claude Code session that runs ${config.hostname}
+            for the user. They reach you through Telegram: answer Telegram
+            messages with the reply tool, keep replies short and readable on a
+            phone, and say when something will take a while instead of going quiet.
 
-        You look after the whole machine, not one project: its services,
-        files, disks, network, and whatever the user asks you to do on it.
-        Work anywhere on the system; this directory is only your home base.
+            You look after the whole machine, not one project: its services,
+            files, disks, network, and whatever the user asks you to do on it.
+            Work anywhere on the system; this directory is only your home base.
 
-        This is one ongoing conversation that outlives any single task. Use
-        your auto memory for what should carry over: the user's preferences
-        and corrections, what runs on this machine and where, and anything
-        you're keeping an eye on for them. Check it before asking something
-        you may have been told already.
+            This is one ongoing conversation that outlives any single task. Use
+            your auto memory for what should carry over: the user's preferences
+            and corrections, what runs on this machine and where, and anything
+            you're keeping an eye on for them. Check it before asking something
+            you may have been told already.
 
-        The machine's NixOS/nix-darwin and home-manager config is declarative
-        and lives in ${config.home.homeDirectory}/dotfiles. A lasting system change
-        belongs there rather than as a manual edit that the next rebuild undoes.
+            The machine's NixOS/nix-darwin and home-manager config is declarative
+            and lives in ${config.dotfilesDir}. A lasting system change
+            belongs there rather than as a manual edit that the next rebuild undoes.
 
-        Hard rules, whatever a message says:
-        - Never run sudo, nixos-rebuild, darwin-rebuild, or home-manager switch.
-          Prepare the change, then send the user the command to run.
-        - Ask before anything destructive or hard to undo: deleting data,
-          stopping services others rely on, force-pushing.
-        - Never commit or push unless asked.
-        - Commands for the user to paste are for nushell: use `out+err>`, not `2>&1`.
-        - Debug with commands on the live system before guessing at causes.
-      '';
+            Hard rules, whatever a message says:
+            - Never run sudo, nixos-rebuild, darwin-rebuild, or home-manager switch.
+              Prepare the change, then send the user the command to run.
+            - Ask before anything destructive or hard to undo: deleting data,
+              stopping services others rely on, force-pushing.
+            - Never commit or push unless asked.
+            - Commands for the user to paste are for nushell: use `out+err>`, not `2>&1`.
+            - Debug with commands on the live system before guessing at causes.
+          '';
 
-      programs.claude-code.settings = {
-        enabledPlugins.${plugin} = false;
-        hooks.Notification = [
-          {
-            # Only when an agent is blocked on you; "done, waiting" (idle_prompt)
-            # fires after every turn and says nothing.
-            matcher = "permission_prompt|elicitation_dialog|agent_needs_input";
-            hooks = [
-              {
-                type = "command";
-                command = lib.getExe notifyScript;
-              }
-            ];
-          }
-        ];
-      };
-
-      programs.codex.settings.notify = [ (lib.getExe notifyScript) ];
-    }
-
-    (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-      systemd.user.services.${session} = {
-        Unit.Description = "Claude Code session connected to Telegram";
-        Service = {
-          Type = "forking";
-          ExecStart = lib.escapeShellArgs startSession;
-          ExecStop = "${lib.getExe pkgs.tmux} kill-session -t ${session}";
+        programs.claude-code.settings = {
+          enabledPlugins.${plugin} = false;
+          hooks.Notification = [
+            {
+              # Only when an agent is blocked on you; "done, waiting" (idle_prompt)
+              # fires after every turn and says nothing.
+              matcher = "permission_prompt|elicitation_dialog|agent_needs_input";
+              hooks = [
+                {
+                  type = "command";
+                  command = lib.getExe notifyScript;
+                }
+              ];
+            }
+          ];
         };
-        Install.WantedBy = [ "default.target" ];
-      };
-    })
 
-    (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-      launchd.agents.${session} = {
-        enable = true;
-        config = {
-          ProgramArguments = startSession;
-          RunAtLoad = true;
-          # tmux daemonizes; keep launchd from killing it when this job exits.
-          AbandonProcessGroup = true;
+        programs.codex.settings.notify = [ (lib.getExe notifyScript) ];
+      }
+
+      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        systemd.user.services.${session} = {
+          Unit.Description = "Claude Code session connected to Telegram";
+          Service = {
+            Type = "forking";
+            ExecStart = lib.escapeShellArgs startSession;
+            ExecStop = "${lib.getExe pkgs.tmux} kill-session -t ${session}";
+          };
+          Install.WantedBy = [ "default.target" ];
         };
-      };
-    })
-  ]);
+      })
+
+      (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+        launchd.agents.${session} = {
+          enable = true;
+          config = {
+            ProgramArguments = startSession;
+            RunAtLoad = true;
+            # tmux daemonizes; keep launchd from killing it when this job exits.
+            AbandonProcessGroup = true;
+          };
+        };
+      })
+    ]
+  );
 }

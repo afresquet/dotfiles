@@ -20,7 +20,7 @@ in
     home.shellAliases =
       let
         nh = lib.getExe pkgs.nh;
-        flake = "~/dotfiles";
+        flake = config.dotfilesDir;
       in
       {
         noss = "${nh} os switch ${flake}";

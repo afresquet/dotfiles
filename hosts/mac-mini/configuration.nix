@@ -1,5 +1,4 @@
 {
-  pkgs,
   config,
   outputs,
   ...
@@ -11,6 +10,8 @@ in
   imports = [
     outputs.darwinModules.programs.default
     outputs.darwinModules.services.default
+
+    ./settings.nix
   ];
 
   users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys = with keys; [
@@ -22,7 +23,8 @@ in
     heeler
   ];
 
-  system.primaryUser = "afresquet";
+  system.primaryUser = config.username;
+  networking.hostName = config.hostname;
 
   monitoring.enable = true;
   agentTelegram = {
@@ -38,7 +40,7 @@ in
     restartAfterFreeze = true;
     sleep = {
       computer = "never";
-      display = 30;       # display can still sleep
+      display = 30; # display can still sleep
       harddisk = "never";
     };
   };
@@ -51,28 +53,15 @@ in
   system.defaults.loginwindow.autoLoginUser = config.system.primaryUser;
 
   homebrew.enable = true;
-  homebrew.casks = [ ];
 
+  # nix-darwin's power module covers sleep + auto-restart but not these two.
+  # `pmset -a` writes to NVRAM so it sticks across reboots.
+  #   womp 1     wake on magic packet (so anything on the LAN can WoL it)
+  #   powernap 0 disable powernap to avoid weird half-awake states that
+  #              break Tailscale connectivity
   system.activationScripts.postActivation.text = ''
-    sudo -H -u ${config.system.primaryUser} sh -c '
-      apps_source="${config.system.build.applications}/Applications"
-      moniker="Nix Trampolines"
-      app_target_base="$HOME/Applications"
-      app_target="$app_target_base/$moniker"
-      mkdir -p "$app_target"
-      ${pkgs.rsync}/bin/rsync --archive --checksum --chmod=-w --copy-unsafe-links --delete "$apps_source/" "$app_target"
-    '
-    # nix-darwin's power module covers sleep + auto-restart but not these two.
-    # `pmset -a` writes to NVRAM so it sticks across reboots.
-    #   womp 1     wake on magic packet (so anything on the LAN can WoL it)
-    #   powernap 0 disable powernap to avoid weird half-awake states that
-    #              break Tailscale connectivity
     pmset -a womp 1 powernap 0
   '';
-
-  # List packages installed in system profile. To search by name, run:
-  # $ nix-env -qaP | grep wget
-  environment.systemPackages = with pkgs; [ ];
 
   # Bring in the dotfiles `pkgs/` overlay (custom packages like
   # export-grafana-dashboard). `additions` injects everything from pkgs/;
@@ -84,9 +73,6 @@ in
 
   # Determinate manages the Nix installation; let it own nix.conf.
   nix.enable = false;
-
-  # Set Git commit hash for darwin-version.
-  # system.configurationRevision = configurationRevision;
 
   # Used for backwards compatibility, please read the changelog before changing.
   # $ darwin-rebuild changelog

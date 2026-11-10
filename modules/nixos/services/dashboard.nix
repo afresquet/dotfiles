@@ -25,21 +25,23 @@ let
     in
     lib.optional (entries != [ ]) {
       ${groupName} = map (svc: {
-        ${svc.name} =
-          {
-            href = svc.href;
-            icon = svc.icon;
-            description = svc.description;
-          }
-          // lib.optionalAttrs (svc.widget != null) {
-            inherit (svc) widget;
-          };
+        ${svc.name} = {
+          inherit (svc) href;
+          inherit (svc) icon;
+          inherit (svc) description;
+        }
+        // lib.optionalAttrs (svc.widget != null) {
+          inherit (svc) widget;
+        };
       }) entries;
     }
   ) groupOrder;
 in
 {
-  imports = [ inputs.agenix.nixosModules.default ];
+  imports = [
+    inputs.agenix.nixosModules.default
+    ./caddy.nix
+  ];
 
   options.dashboard = {
     enable = lib.mkEnableOption "Homepage dashboard" // {
@@ -137,9 +139,30 @@ in
       bookmarks = [
         {
           Admin = [
-            { "Tailscale" = [ { href = "https://login.tailscale.com/admin/machines"; icon = "tailscale.png"; } ]; }
-            { "Mullvad" = [ { href = "https://mullvad.net/en/account"; icon = "mullvad.png"; } ]; }
-            { "Livebox" = [ { href = "http://192.168.1.1"; icon = "mdi-router-wireless"; } ]; }
+            {
+              "Tailscale" = [
+                {
+                  href = "https://login.tailscale.com/admin/machines";
+                  icon = "tailscale.png";
+                }
+              ];
+            }
+            {
+              "Mullvad" = [
+                {
+                  href = "https://mullvad.net/en/account";
+                  icon = "mullvad.png";
+                }
+              ];
+            }
+            {
+              "Livebox" = [
+                {
+                  href = "http://192.168.1.1";
+                  icon = "mdi-router-wireless";
+                }
+              ];
+            }
           ];
         }
       ];

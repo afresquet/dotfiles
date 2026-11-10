@@ -19,16 +19,17 @@ in
       settings = {
         user = {
           name = config.username;
-          email = cfg.email;
+          inherit (cfg) email;
         };
         init.defaultBranch = "master";
         core.editor = lib.getExe config.editor;
-        user.signingkey = cfg.signingKey;
-        gpg.format = "ssh";
-        commit.gpgsign = true;
         push.autoSetupRemote = true;
       };
-      signing.format = null;
+      signing = {
+        key = cfg.signingKey;
+        format = "ssh";
+        signByDefault = true;
+      };
     };
     programs.difftastic = {
       enable = true;

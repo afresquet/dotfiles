@@ -1,7 +1,5 @@
-# Edit this configuration file to define what should be installed on
-# your system.  Help is available in the configuration.nix(5) man page
-# and in the NixOS manual (accessible by running ‘nixos-help’).
-
+# Shared by every NixOS desktop host (desktop, laptop). The Pi has its own
+# configuration since it is headless and runs a different nixpkgs.
 {
   config,
   pkgs,
@@ -21,6 +19,8 @@
     outputs.overlays.additions
     outputs.overlays.modifications
   ];
+
+  dotfilesDir = "${config.users.users.${config.username}.home}/dotfiles";
 
   programs.hyprland = {
     enable = true;
@@ -43,12 +43,7 @@
     HandlePowerKeyLongPress = "poweroff";
   };
 
-  # Enable the X11 windowing system.
-  services.xserver.enable = true;
-
-  # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.${config.username} = {
-    homeMode = "755";
     isNormalUser = true;
     extraGroups = [
       "networkmanager"
@@ -60,13 +55,8 @@
     inherit (config) description shell;
   };
 
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "23.11"; # Did you read the comment?
+  # Release the stateful defaults were taken from at first install; leave it.
+  system.stateVersion = "23.11";
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 

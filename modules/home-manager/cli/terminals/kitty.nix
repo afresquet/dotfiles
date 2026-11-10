@@ -5,7 +5,7 @@ in
 {
   options = {
     kitty.enable = lib.mkEnableOption "kitty" // {
-      default = true;
+      default = config.desktop;
     };
   };
 

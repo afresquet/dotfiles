@@ -29,20 +29,49 @@ let
   # config.xml.
   # TODO: bazarr — uses a different config format (YAML, not XML), so it
   # needs its own key extractor before it can join arrExporters.
-  monitoringEnabled = config.monitoring.enable or false;
+  monitoringEnabled = config.monitoring.enable;
   prowlarrUrl =
-    if (config.vpn.enable or false)
-    then "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString apps.prowlarr}"
-    else "http://127.0.0.1:${toString apps.prowlarr}";
+    if config.vpn.enable then
+      "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString apps.prowlarr}"
+    else
+      "http://127.0.0.1:${toString apps.prowlarr}";
   arrExporters = {
-    radarr   = { port = 9707; configPath = "/var/lib/radarr/.config/Radarr/config.xml";    url = "http://127.0.0.1:${toString apps.radarr}"; };
-    sonarr   = { port = 9708; configPath = "/var/lib/sonarr/.config/NzbDrone/config.xml";  url = "http://127.0.0.1:${toString apps.sonarr}"; };
-    lidarr   = { port = 9709; configPath = "/var/lib/lidarr/.config/Lidarr/config.xml";    url = "http://127.0.0.1:${toString apps.lidarr}"; };
-    readarr  = { port = 9710; configPath = "/var/lib/readarr/config.xml";                  url = "http://127.0.0.1:${toString apps.readarr}"; };
-    prowlarr = { port = 9711; configPath = "/var/lib/private/prowlarr/config.xml";         url = prowlarrUrl; };
+    radarr = {
+      port = 9707;
+      configPath = "/var/lib/radarr/.config/Radarr/config.xml";
+      url = "http://127.0.0.1:${toString apps.radarr}";
+    };
+    sonarr = {
+      port = 9708;
+      configPath = "/var/lib/sonarr/.config/NzbDrone/config.xml";
+      url = "http://127.0.0.1:${toString apps.sonarr}";
+    };
+    lidarr = {
+      port = 9709;
+      configPath = "/var/lib/lidarr/.config/Lidarr/config.xml";
+      url = "http://127.0.0.1:${toString apps.lidarr}";
+    };
+    readarr = {
+      port = 9710;
+      configPath = "/var/lib/readarr/config.xml";
+      url = "http://127.0.0.1:${toString apps.readarr}";
+    };
+    prowlarr = {
+      port = 9711;
+      configPath = "/var/lib/private/prowlarr/config.xml";
+      url = prowlarrUrl;
+    };
   };
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+    ./monitoring/options.nix
+    ./qbittorrent.nix
+    ./vpn.nix
+  ];
+
   options.arrStack = {
     enable = lib.mkEnableOption "*arr suite + jellyseerr" // {
       default = false;
@@ -93,13 +122,18 @@ in
     # needs to reach them on the namespace's bridge side (192.168.15.5) to
     # push indexer config. Open just those ports on the wg-br interface so we
     # don't expose them anywhere else.
-    networking.firewall.interfaces.wg-br = lib.mkIf (config.vpn.enable or false) {
-      allowedTCPPorts = lib.attrValues (lib.filterAttrs (n: _: builtins.elem n [
-        "radarr"
-        "sonarr"
-        "lidarr"
-        "readarr"
-      ]) apps);
+    networking.firewall.interfaces.wg-br = lib.mkIf config.vpn.enable {
+      allowedTCPPorts = lib.attrValues (
+        lib.filterAttrs (
+          n: _:
+          builtins.elem n [
+            "radarr"
+            "sonarr"
+            "lidarr"
+            "readarr"
+          ]
+        ) apps
+      );
     };
     services.prowlarr.enable = true;
     services.bazarr.enable = true;
@@ -142,7 +176,7 @@ in
               # but lidarr writes there as the owner anyway, so the gid shift
               # doesn't break config access.
               PUID = "306";
-              PGID = "984";
+              PGID = toString config.users.groups.media.gid;
               # 0002 = 2775 dirs / 0664 files — so other media-group consumers
               # (Navidrome, etc.) can read what Lidarr writes into media/music.
               UMASK = "0002";
@@ -169,7 +203,7 @@ in
         # attaching podman to the existing netns. Prowlarr's "FlareSolverr"
         # indexer proxy config keeps working unchanged (Byparr serves the
         # same API).
-        (lib.mkIf (config.vpn.enable or false) {
+        (lib.mkIf config.vpn.enable {
           byparr = {
             image = "ghcr.io/thephaseless/byparr:latest";
             autoStart = true;
@@ -187,10 +221,9 @@ in
       ];
     };
 
-
     users.users = lib.mkMerge [
       (lib.mapAttrs (_: _: { extraGroups = [ "media" ]; }) mediaApps)
-      (lib.optionalAttrs (config.qbittorrent.enable or false) {
+      (lib.optionalAttrs config.qbittorrent.enable {
         qbittorrent.extraGroups = [ "media" ];
       })
       {
@@ -214,7 +247,7 @@ in
         # prowlarr is in the VPN namespace, so caddy must reach it via the
         # namespace's bridge IP rather than the host's 127.0.0.1.
         upstreamHost =
-          if (config.vpn.enable or false) && name == "prowlarr" then
+          if config.vpn.enable && name == "prowlarr" then
             config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
           else
             "127.0.0.1";
@@ -228,13 +261,41 @@ in
     dashboard.services =
       let
         appMeta = {
-          radarr = { displayName = "Radarr"; description = "Movies"; widgetType = "radarr"; };
-          sonarr = { displayName = "Sonarr"; description = "TV shows"; widgetType = "sonarr"; };
-          lidarr = { displayName = "Lidarr"; description = "Music"; widgetType = "lidarr"; };
-          readarr = { displayName = "Readarr"; description = "Books"; widgetType = "readarr"; };
-          bazarr = { displayName = "Bazarr"; description = "Subtitles"; widgetType = "bazarr"; };
-          prowlarr = { displayName = "Prowlarr"; description = "Indexer manager"; widgetType = "prowlarr"; };
-          jellyseerr = { displayName = "Jellyseerr"; description = "Media requests"; widgetType = "jellyseerr"; };
+          radarr = {
+            displayName = "Radarr";
+            description = "Movies";
+            widgetType = "radarr";
+          };
+          sonarr = {
+            displayName = "Sonarr";
+            description = "TV shows";
+            widgetType = "sonarr";
+          };
+          lidarr = {
+            displayName = "Lidarr";
+            description = "Music";
+            widgetType = "lidarr";
+          };
+          readarr = {
+            displayName = "Readarr";
+            description = "Books";
+            widgetType = "readarr";
+          };
+          bazarr = {
+            displayName = "Bazarr";
+            description = "Subtitles";
+            widgetType = "bazarr";
+          };
+          prowlarr = {
+            displayName = "Prowlarr";
+            description = "Indexer manager";
+            widgetType = "prowlarr";
+          };
+          jellyseerr = {
+            displayName = "Jellyseerr";
+            description = "Media requests";
+            widgetType = "jellyseerr";
+          };
         };
       in
       lib.mapAttrs (
@@ -244,7 +305,7 @@ in
           # Prowlarr is in the namespace, so homepage (on host) reaches it via
           # the bridge IP. Everything else is a host service.
           widgetHost =
-            if (config.vpn.enable or false) && name == "prowlarr" then
+            if config.vpn.enable && name == "prowlarr" then
               config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
             else
               "127.0.0.1";
@@ -254,7 +315,7 @@ in
           name = meta.displayName;
           href = "http://${name}.home-server/";
           icon = "${name}.png";
-          description = meta.description;
+          inherit (meta) description;
           widget = {
             type = meta.widgetType;
             url = "http://${widgetHost}:${toString port}";
@@ -266,7 +327,7 @@ in
     # All systemd.services in this module are merged here so the dotted form
     # (foo.x = ...) and the dynamically-keyed mapAttrs' form can co-exist.
     systemd.services = lib.mkMerge [
-      (lib.mkIf (config.vpn.enable or false) {
+      (lib.mkIf config.vpn.enable {
         # Tie podman-byparr's lifecycle to wg.service.
         podman-byparr = {
           after = [ "wg.service" ];
@@ -288,7 +349,8 @@ in
       # re-keyed config.xml gets picked up.
       (lib.mkIf monitoringEnabled (
         lib.mapAttrs' (
-          appName: app: lib.nameValuePair "exportarr-${appName}-key" {
+          appName: app:
+          lib.nameValuePair "exportarr-${appName}-key" {
             description = "Extract API key for ${appName} exportarr";
             requiredBy = [ "prometheus-exportarr-${appName}-exporter.service" ];
             before = [ "prometheus-exportarr-${appName}-exporter.service" ];
@@ -315,7 +377,7 @@ in
       ))
     ];
 
-    vpnNamespaces = lib.mkIf (config.vpn.enable or false) {
+    vpnNamespaces = lib.mkIf config.vpn.enable {
       ${config.vpn.namespace}.portMappings = [
         {
           from = 9696;
@@ -333,7 +395,8 @@ in
 
     services.prometheus.exporters = lib.mkIf monitoringEnabled (
       lib.mapAttrs' (
-        appName: app: lib.nameValuePair "exportarr-${appName}" {
+        appName: app:
+        lib.nameValuePair "exportarr-${appName}" {
           enable = true;
           listenAddress = "0.0.0.0";
           inherit (app) port url;

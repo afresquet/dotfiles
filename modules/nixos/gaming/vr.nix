@@ -5,7 +5,7 @@
   ...
 }:
 let
-  cfg = config.piper;
+  cfg = config.vr;
 in
 {
   options = {

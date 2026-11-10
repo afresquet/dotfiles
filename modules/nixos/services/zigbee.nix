@@ -7,6 +7,11 @@ let
   cfg = config.zigbee;
 in
 {
+  imports = [
+    ./caddy.nix
+    ./dashboard.nix
+  ];
+
   options.zigbee = {
     enable = lib.mkEnableOption "Zigbee2MQTT + Mosquitto stack" // {
       default = false;
@@ -84,7 +89,7 @@ in
 
         serial = {
           port = cfg.device;
-          adapter = cfg.adapter;
+          inherit (cfg) adapter;
         };
 
         frontend.port = cfg.port;
