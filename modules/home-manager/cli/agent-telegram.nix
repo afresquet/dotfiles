@@ -131,15 +131,28 @@ let
     '';
   };
 
+  # Keeps the tmux session alive. `tmux new-session -d` daemonizes, so a
+  # service that only starts it exits at once and the service manager never
+  # notices when the tmux server dies (the inner loop only restarts claude).
+  # This stays in the foreground, recreates the session whenever it is
+  # missing, and is itself restarted by launchd/systemd if it dies.
   # A login shell gives the session the same PATH and env as an interactive one.
-  startSession = [
-    (lib.getExe pkgs.tmux)
-    "new-session"
-    "-d"
-    "-s"
-    session
-    "${pkgs.bashInteractive}/bin/bash -lc ${lib.getExe channelScript}"
-  ];
+  superviseScript = pkgs.writeShellApplication {
+    name = "claude-telegram-supervise";
+    runtimeInputs = [
+      pkgs.tmux
+      pkgs.coreutils
+    ];
+    text = ''
+      while true; do
+        if ! tmux has-session -t ${lib.escapeShellArg "=${session}"} 2>/dev/null; then
+          tmux new-session -d -s ${session} \
+            ${lib.escapeShellArg "${pkgs.bashInteractive}/bin/bash -lc ${lib.getExe channelScript}"}
+        fi
+        sleep 30
+      done
+    '';
+  };
 in
 {
   options.agentTelegram = {
@@ -238,9 +251,10 @@ in
         systemd.user.services.${session} = {
           Unit.Description = "Claude Code session connected to Telegram";
           Service = {
-            Type = "forking";
-            ExecStart = lib.escapeShellArgs startSession;
+            ExecStart = lib.getExe superviseScript;
             ExecStop = "${lib.getExe pkgs.tmux} kill-session -t ${session}";
+            Restart = "always";
+            RestartSec = 30;
           };
           Install.WantedBy = [ "default.target" ];
         };
@@ -250,9 +264,12 @@ in
         launchd.agents.${session} = {
           enable = true;
           config = {
-            ProgramArguments = startSession;
+            ProgramArguments = [ (lib.getExe superviseScript) ];
             RunAtLoad = true;
-            # tmux daemonizes; keep launchd from killing it when this job exits.
+            KeepAlive = true;
+            ThrottleInterval = 30;
+            # Leave the tmux server running when launchd stops or reloads the
+            # supervisor (e.g. on a home-manager switch).
             AbandonProcessGroup = true;
           };
         };
