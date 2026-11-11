@@ -78,13 +78,18 @@ in
   determinateNix = {
     enable = true;
     customSettings = {
-      # The Pi cache is set here for everyone because the user is not a
+      # These caches are set here for everyone because the user is not a
       # trusted Nix user (that is root in all but name), so a flake's own
-      # `nixConfig` caches are ignored. Without it the Pi kernel and firmware
-      # get compiled from source.
-      extra-substituters = [ "https://nixos-raspberrypi.cachix.org" ];
+      # `nixConfig` caches are ignored. Without them the Pi kernel and
+      # firmware, and the harvest project's devenv shell, get compiled from
+      # source.
+      extra-substituters = [
+        "https://nixos-raspberrypi.cachix.org"
+        "https://devenv.cachix.org"
+      ];
       extra-trusted-public-keys = [
         "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+        "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
       ];
       # Everything built here is signed with this key, so the Pis accept
       # packages copied from this Mac (their `trusted-public-keys` has
