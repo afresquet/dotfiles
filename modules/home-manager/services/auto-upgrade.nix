@@ -71,7 +71,14 @@ in
 
       (lib.mkIf isLinux {
         systemd.user.services.home-manager-auto-upgrade = {
-          Unit.Description = "Switch home-manager to the published dotfiles flake";
+          Unit = {
+            Description = "Switch home-manager to the published dotfiles flake";
+            # The switch this unit runs rewrites the unit itself (a flake
+            # update changes its ExecStart path), and sd-switch would then
+            # stop it mid-activation, killing the switch at reloadSystemd.
+            # Upstream's services.home-manager.autoUpgrade does the same.
+            X-SwitchMethod = "keep-old";
+          };
           Service = {
             Type = "oneshot";
             ExecStart = lib.getExe upgradeScript;
@@ -94,10 +101,16 @@ in
       })
 
       (lib.mkIf isDarwin {
+        home.packages = [ upgradeScript ];
+
         launchd.agents.home-manager-auto-upgrade = {
           enable = true;
           config = {
-            ProgramArguments = [ (lib.getExe upgradeScript) ];
+            # Through the profile, not the store path: home-manager boots out
+            # any agent whose plist changed, which would kill the switch this
+            # agent is running (launchd has no keep-old like sd-switch). A
+            # stable path keeps the plist identical across generations.
+            ProgramArguments = [ "${config.home.profileDirectory}/bin/home-manager-auto-upgrade" ];
             # launchd calendar times are local only; 08:00 in Madrid is at
             # least two hours after the workflow's 04:00 UTC start, matching
             # the Mac mini's system auto-upgrade. Missed runs fire on wake.
