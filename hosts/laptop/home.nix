@@ -13,5 +13,8 @@
     fingerprint = true;
   };
 
-  waybar.statsIcon = "<span size='x-large'>󰌢</span>";
+  waybar = {
+    laptop = true;
+    statsIcon = "<span size='x-large'>󰌢</span>";
+  };
 }

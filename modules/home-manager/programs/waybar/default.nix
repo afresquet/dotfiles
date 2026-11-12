@@ -18,6 +18,7 @@ in
         type = lib.types.str;
         default = "";
       };
+      laptop = lib.mkEnableOption "laptop-specific modules and behaviour";
     };
   };
 
@@ -57,7 +58,9 @@ in
             "pulseaudio#mic"
             "network"
             "bluetooth"
-            "backlight"
+          ]
+          ++ lib.optional cfg.laptop "backlight"
+          ++ [
             "battery"
             "group/stats"
           ];
@@ -103,7 +106,7 @@ in
         privacy = {
           icon-size = 14;
         };
-        # Speaker: click to mute, right click for the mixer, scroll in 5% steps.
+        # Speaker: click to mute, right click for the mixer, scroll to change volume.
         pulseaudio =
           let
             pavucontrol = lib.getExe pkgs.pavucontrol;
@@ -130,8 +133,10 @@ in
                 "󰕾"
               ];
             };
-            # Same 5% steps as the volume keys. Touchpads send many small scroll
-            # events, so each step also needs a bit more scrolling.
+          }
+          # Laptop: same 5% steps as the volume keys. Touchpads send many small
+          # scroll events, so each step also needs a bit more scrolling.
+          // lib.optionalAttrs cfg.laptop {
             scroll-step = 5;
             smooth-scrolling-threshold = 5;
           };
@@ -188,9 +193,9 @@ in
             format = "{icon}";
             format-icons = {
               on = "󰂯";
-              off = "󰂲";
-              disabled = "󰂲";
-              connected = "󰂱";
+              off = "<span size='x-large'>󰂲</span>";
+              disabled = "<span size='x-large'>󰂲</span>";
+              connected = "<span size='x-large'>󰂱</span>";
             };
             tooltip-format-connected = "{device_enumerate}";
             tooltip-format-enumerate-connected = "{device_alias}";
