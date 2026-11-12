@@ -211,6 +211,23 @@ in
     }
   ];
 
+  # smartd sends SMART ENABLE to every drive it monitors at startup. The
+  # USB hard drive shipped with SMART disabled, which left smartctl_exporter
+  # failing with exit status 4 and no health metrics for it. Listed by id
+  # rather than autodetected because the USB drive needs `-d sat` to be
+  # reached through its bridge.
+  services.smartd = {
+    enable = true;
+    autodetect = false;
+    devices = [
+      {
+        device = "/dev/disk/by-id/ata-TOSHIBA_MQ04UBB400_Z1BAT1QNT";
+        options = "-d sat";
+      }
+      { device = "/dev/disk/by-id/nvme-CT500P310SSD8_25475480C930"; }
+    ];
+  };
+
   # Arm the hardware watchdog: a hard freeze (kernel lockup, no log) then
   # reboots on its own instead of waiting for someone to pull the plug.
   # 15s is the BCM2835 watchdog's maximum.
