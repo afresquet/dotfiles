@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  inputs,
   outputs,
   isLinux,
   isDarwin,
@@ -12,12 +13,32 @@ let
 
   name = "${config.home.username}@${config.hostname}";
 
+  # The lock this configuration was built from, for upgrade-pending to
+  # compare against main's. home-manager always activates, so the linked
+  # file is the deployed configuration's.
+  lockFile = "dotfiles/lock";
+  deployedLock = "${config.xdg.dataHome}/${lockFile}";
+
+  checkCommand = lib.escapeShellArgs [
+    (lib.getExe pkgs.upgrade-pending)
+    cfg.flake
+    deployedLock
+  ];
+
   upgradeScript = pkgs.writeShellApplication {
     name = "home-manager-auto-upgrade";
     text = ''
       # Timer and launchd environments have a bare PATH; home-manager shells
       # out to nix, which lives in the system/default profile.
       export PATH="/run/current-system/sw/bin:/nix/var/nix/profiles/default/bin:$PATH"
+    ''
+    # On Linux the systemd unit runs the gate as ExecCondition, so a skip
+    # doesn't fire the notification hooks. launchd has no such slot. Exit 1
+    # is "nothing new"; anything else is a broken gate, so fail.
+    + lib.optionalString isDarwin ''
+      ${checkCommand} || { rc=$?; [ "$rc" -eq 1 ] && exit 0; exit "$rc"; }
+    ''
+    + ''
       exec ${lib.getExe config.programs.home-manager.package} switch --refresh \
         --flake ${lib.escapeShellArg "${cfg.flake}#${name}"}
     '';
@@ -67,6 +88,8 @@ in
             message = "autoUpgrade: no homeConfigurations.\"${name}\" in the flake; it switches to <username>@<hostname>.";
           }
         ];
+
+        xdg.dataFile.${lockFile}.text = builtins.hashFile "sha256" (inputs.self + "/flake.lock");
       }
 
       (lib.mkIf isLinux {
@@ -81,6 +104,9 @@ in
           };
           Service = {
             Type = "oneshot";
+            # Exit 1 skips the unit without failing it, and happens before
+            # ExecStartPre, so a no-op check sends no notification.
+            ExecCondition = checkCommand;
             ExecStart = lib.getExe upgradeScript;
           }
           // lib.optionalAttrs cfg.notify {
@@ -91,9 +117,10 @@ in
         systemd.user.timers.home-manager-auto-upgrade = {
           Unit.Description = "Weekly home-manager switch from the published dotfiles flake";
           Timer = {
-            # Same slot as the NixOS hosts' system.autoUpgrade: two hours
-            # after the flake-update workflow starts (Saturday 04:00 UTC).
-            OnCalendar = "Sat 06:00 UTC";
+            # Every four hours, like the NixOS hosts' system.autoUpgrade: a
+            # flake.lock the flake-update workflow commits late, or after a
+            # failed run is fixed and rerun, deploys within hours.
+            OnCalendar = "00/4:00";
             Persistent = true;
           };
           Install.WantedBy = [ "timers.target" ];
@@ -111,16 +138,9 @@ in
             # agent is running (launchd has no keep-old like sd-switch). A
             # stable path keeps the plist identical across generations.
             ProgramArguments = [ "${config.home.profileDirectory}/bin/home-manager-auto-upgrade" ];
-            # launchd calendar times are local only; 08:00 in Madrid is at
-            # least two hours after the workflow's 04:00 UTC start, matching
-            # the Mac mini's system auto-upgrade. Missed runs fire on wake.
-            StartCalendarInterval = [
-              {
-                Weekday = 6;
-                Hour = 8;
-                Minute = 0;
-              }
-            ];
+            # Every four hours, like the Mac mini's system auto-upgrade.
+            # Intervals missed while asleep coalesce into one run on wake.
+            StartInterval = 4 * 60 * 60;
             StandardOutPath = "${config.home.homeDirectory}/Library/Logs/home-manager-auto-upgrade.log";
             StandardErrorPath = "${config.home.homeDirectory}/Library/Logs/home-manager-auto-upgrade.log";
           };

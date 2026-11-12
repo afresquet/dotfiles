@@ -2,10 +2,17 @@
   lib,
   config,
   pkgs,
+  inputs,
   ...
 }:
 let
   cfg = config.autoUpgrade;
+
+  # Read from the system profile rather than /etc: with operation = "boot"
+  # the running system stays the old one until a reboot, and comparing
+  # against it would rebuild every few hours until then.
+  lockFile = "dotfiles-lock";
+  deployedLock = "/nix/var/nix/profiles/system/etc/${lockFile}";
 
   notify =
     phase:
@@ -44,6 +51,16 @@ in
       default = if config.desktop then "boot" else "switch";
     };
 
+    dates = lib.mkOption {
+      type = lib.types.str;
+      # Every four hours, gated by upgrade-pending (ExecCondition below). A
+      # flake.lock the flake-update workflow commits late, or after a failed
+      # run is fixed and rerun, deploys within hours instead of waiting a
+      # week for a fixed slot that has already passed.
+      default = "00/4:00";
+      description = "systemd calendar expression for when to check for a new flake.lock.";
+    };
+
     allowReboot = lib.mkEnableOption "rebooting after an upgrade that changed the kernel, initrd or kernel modules";
 
     notify = lib.mkEnableOption "desktop notifications when the upgrade starts and finishes" // {
@@ -55,25 +72,37 @@ in
     system.autoUpgrade = {
       enable = true;
       flake = "${cfg.flake}#${config.networking.hostName}";
-      inherit (cfg) operation allowReboot;
-      # Two hours after the flake-update workflow starts (Saturday 04:00
-      # UTC). Pinned to UTC so it stays two hours behind the cron through
-      # DST. If the run hasn't committed yet, this deploys the previous
-      # main, which is harmless.
-      dates = "Sat 06:00 UTC";
-      # Hosts that were off at that time (the laptop) catch up on next boot.
+      inherit (cfg) operation allowReboot dates;
+      # Hosts that were off (the laptop) catch up on next boot.
       persistent = true;
     };
 
-    # The "-" prefix in `notify`: a failed notification must never block or
-    # fail the upgrade. nixos-upgrade runs as root, so upgrade-notify hands
-    # the notification to this user's session bus.
-    systemd.services.nixos-upgrade = lib.mkIf cfg.notify {
-      environment.NOTIFY_USER = config.username;
-      serviceConfig = {
-        ExecStartPre = notify "start";
-        ExecStopPost = notify "stop";
-      };
-    };
+    # The lock this configuration was built from, for upgrade-pending to
+    # compare against main's.
+    environment.etc.${lockFile}.text = builtins.hashFile "sha256" (inputs.self + "/flake.lock");
+
+    systemd.services.nixos-upgrade = lib.mkMerge [
+      {
+        # A skip (exit 1) leaves the unit inactive rather than failed, and
+        # happens before ExecStartPre, so a no-op check sends no
+        # notification.
+        serviceConfig.ExecCondition = lib.escapeShellArgs [
+          (lib.getExe pkgs.upgrade-pending)
+          cfg.flake
+          deployedLock
+        ];
+      }
+
+      # The "-" prefix in `notify`: a failed notification must never block
+      # or fail the upgrade. nixos-upgrade runs as root, so upgrade-notify
+      # hands the notification to this user's session bus.
+      (lib.mkIf cfg.notify {
+        environment.NOTIFY_USER = config.username;
+        serviceConfig = {
+          ExecStartPre = notify "start";
+          ExecStopPost = notify "stop";
+        };
+      })
+    ];
   };
 }

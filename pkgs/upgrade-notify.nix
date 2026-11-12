@@ -31,7 +31,11 @@ pkgs.writeShellApplication {
     case "$phase" in
       start) send "$title started" ;;
       stop)
-        if [ "''${SERVICE_RESULT:-}" = success ]; then
+        # ExecStopPost also runs when ExecCondition skips the unit (the
+        # auto-upgrade gates' "nothing new"); there was no start to report.
+        if [ "''${SERVICE_RESULT:-}" = exec-condition ]; then
+          exit 0
+        elif [ "''${SERVICE_RESULT:-}" = success ]; then
           send "$title finished" "$finished"
         else
           send --urgency=critical "$title failed" "$log"

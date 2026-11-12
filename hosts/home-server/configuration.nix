@@ -141,7 +141,18 @@ in
   time.timeZone = "Europe/Madrid";
 
   # Headless: nobody is around to reboot it for a kernel update.
-  autoUpgrade.allowReboot = true;
+  # Upgrade (and so possibly reboot) only overnight, checking hourly so a
+  # flake.lock committed during the day still lands that night. The reboot
+  # window catches a boot-time catch-up run: that one still switches, but
+  # the new kernel waits for the next reboot.
+  autoUpgrade = {
+    allowReboot = true;
+    dates = "02..05:00";
+  };
+  system.autoUpgrade.rebootWindow = {
+    lower = "02:00";
+    upper = "06:00";
+  };
 
   # Raspberry Pi kernels ship with the memory cgroup controller disabled by
   # default to save a few % of overhead. Without it, /sys/fs/cgroup/.../memory.*

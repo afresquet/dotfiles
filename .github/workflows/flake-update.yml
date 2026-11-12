@@ -7,7 +7,10 @@ name: Flake update
 
 on:
   schedule:
-    - cron: "0 4 * * 6" # Saturdays 04:00 UTC; hosts auto-upgrade at 06:00 UTC
+    # Saturdays 04:00 UTC. Hosts check every few hours whether main's
+    # flake.lock changed (pkgs/upgrade-pending.nix), so a late commit or a
+    # manual rerun after a failure deploys without waiting a week.
+    - cron: "0 4 * * 6"
   workflow_dispatch:
 
 concurrency:
