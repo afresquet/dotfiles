@@ -91,6 +91,12 @@ in
   nixpkgs.overlays = [
     outputs.overlays.additions
     outputs.overlays.modifications
+    # The Pi's system runs the stable nixpkgs nixos-raspberrypi pins (for its
+    # kernel cache), but these services move fast and stable lags well behind
+    # (Jellyfin 10.11 on stable vs 12.x here). Take them from the unstable
+    # `nixpkgs` input instead. Not safe to drop until stable catches up: these
+    # apps migrate their databases forward, and going back to stable's older
+    # versions would downgrade them.
     (
       final: _:
       let

@@ -60,6 +60,11 @@
 
   boot.kernelPackages = pkgs.linuxPackages_latest;
 
+  # Electron/Chromium apps (Discord, Obsidian, VS Code, ...) run natively on
+  # Wayland instead of through XWayland: nixpkgs' wrappers add the ozone flags
+  # when this is set. A session variable so every login gets it via PAM.
+  environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
   nix = {
     settings = {
       auto-optimise-store = true;
