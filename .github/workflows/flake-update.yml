@@ -18,9 +18,11 @@ permissions:
   contents: read
 
 env:
+  # afresquet-dotfiles: our own Pi builds from earlier runs. Reruns on the
+  # same lock and anything from pinned inputs download instead of rebuild.
   NIX_CONF: |
-    extra-substituters = https://nix-community.cachix.org https://hyprland.cachix.org https://nixos-raspberrypi.cachix.org https://devenv.cachix.org
-    extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw=
+    extra-substituters = https://nix-community.cachix.org https://hyprland.cachix.org https://nixos-raspberrypi.cachix.org https://devenv.cachix.org https://afresquet-dotfiles.cachix.org
+    extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw= afresquet-dotfiles.cachix.org-1:14Rw96q4DN7l6kkvY3ducxkBwDQrQv8BlHg4XIxkC50=
 
 jobs:
   update:
