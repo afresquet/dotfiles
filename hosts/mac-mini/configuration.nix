@@ -21,7 +21,6 @@ in
     alvaroDesktop
     alvaroLaptop
     alvaroPhone
-    alvaroPhoneShortcuts
     heeler
   ];
 

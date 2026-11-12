@@ -188,21 +188,6 @@ in
     }
   ];
 
-  services.openssh = {
-    # Tailscale SSH takes over port 22 on the tailnet and ignores authorized
-    # keys, so key-based clients that can't speak to it (iOS Shortcuts) use
-    # OpenSSH on 2222, reachable from the tailnet only.
-    ports = [
-      22
-      2222
-    ];
-    openFirewall = false;
-  };
-  networking.firewall = {
-    allowedTCPPorts = [ 22 ];
-    interfaces.tailscale0.allowedTCPPorts = [ 2222 ];
-  };
-
   users.users.${config.username} = {
     isNormalUser = true;
     initialPassword = "pi";
@@ -221,7 +206,6 @@ in
       alvaroLaptop
       alvarosMacMini
       alvaroPhone
-      alvaroPhoneShortcuts
       heeler
     ];
   };

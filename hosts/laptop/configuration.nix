@@ -33,7 +33,6 @@ in
     alvaroDesktop
     alvarosMacMini
     alvaroPhone
-    alvaroPhoneShortcuts
     heeler
   ];
 }
