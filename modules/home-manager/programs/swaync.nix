@@ -73,7 +73,12 @@ in
             button-text = "Clear";
           };
           dnd.text = "Do not disturb";
-          mpris.image-size = 72;
+          mpris = {
+            image-size = 72;
+            # playerctld (enabled for Waybar) re-exports the active player as
+            # its own MPRIS name, so every player would show up twice.
+            blacklist = [ "playerctld" ];
+          };
           volume.label = "󰕾";
           buttons-grid = {
             buttons-per-row = 6;
