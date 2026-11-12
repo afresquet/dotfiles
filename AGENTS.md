@@ -2,7 +2,7 @@
 
 Guidance for AI agents working in this repository. It is a Nix flake that
 configures five machines: two NixOS desktops, a Raspberry Pi home server, a
-nix-darwin Mac mini and a home-manager-only work MacBook. `README.md` has the
+Mac mini and a work MacBook, both on nix-darwin. `README.md` has the
 host table and layout overview; this file is about how to change things
 without breaking them.
 
@@ -19,6 +19,9 @@ without breaking them.
   `2>&1`, `$env.FOO` instead of `$FOO`.
 - Don't run `nix flake update`. Pinned versions are load-bearing: several
   overlays and assertions are tied to exact package versions on purpose.
+  `.github/workflows/flake-update.yml` updates the lock weekly and commits it
+  only once every configuration builds; failures open a "Flake update
+  failed" issue.
 - Formatting and lint are enforced. Run `nix fmt` after editing Nix files;
   `nix flake check` must pass before you report done.
 
@@ -34,11 +37,12 @@ nix eval --raw .#nixosConfigurations.Alvaro-Desktop.config.system.build.toplevel
 nix eval --raw .#nixosConfigurations.Alvaro-Laptop.config.system.build.toplevel.drvPath
 nix eval --raw .#nixosConfigurations.Home-Server.config.system.build.toplevel.drvPath
 nix eval --raw .#darwinConfigurations.Alvaros-Mac-mini.config.system.build.toplevel.drvPath
+nix eval --raw .#darwinConfigurations.mac-afresquet.config.system.build.toplevel.drvPath
 nix eval --raw '.#homeConfigurations."afresquet@Alvaro-Desktop".activationPackage.drvPath'
 nix eval --raw '.#homeConfigurations."afresquet@Alvaro-Laptop".activationPackage.drvPath'
 nix eval --raw '.#homeConfigurations."pi@Home-Server".activationPackage.drvPath'
 nix eval --raw '.#homeConfigurations."afresquet@Alvaros-Mac-mini".activationPackage.drvPath'
-nix eval --raw '.#homeConfigurations."alvaro.fresquet@Alvaros-MacBook-Pro.local".activationPackage.drvPath'
+nix eval --raw '.#homeConfigurations."alvaro.fresquet@mac-afresquet".activationPackage.drvPath'
 ```
 
 Evaluate every configuration a change can reach, not just the one you were
