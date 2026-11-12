@@ -88,9 +88,9 @@ jobs:
                 installable: ".#\($kind)Configurations.\"\(.key)\".\($attr)"
               });
             { include:
-                ($nixos | entries("nixos"; "config.system.build.toplevel"))
+                (($nixos | entries("nixos"; "config.system.build.toplevel"))
               + ($darwin | entries("darwin"; "config.system.build.toplevel"))
-              + ($home | entries("home"; "activationPackage")) }
+              + ($home | entries("home"; "activationPackage"))) }
             ')
           echo "$matrix" | jq .
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
