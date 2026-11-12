@@ -144,7 +144,30 @@ in
   boot.kernelParams = [
     "cgroup_enable=memory"
     "cgroup_memory=1"
+    # Experiment: silent full-system freezes (journal just stops) started
+    # with the 6.18.59 kernel, three in three days. Pi 5 + NVMe reports with
+    # the same symptom point at NVMe/PCIe power saving
+    # (home-assistant/operating-system#5098), so keep the drive and link
+    # out of low-power states. The assertion below fires on a kernel bump.
+    "nvme_core.default_ps_max_latency_us=0"
+    "pcie_aspm=off"
   ];
+  assertions = [
+    {
+      assertion = config.boot.kernelPackages.kernel.modDirVersion == "6.18.59";
+      message = "Home-Server kernel is now ${config.boot.kernelPackages.kernel.modDirVersion}: the NVMe/PCIe power-saving workaround in hosts/home-server/configuration.nix was for silent freezes on 6.18.59. Check raspberrypi/linux for a fix, then drop `nvme_core.default_ps_max_latency_us=0` and `pcie_aspm=off` (watch for unclean shutdowns afterwards) along with this assertion.";
+    }
+  ];
+
+  # Turn partial hangs into a reboot as well: the kernel panics on a soft
+  # lockup or a task stuck in D state (e.g. blocked on storage) for 120s,
+  # and reboots 10s after any panic instead of sitting there forever. The
+  # hardware watchdog below covers hard lockups.
+  boot.kernel.sysctl = {
+    "kernel.softlockup_panic" = 1;
+    "kernel.hung_task_panic" = 1;
+    "kernel.panic" = 10;
+  };
   boot.zfs.forceImportRoot = false;
 
   # Disable the system-wide NSS cache daemon (nsncd). It runs in the host's
@@ -187,6 +210,11 @@ in
       size = 4096; # MiB
     }
   ];
+
+  # Arm the hardware watchdog: a hard freeze (kernel lockup, no log) then
+  # reboots on its own instead of waiting for someone to pull the plug.
+  # 15s is the BCM2835 watchdog's maximum.
+  systemd.settings.Manager.RuntimeWatchdogSec = "15s";
 
   users.users.${config.username} = {
     isNormalUser = true;
