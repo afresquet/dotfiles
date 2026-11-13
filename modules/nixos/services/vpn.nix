@@ -43,7 +43,7 @@ in
     vpnNamespaces.${cfg.namespace} = {
       enable = true;
       wireguardConfigFile = config.age.secrets.mullvad-wg.path;
-      accessibleFrom = [
+      allowedIngress = [
         "127.0.0.1/32"
       ];
       portMappings = lib.mkIf monitoringEnabled [
