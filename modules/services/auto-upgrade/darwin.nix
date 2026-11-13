@@ -36,7 +36,7 @@ in
   };
 
   # nix-darwin has no system.autoUpgrade; this is the launchd equivalent of
-  # the NixOS module in modules/nixos/services/auto-upgrade.nix.
+  # the NixOS module next to it (nixos.nix).
   config = lib.mkIf cfg.enable {
     # The lock this configuration was built from, for upgrade-pending to
     # compare against main's.
