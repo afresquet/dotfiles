@@ -249,6 +249,8 @@ in
 
       settings = {
         theme = "dark";
+        verbose = false;
+        outputStyle = "Concise";
         agentPushNotifEnabled = true;
         attribution = {
           commit = "";
