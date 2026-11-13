@@ -1,8 +1,8 @@
 { lib, ... }:
 {
+  # `agentTelegram.enable` is a host setting (hosts/settings.nix), shared
+  # with the home config.
   options.agentTelegram = {
-    enable = lib.mkEnableOption "the Telegram bot secret for agent alerts and the Telegram-connected Claude session";
-
     secretFile = lib.mkOption {
       type = lib.types.path;
       description = ''

@@ -155,9 +155,9 @@ let
   };
 in
 {
+  # `agentTelegram.enable` is a host setting (hosts/settings.nix), shared
+  # with the system config.
   options.agentTelegram = {
-    enable = lib.mkEnableOption "Telegram alerts and a Telegram-connected Claude session";
-
     envFile = lib.mkOption {
       type = lib.types.str;
       default = "/run/agenix/agent-telegram";

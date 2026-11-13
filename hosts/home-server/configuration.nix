@@ -52,7 +52,6 @@ in
         config.users.users.${config.username}.openssh.authorizedKeys.keys;
   };
   agentTelegram = {
-    enable = true;
     secretFile = ../../secrets/agent-telegram-home-server.age;
   };
   issueAgent = {

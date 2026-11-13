@@ -55,6 +55,10 @@ in
         MagicDNS) or discovers it at runtime via `tailscale ip -4`.
       '';
     };
+    # Declared here rather than in the feature's modules: the system and
+    # home configs are separate evaluations that both import the host's
+    # settings, so the host turns it on once for both.
+    agentTelegram.enable = lib.mkEnableOption "Telegram alerts and a Telegram-connected Claude session (the bot secret on the system side, the session and alerts on the home side)";
   };
 
   config = {
