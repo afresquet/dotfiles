@@ -22,11 +22,14 @@ only gets home-manager.
   `hosts/configuration.nix` is shared by the NixOS desktops,
   `hosts/home-base.nix` by every home config and `hosts/home.nix` adds the
   desktop layer (GUI programs, Hyprland, Stylix).
-- `modules/{nixos,darwin,home-manager}/` are categories of modules. Every
-  module exposes a top-level `<name>.enable` option and is imported through
-  its category's `default.nix`; `modules/shared/` holds option declarations
-  used on more than one platform.
-- `modules/nixos/services/` modules contribute to each other through
+- `modules/<category>/<feature>/` holds one feature (categories: cli, gaming,
+  polyfills, programs, services) with one file per platform: `nixos.nix`,
+  `darwin.nix`, `home.nix`, and `common.nix` for the option declarations they
+  share. Every feature exposes a top-level `<name>.enable` option; the flake
+  exports them per platform as `nixosModules`, `darwinModules` and
+  `homeModules` (`<category>.<feature>`, or `<category>.default` for a whole
+  category).
+- The NixOS modules under `modules/services/` contribute to each other through
   `reverseProxy.services`, `dashboard.services`, `monitoring.exporters` and
   `monitoring.dashboards`; a module imports the module whose options it
   contributes to. The Mac's monitoring reads the Pi's evaluated config
@@ -39,7 +42,7 @@ only gets home-manager.
 
 ## Rebuilding
 
-The `nh` aliases from `modules/home-manager/cli/nh.nix`, run from anywhere:
+The `nh` aliases from `modules/cli/nh/home.nix`, run from anywhere:
 
 | Alias | Runs |
 |-------|------|
