@@ -1,0 +1,73 @@
+name: Check
+
+# Every push: `nix flake check` (formatting included) and an evaluation of
+# every configuration, without building. Evaluation warnings are annotated on
+# the run; on main they also keep the "Evaluation warnings" issue in sync
+# (scripts/report-warnings.sh). flake-update calls this on its candidate
+# lock and reports that lock's warnings itself once it commits it.
+
+on:
+  push:
+    paths-ignore:
+      - "**.md"
+  workflow_call:
+    inputs:
+      lock:
+        description: flake.lock contents to check instead of the committed one.
+        type: string
+        default: ""
+    outputs:
+      warnings:
+        description: Evaluation warnings, as printed by scripts/eval-configs.sh.
+        value: ${{ jobs.check.outputs.warnings }}
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write # Evaluation warnings issue
+    outputs:
+      warnings: ${{ steps.eval.outputs.warnings }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-nix
+        with:
+          lock: ${{ inputs.lock }}
+
+      - name: Flake check
+        run: nix flake check
+
+      - name: Evaluate configurations
+        id: eval
+        run: |
+          rc=0
+          warnings=$(.github/scripts/build-matrix.sh | .github/scripts/eval-configs.sh) || rc=$?
+          {
+            echo "warnings<<WARNINGS_EOF"
+            printf '%s\n' "$warnings"
+            echo "WARNINGS_EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$warnings" ]; then
+            printf '%s\n' "$warnings"
+            echo "::warning title=Evaluation warnings::$(grep -c '^  in: ' <<<"$warnings") distinct evaluation warning(s), see the job summary"
+            fence='```'
+            printf '### Evaluation warnings\n\n%s\n%s\n%s\n' "$fence" "$warnings" "$fence" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rc"
+
+      - name: Report warnings
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          WARNINGS: ${{ steps.eval.outputs.warnings }}
+        run: .github/scripts/report-warnings.sh <<<"$WARNINGS"

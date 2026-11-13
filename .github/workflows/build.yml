@@ -1,0 +1,114 @@
+name: Build
+
+# Builds every NixOS, nix-darwin and home-manager configuration on its native
+# platform and pushes the Pi's closures to Cachix. Runs when a push changes
+# flake.lock on main (a manual input update; the lock is already on main by
+# then, so a failure is reported as a "Lock build failed" issue and Telegram
+# message rather than blocked), and is called by flake-update with its
+# candidate lock, which it commits only if this passes.
+
+on:
+  push:
+    branches: [main]
+    paths: [flake.lock]
+  workflow_call:
+    inputs:
+      lock:
+        description: flake.lock contents to build instead of the committed one.
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  matrix:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: ./.github/actions/setup-nix
+        with:
+          lock: ${{ inputs.lock }}
+
+      - name: Build matrix
+        id: matrix
+        run: |
+          matrix=$(.github/scripts/build-matrix.sh)
+          echo "$matrix" | jq .
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: matrix
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Reclaim disk space
+        if: runner.os == 'Linux'
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
+            "$AGENT_TOOLSDIRECTORY" /usr/local/.ghcup /opt/hostedtoolcache \
+            /usr/local/lib/android
+          docker system prune -af || true
+          df -h /
+
+      - uses: ./.github/actions/setup-nix
+        with:
+          lock: ${{ inputs.lock }}
+
+      - name: Build
+        id: build
+        run: |
+          out=$(nix build --no-link --print-out-paths '${{ matrix.installable }}')
+          echo "$out"
+          echo "out=$out" >> "$GITHUB_OUTPUT"
+
+      # Hosts pick these up through their auto-upgrade, so the closure is
+      # downloaded rather than rebuilt. Skipped until the CACHIX_CACHE
+      # variable and CACHIX_AUTH_TOKEN secret are set. Pushing a closure
+      # leaves out anything already on cache.nixos.org.
+      - name: Push to Cachix
+        if: matrix.push && vars.CACHIX_CACHE != ''
+        env:
+          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+        run: nix run nixpkgs#cachix -- push '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
+
+  # Only for pushes: when called, flake-update reports on the whole run.
+  report:
+    needs: [matrix, build]
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    permissions:
+      actions: read # list which jobs failed
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: |
+          title="Lock build failed"
+          if [ "$FAILED" != true ]; then
+            .github/scripts/notify.sh close "$title" "Fixed: $RUN_URL"
+            exit 0
+          fi
+          failed=$(gh run view "${{ github.run_id }}" --json jobs \
+            --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
+          printf 'Run: %s\n\nflake.lock on main (%s) failed to build:\n%s\n' \
+            "$RUN_URL" "${{ github.sha }}" "$failed" | .github/scripts/notify.sh issue "$title"
+          .github/scripts/notify.sh telegram "❌ flake.lock on main failed to build for $GH_REPO: $RUN_URL"

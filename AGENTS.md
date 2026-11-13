@@ -19,9 +19,11 @@ without breaking them.
   `2>&1`, `$env.FOO` instead of `$FOO`.
 - Don't run `nix flake update`. Pinned versions are load-bearing: several
   overlays and assertions are tied to exact package versions on purpose.
-  `.github/workflows/flake-update.yml` updates the lock weekly and commits it
-  only once every configuration builds; failures open a "Flake update
-  failed" issue.
+  `.github/workflows/flake-update.yml` updates the lock weekly (or on
+  demand) and commits it only once `check.yml` and `build.yml` pass on it;
+  failures open a "Flake update failed" issue. `check.yml` runs on every
+  push and tracks evaluation warnings in an "Evaluation warnings" issue;
+  `build.yml` also runs when a push changes `flake.lock` on main.
 - Formatting and lint are enforced. Run `nix fmt` after editing Nix files;
   `nix flake check` must pass before you report done.
 

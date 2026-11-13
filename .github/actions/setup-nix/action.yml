@@ -1,0 +1,25 @@
+name: Set up Nix
+description: Install Nix with this flake's binary caches, optionally swapping in a candidate flake.lock.
+
+inputs:
+  lock:
+    description: flake.lock contents to use instead of the committed one.
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    # afresquet-dotfiles: our own Pi builds from earlier runs. Reruns on the
+    # same lock and anything from pinned inputs download instead of rebuild.
+    - uses: DeterminateSystems/nix-installer-action@v23
+      with:
+        extra-conf: |
+          extra-substituters = https://nix-community.cachix.org https://hyprland.cachix.org https://nixos-raspberrypi.cachix.org https://devenv.cachix.org https://afresquet-dotfiles.cachix.org
+          extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw= afresquet-dotfiles.cachix.org-1:14Rw96q4DN7l6kkvY3ducxkBwDQrQv8BlHg4XIxkC50=
+
+    - name: Apply candidate flake.lock
+      if: inputs.lock != ''
+      shell: bash
+      env:
+        LOCK: ${{ inputs.lock }}
+      run: printf '%s\n' "$LOCK" > flake.lock && git diff --stat flake.lock

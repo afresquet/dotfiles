@@ -1,10 +1,11 @@
 name: Flake update
 
-# Weekly `nix flake update`, gated on every NixOS, nix-darwin and home-manager
-# configuration building on its native platform. flake.lock is committed to
-# main only when everything builds; any failure opens (or comments on) an
-# issue and, if the TELEGRAM_* secrets are set, pings Telegram. Evaluation
-# warnings under the new lock do the same, without blocking the commit.
+# Weekly (or on demand) `nix flake update`, gated on the Check and Build
+# workflows passing on the new lock: flake.lock is committed to main only
+# when it checks and every configuration builds. Any failure opens (or
+# comments on) a "Flake update failed" issue and, if the TELEGRAM_* secrets
+# are set, messages Telegram. Committing with the default token doesn't
+# trigger other workflows, so the lock isn't checked or built twice.
 
 on:
   schedule:
@@ -21,30 +22,17 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # afresquet-dotfiles: our own Pi builds from earlier runs. Reruns on the
-  # same lock and anything from pinned inputs download instead of rebuild.
-  NIX_CONF: |
-    extra-substituters = https://nix-community.cachix.org https://hyprland.cachix.org https://nixos-raspberrypi.cachix.org https://devenv.cachix.org https://afresquet-dotfiles.cachix.org
-    extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc= nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI= devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw= afresquet-dotfiles.cachix.org-1:14Rw96q4DN7l6kkvY3ducxkBwDQrQv8BlHg4XIxkC50=
-
 jobs:
   update:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      issues: write # evaluation warnings issue
+    timeout-minutes: 15
     outputs:
       changed: ${{ steps.update.outputs.changed }}
       lock: ${{ steps.update.outputs.lock }}
-      matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - uses: actions/checkout@v7
 
-      - uses: DeterminateSystems/nix-installer-action@v23
-        with:
-          extra-conf: ${{ env.NIX_CONF }}
+      - uses: ./.github/actions/setup-nix
 
       - name: Update flake.lock
         id: update
@@ -56,159 +44,53 @@ jobs:
           fi
           git diff --stat flake.lock
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          # Hand the exact bytes to the build jobs; flake.lock has no line
-          # that could collide with the delimiter.
+          # Hand the exact bytes to the check and build jobs; flake.lock has
+          # no line that could collide with the delimiter.
           {
             echo "lock<<FLAKE_LOCK_EOF"
             cat flake.lock
             echo "FLAKE_LOCK_EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Flake check
-        if: steps.update.outputs.changed == 'true'
-        run: nix flake check
-
-      # Derive the build matrix from the flake itself so new hosts are picked
-      # up without touching this workflow. Each configuration builds on a
-      # runner of its own platform, one per job so a desktop closure gets the
-      # whole runner disk to itself.
-      - name: Build matrix
-        id: matrix
-        if: steps.update.outputs.changed == 'true'
-        run: |
-          systems='cs: builtins.mapAttrs (_: c: c.pkgs.stdenv.hostPlatform.system) cs'
-          matrix=$(jq -cn \
-            --argjson nixos "$(nix eval --json .#nixosConfigurations --apply "$systems")" \
-            --argjson darwin "$(nix eval --json .#darwinConfigurations --apply "$systems")" \
-            --argjson home "$(nix eval --json .#homeConfigurations --apply "$systems")" \
-            '
-            def runner:
-              { "x86_64-linux": "ubuntu-24.04",
-                "aarch64-linux": "ubuntu-24.04-arm",
-                "aarch64-darwin": "macos-latest" }[.]
-              // error("no runner for \(.)");
-            def entries($kind; $attr):
-              to_entries | map({
-                name: "\($kind) \(.key)",
-                runner: (.value | runner),
-                # Only the Pi is too slow to compile; pushing everything
-                # would churn through the free Cachix quota every week.
-                push: (.value == "aarch64-linux"),
-                installable: ".#\($kind)Configurations.\"\(.key)\".\($attr)"
-              });
-            { include:
-                (($nixos | entries("nixos"; "config.system.build.toplevel"))
-              + ($darwin | entries("darwin"; "config.system.build.toplevel"))
-              + ($home | entries("home"; "activationPackage"))) }
-            ')
-          echo "$matrix" | jq .
-          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
-
-      # Deprecations and renames under the new lock (e.g. an input renaming
-      # an option). They don't block the commit, but get reported here so
-      # they're fixed before they turn into errors. The issue stays open,
-      # collecting a comment per run, until a run comes back clean.
-      - name: Evaluation warnings
-        if: steps.update.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          MATRIX: ${{ steps.matrix.outputs.matrix }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          warnings=$(.github/scripts/eval-warnings.sh <<<"$MATRIX")
-          existing=$(gh issue list --state open --search 'in:title "Flake update warnings"' \
-            --json number --jq '.[0].number // empty')
-
-          if [ -z "$warnings" ]; then
-            echo "No evaluation warnings"
-            if [ -n "$existing" ]; then
-              gh issue close "$existing" --comment "No evaluation warnings as of $RUN_URL"
-            fi
-            exit 0
-          fi
-
-          printf '%s\n' "$warnings"
-          echo "::warning title=Evaluation warnings::$(grep -c '^  in: ' <<<"$warnings") distinct evaluation warning(s), see the job summary"
-          fence='```'
-          body=$(printf 'Run: %s\n\nEvaluation warnings with the updated flake.lock:\n\n%s\n%s\n%s\n' \
-            "$RUN_URL" "$fence" "$warnings" "$fence")
-          printf '%s\n' "$body" >> "$GITHUB_STEP_SUMMARY"
-
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "Flake update warnings" --body "$body"
-          fi
-
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Telegram secrets not set, skipping"
-            exit 0
-          fi
-          # Telegram caps a message at 4096 characters; the issue has it all.
-          text=$(printf '⚠️ Flake update evaluation warnings for %s: %s\n\n%s' \
-            "${{ github.repository }}" "$RUN_URL" "$warnings")
-          curl -fsS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
-            --data-urlencode "text=${text:0:4000}" \
-            > /dev/null || echo "::warning::Telegram notification failed"
-
-  build:
+  # A called workflow's token can only have what the caller grants, even for
+  # jobs that skip themselves when called (Check's warnings report, Build's
+  # push report), so these grant what those declare.
+  check:
     needs: update
     if: needs.update.outputs.changed == 'true'
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 300
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.update.outputs.matrix) }}
-    steps:
-      - uses: actions/checkout@v7
+    permissions:
+      contents: read
+      issues: write
+    uses: ./.github/workflows/check.yml
+    with:
+      lock: ${{ needs.update.outputs.lock }}
+    secrets: inherit
 
-      - name: Reclaim disk space
-        if: runner.os == 'Linux'
-        run: |
-          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/share/boost \
-            "$AGENT_TOOLSDIRECTORY" /usr/local/.ghcup /opt/hostedtoolcache \
-            /usr/local/lib/android
-          docker system prune -af || true
-          df -h /
-
-      - uses: DeterminateSystems/nix-installer-action@v23
-        with:
-          extra-conf: ${{ env.NIX_CONF }}
-
-      - name: Apply updated flake.lock
-        env:
-          LOCK: ${{ needs.update.outputs.lock }}
-        run: printf '%s\n' "$LOCK" > flake.lock && git diff --stat flake.lock
-
-      - name: Build
-        id: build
-        run: |
-          out=$(nix build --no-link --print-out-paths '${{ matrix.installable }}')
-          echo "$out"
-          echo "out=$out" >> "$GITHUB_OUTPUT"
-
-      # Hosts pick these up through their auto-upgrade, so the closure is
-      # downloaded rather than rebuilt. Skipped until the CACHIX_CACHE
-      # variable and CACHIX_AUTH_TOKEN secret are set. Pushing a closure
-      # leaves out anything already on cache.nixos.org.
-      - name: Push to Cachix
-        if: matrix.push && vars.CACHIX_CACHE != ''
-        env:
-          CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: nix run nixpkgs#cachix -- push '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
+  build:
+    needs: [update, check]
+    if: needs.update.outputs.changed == 'true'
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    uses: ./.github/workflows/build.yml
+    with:
+      lock: ${{ needs.update.outputs.lock }}
+    secrets: inherit
 
   commit:
-    needs: [update, build]
+    needs: [update, check, build]
     if: needs.update.outputs.changed == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
       issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       # Commit on top of the current main rather than the SHA that was tested:
       # only flake.lock changes, and the run can take hours.
@@ -218,6 +100,7 @@ jobs:
           fetch-depth: 0
 
       - name: Commit flake.lock
+        id: commit
         env:
           LOCK: ${{ needs.update.outputs.lock }}
           BASE: ${{ github.sha }}
@@ -233,53 +116,40 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "flake update" -- flake.lock
           git push origin HEAD:main
+          echo "committed=true" >> "$GITHUB_OUTPUT"
 
       - name: Close failure issue
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          gh issue list --state open --search 'in:title "Flake update failed"' \
-            --json number --jq '.[].number' |
-          while read -r n; do
-            gh issue close "$n" --comment "Fixed: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          done
+          .github/scripts/notify.sh close "Flake update failed" "Fixed: $RUN_URL"
+
+      # The push above doesn't trigger Check, so report the new lock's
+      # warnings for main here.
+      - name: Report warnings
+        if: steps.commit.outputs.committed == 'true'
+        env:
+          WARNINGS: ${{ needs.check.outputs.warnings }}
+        run: .github/scripts/report-warnings.sh <<<"$WARNINGS"
 
   notify:
-    needs: [update, build, commit]
+    needs: [update, check, build, commit]
     if: failure()
     runs-on: ubuntu-24.04
     permissions:
       actions: read # list which jobs failed
       issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
-      - name: Open or update issue
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      - uses: actions/checkout@v7
+
+      - name: Report
         run: |
           failed=$(gh run view "${{ github.run_id }}" --json jobs \
             --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
-          body=$(printf 'Run: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$failed")
-          existing=$(gh issue list --state open --search 'in:title "Flake update failed"' \
-            --json number --jq '.[0].number // empty')
-          if [ -n "$existing" ]; then
-            gh issue comment "$existing" --body "$body"
-          else
-            gh issue create --title "Flake update failed" --body "$body"
-          fi
-
-      - name: Telegram
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then
-            echo "Telegram secrets not set, skipping"
-            exit 0
-          fi
-          curl -fsS "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" \
-            --data-urlencode "chat_id=$TELEGRAM_CHAT_ID" \
-            --data-urlencode "text=❌ Flake update failed for ${{ github.repository }}: $RUN_URL" \
-            > /dev/null
+          printf 'Run: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$failed" |
+            .github/scripts/notify.sh issue "Flake update failed"
+          .github/scripts/notify.sh telegram "❌ Flake update failed for $GH_REPO: $RUN_URL"
