@@ -2,8 +2,9 @@ name: Flake update
 
 # Weekly (or on demand) `nix flake update`, gated on the Check and Build
 # workflows passing on the new lock: flake.lock is committed to main only
-# when it checks and every configuration builds. Any failure opens (or
-# comments on) a "Flake update failed" issue and, if the TELEGRAM_* secrets
+# when it checks and every configuration builds. Any failure pushes the
+# candidate lock to the `flake-update` branch, opens (or comments on) a
+# "Flake update failed" issue pointing at it and, if the TELEGRAM_* secrets
 # are set, messages Telegram. Committing with the default token doesn't
 # trigger other workflows, so the lock isn't checked or built twice.
 
@@ -121,6 +122,8 @@ jobs:
       - name: Close failure issue
         run: |
           .github/scripts/notify.sh close "Flake update failed" "Fixed: $RUN_URL"
+          # The failed candidate is superseded by this lock.
+          git push origin --delete flake-update 2>/dev/null || true
 
       # The push above doesn't trigger Check, so report the new lock's
       # warnings for main here.
@@ -136,6 +139,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       actions: read # list which jobs failed
+      contents: write # the flake-update branch
       issues: write
     env:
       GH_TOKEN: ${{ github.token }}
@@ -146,10 +150,35 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # The candidate lock otherwise only exists in this run. On a branch,
+      # a fix (yours or the issue agent's, whose branch starts from it) is
+      # made and tested against the lock that actually failed, and merging
+      # it lands the update and the fix together.
+      - name: Push the candidate lock
+        id: candidate
+        if: needs.update.outputs.changed == 'true'
+        env:
+          LOCK: ${{ needs.update.outputs.lock }}
+        run: |
+          printf '%s\n' "$LOCK" > flake.lock
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "flake update" -- flake.lock
+          git push --force origin HEAD:refs/heads/flake-update
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Report
+        env:
+          CANDIDATE: ${{ steps.candidate.outputs.sha }}
         run: |
           failed=$(gh run view "${{ github.run_id }}" --json jobs \
             --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
-          printf 'Run: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$failed" |
-            .github/scripts/notify.sh issue "Flake update failed"
-          .github/scripts/notify.sh telegram "❌ Flake update failed for $GH_REPO: $RUN_URL"
+          candidate=""
+          if [ -n "$CANDIDATE" ]; then
+            # The marker tells the issue agent to start from the branch.
+            candidate=$(printf '\n%s\n\n<!-- agent-base: flake-update -->\n' \
+              "The updated flake.lock is on the \`flake-update\` branch ($CANDIDATE); fix on top of it.")
+          fi
+          issue=$(printf 'Run: %s\n\nFailed jobs:\n%s\n%s\n' "$RUN_URL" "$failed" "$candidate" |
+            .github/scripts/notify.sh issue "Flake update failed")
+          .github/scripts/notify.sh telegram "$(printf '❌ Flake update failed for %s\nRun: %s\nIssue: %s' "$GH_REPO" "$RUN_URL" "$issue")"

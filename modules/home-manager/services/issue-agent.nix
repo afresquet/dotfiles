@@ -58,7 +58,10 @@ let
       `nix eval` of every configuration the change can reach. Never build:
       this is a Raspberry Pi, and Nix is configured here so that a build
       fails instead of running. CI builds the PR.
-    - Don't run `nix flake update`; pinned versions are load-bearing.
+    - Don't run `nix flake update`; pinned versions are load-bearing. For a
+      failed flake update your branch already carries the new flake.lock
+      (see "Your branch" in the context): keep it and make the code work
+      with it, which is what AGENTS.md's overlay and assertion rules are for.
     - Keep the change to what the issue needs.
     - Commit with a short lowercase summary (`vpn-confinement option
       renames`), no attribution trailers. If a PR for this issue already
@@ -149,6 +152,7 @@ let
 
     repo=${lib.escapeShellArg cfg.repo}
     label=${lib.escapeShellArg cfg.label}
+    agent_marker='<!-- issue-agent -->'
     state=${lib.escapeShellArg stateDir}
     clone="$state/repo"
 
@@ -176,6 +180,10 @@ let
         jq -r .token
     }
     token=$(mint_token)
+    if [ -z "$token" ] || [ "$token" = null ]; then
+      echo "couldn't get a token for the GitHub App" >&2
+      exit 1
+    fi
     ghx() { GH_TOKEN=$token gh "$@"; }
 
     # The open agent PR for issue $1, if any.
@@ -228,8 +236,25 @@ let
       mkdir -p "$out" "$(dirname "$work")"
       trap 'git -C "$clone" worktree remove --force "$work" 2>/dev/null || true' EXIT
 
+      # A failed flake update leaves its candidate lock on a branch and marks
+      # the issue; the fix goes on top of that lock, not main's.
+      candidate=""
+      if jq -r '[.body, (.comments[].body)] | join("\n")' <<<"$issue" |
+        grep -q '<!-- agent-base: flake-update -->' &&
+        git -C "$clone" rev-parse --verify --quiet origin/flake-update >/dev/null; then
+        candidate=origin/flake-update
+      fi
+      restarted=""
       if git -C "$clone" rev-parse --verify --quiet "origin/$branch" >/dev/null; then
         base="origin/$branch"
+        # A newer candidate (the update was rerun) that the branch doesn't
+        # have: start over from it; the push replaces the branch.
+        if [ -n "$candidate" ] && ! git -C "$clone" merge-base --is-ancestor "$candidate" "$base"; then
+          base=$candidate
+          restarted=1
+        fi
+      elif [ -n "$candidate" ]; then
+        base=$candidate
       else
         base="origin/main"
       fi
@@ -238,6 +263,12 @@ let
       context="$out/context.md"
       {
         printf '# Issue #%s: %s\n\n%s\n' "$n" "$title" "$(jq -r .body <<<"$issue")"
+        if [ -n "$candidate" ]; then
+          printf '\n## Your branch\n\n%s\n' "It starts from the failed update's flake.lock (the \`flake-update\` branch), so you are working against the inputs that failed. Keep that lock; fix the code on top of it."
+          if [ -n "$restarted" ]; then
+            printf 'The update was rerun with a newer lock since your PR, so the branch starts over from it: redo your fix (your PR below shows what it was).\n'
+          fi
+        fi
         jq -r '.comments[] | "\n## Comment by \(.author.login)\n\n\(.body)"' <<<"$issue"
         # Logs of the runs the issue links to, failed steps only.
         jq -r '[.body, (.comments[].body)] | join("\n")' <<<"$issue" |
@@ -276,9 +307,12 @@ let
           < /dev/null > "$out/transcript.jsonl" 2> "$out/stderr.txt"
       ) || rc=$?
 
+      # Telegram carries links, not what the issue or PR already says, plus
+      # what's only visible on this machine (failures, with how to look).
+      issue_url=$(jq -r .url <<<"$issue")
       ahead=$(git -C "$work" rev-list --count "$base..HEAD")
       if [ "$rc" -ne 0 ]; then
-        telegram "⚠️ Issue agent failed on #$n $title (exit $rc). Log: issue-agent-watch $n"
+        telegram "⚠️ Issue agent failed on #$n (exit $rc): $issue_url"$'\n'"Log: issue-agent-watch $n"
       elif [ "$ahead" -gt 0 ] && [ -s "$out/title" ]; then
         # A fresh token: the agent may have run for most of the last one's
         # hour. gh's credential helper hands git the token from GH_TOKEN.
@@ -288,21 +322,24 @@ let
           push --quiet --force-with-lease origin "HEAD:refs/heads/$branch"
         body=$(printf '%s\n\nFixes #%s\n' "$(cat "$out/body.md" 2>/dev/null)" "$n")
         existing=$(ghx pr list -R "$repo" --head "$branch" --state open --json url --jq '.[0].url // empty')
-        summary=$(head -c 1500 "$out/body.md" 2>/dev/null || true)
         if [ -n "$existing" ]; then
           ghx pr edit "$existing" -R "$repo" --title "$(cat "$out/title")" --body "$body" \
             --add-label "$label" >/dev/null
-          telegram "🔧 Updated $existing for #$n $title"$'\n\n'"$summary"
+          telegram "🔄 PR updated for #$n: $existing"
         else
           # Labelled so the agent's PRs are easy to tell apart.
           url=$(ghx pr create -R "$repo" --base main --head "$branch" \
             --title "$(cat "$out/title")" --body "$body" --label "$label")
-          telegram "🔧 $url fixes #$n $title"$'\n\n'"$summary"
+          telegram "🔧 PR for #$n: $url"
         fi
       elif [ -s "$out/skip" ]; then
-        telegram "🤷 Issue agent left #$n $title alone: $(head -c 1500 "$out/skip")"
+        # The reason goes on the issue. The marker keeps the agent's own
+        # comments from counting as news that would make it run again.
+        printf '%s\n\n%s\n' "$(cat "$out/skip")" "$agent_marker" |
+          ghx issue comment "$n" -R "$repo" --body-file - >/dev/null
+        telegram "🤷 Issue agent left #$n alone, reason on the issue: $issue_url"
       else
-        telegram "⚠️ Issue agent finished #$n $title without a fix or a reason. Log: issue-agent-watch $n"
+        telegram "⚠️ Issue agent finished #$n without a fix or a reason: $issue_url"$'\n'"Log: issue-agent-watch $n"
       fi
     '';
   };
@@ -381,7 +418,7 @@ let
           continue
         fi
         key=$({
-          jq -r '[.body, (.comments[].body)] | join("\n---\n")' <<<"$issue"
+          jq -r --arg m "$agent_marker" '[.body, (.comments[].body | select(contains($m) | not))] | join("\n---\n")' <<<"$issue"
           printf '%s' "$feedback"
         } | sha256sum | cut -d' ' -f1)
         if [ "$(jq -r --arg n "$n" '.[$n] // ""' "$handled")" = "$key" ]; then
@@ -389,7 +426,7 @@ let
         fi
         echo "issue #$n: $(jq -r .title <<<"$issue")"
         if ! ${lib.getExe oneScript} "$issue"; then
-          telegram "⚠️ Issue agent crashed on #$n $(jq -r .title <<<"$issue"); see journalctl --user -u issue-agent"
+          telegram "⚠️ Issue agent crashed on #$n: $(jq -r .url <<<"$issue")"$'\n'"Log: journalctl --user -u issue-agent"
         fi
         # Handled whatever the outcome; it runs again once the issue changes.
         tmp=$(mktemp)

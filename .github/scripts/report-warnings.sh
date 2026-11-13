@@ -33,6 +33,6 @@ if [ -n "$n" ]; then
 fi
 
 fence='```'
-printf 'Run: %s\n\nEvaluation warnings on main:\n\n%s\n%s\n%s\n\n<!-- warnings-hash: %s -->\n' \
-  "$RUN_URL" "$fence" "$warnings" "$fence" "$hash" | "$notify" issue "$title"
-"$notify" telegram "$(printf '⚠️ Evaluation warnings on %s main: %s\n\n%s' "$GH_REPO" "$RUN_URL" "$warnings")"
+url=$(printf 'Run: %s\n\nEvaluation warnings on main:\n\n%s\n%s\n%s\n\n<!-- warnings-hash: %s -->\n' \
+  "$RUN_URL" "$fence" "$warnings" "$fence" "$hash" | "$notify" issue "$title")
+"$notify" telegram "$(printf '⚠️ Evaluation warnings on %s main\nRun: %s\nIssue: %s' "$GH_REPO" "$RUN_URL" "$url")"

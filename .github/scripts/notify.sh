@@ -2,7 +2,8 @@
 # Usage:
 #   notify.sh find <title>             print the number of the open issue titled <title>
 #   notify.sh issue <title>            body on stdin; comment on that issue, or open
-#                                      it labelled `agent` for home-server's issue agent
+#                                      it labelled `agent` for home-server's issue
+#                                      agent; prints the issue's URL
 #   notify.sh close <title> <comment>  close that issue, if open
 #   notify.sh telegram <text>          message the TELEGRAM_CHAT_ID chat
 #
@@ -23,7 +24,8 @@ case "${1:-}" in
     body=$(cat)
     n=$(find_issue "$2")
     if [ -n "$n" ]; then
-      gh issue comment "$n" --body "$body"
+      gh issue comment "$n" --body "$body" >/dev/null
+      gh issue view "$n" --json url --jq .url
     else
       # Only if missing (it fails when the label exists); leaves yours alone.
       gh label create agent --color de7356 \
@@ -50,7 +52,7 @@ case "${1:-}" in
       >/dev/null || echo "::warning::Telegram notification failed"
     ;;
   *)
-    sed -n '2,7p' "$0" >&2
+    sed -n '2,8p' "$0" >&2
     exit 2
     ;;
 esac

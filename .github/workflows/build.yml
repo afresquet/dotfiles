@@ -1,16 +1,21 @@
 name: Build
 
 # Builds every NixOS, nix-darwin and home-manager configuration on its native
-# platform and pushes the Pi's closures to Cachix. Runs when a push changes
-# flake.lock on main (a manual input update; the lock is already on main by
-# then, so a failure is reported as a "Lock build failed" issue and Telegram
-# message rather than blocked), and is called by flake-update with its
-# candidate lock, which it commits only if this passes.
+# platform and pushes the Pi's closures to Cachix. Runs:
+# - when a push changes flake.lock on main (a manual input update; the lock
+#   is already on main by then, so a failure is reported as a "Lock build
+#   failed" issue and Telegram message rather than blocked);
+# - on every push to an issue agent branch whose flake.lock differs from
+#   main's (its fix for a failed flake update, made on top of the candidate
+#   lock), so the PR shows whether the update now builds;
+# - when flake-update calls it with its candidate lock, which it commits
+#   only if this passes.
 
 on:
   push:
-    branches: [main]
-    paths: [flake.lock]
+    # Not filtered on paths: an agent branch's later commits don't touch
+    # flake.lock but still need building. The gate job decides.
+    branches: [main, "agent/**"]
   workflow_call:
     inputs:
       lock:
@@ -22,7 +27,35 @@ permissions:
   contents: read
 
 jobs:
+  gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Does this need building?
+        id: gate
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "${{ github.event_name }}" != push ]; then
+            run=true # called by flake-update
+          elif [ "${{ github.ref }}" = refs/heads/main ]; then
+            # This push changed the lock.
+            run=$(git diff --quiet "$BEFORE" HEAD -- flake.lock && echo false || echo true)
+          else
+            # An agent branch carrying a different lock than main.
+            run=$(git diff --quiet origin/main HEAD -- flake.lock && echo false || echo true)
+          fi
+          echo "run=$run" | tee -a "$GITHUB_OUTPUT"
+
   matrix:
+    needs: gate
+    if: needs.gate.outputs.run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:
@@ -82,10 +115,13 @@ jobs:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
         run: nix run nixpkgs#cachix -- push '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
 
-  # Only for pushes: when called, flake-update reports on the whole run.
+  # Only for pushes to main: when called, flake-update reports on the whole
+  # run, and an agent branch's result shows on its PR.
   report:
-    needs: [matrix, build]
-    if: always() && github.event_name == 'push'
+    needs: [gate, matrix, build]
+    if: >-
+      always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+      && needs.gate.outputs.run == 'true'
     runs-on: ubuntu-24.04
     permissions:
       actions: read # list which jobs failed
@@ -109,6 +145,6 @@ jobs:
           fi
           failed=$(gh run view "${{ github.run_id }}" --json jobs \
             --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
-          printf 'Run: %s\n\nflake.lock on main (%s) failed to build:\n%s\n' \
-            "$RUN_URL" "${{ github.sha }}" "$failed" | .github/scripts/notify.sh issue "$title"
-          .github/scripts/notify.sh telegram "❌ flake.lock on main failed to build for $GH_REPO: $RUN_URL"
+          issue=$(printf 'Run: %s\n\nflake.lock on main (%s) failed to build:\n%s\n' \
+            "$RUN_URL" "${{ github.sha }}" "$failed" | .github/scripts/notify.sh issue "$title")
+          .github/scripts/notify.sh telegram "$(printf '❌ flake.lock on %s main failed to build\nRun: %s\nIssue: %s' "$GH_REPO" "$RUN_URL" "$issue")"
