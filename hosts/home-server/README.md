@@ -420,7 +420,7 @@ YAML says.
   `slskd.yml` — env vars from the module take precedence, and you'd be
   editing dead config.
 - Inbound Soulseek peer port `50300` is open on `wg0` (declared via
-  `vpnNamespaces.<ns>.openVPNPorts`), but Mullvad swallows inbound — see
+  `vpnNamespaces.<ns>.vpn.allowedTCPPorts`), but Mullvad swallows inbound — see
   the VPN namespace section for why that's expected.
 - Default web UI creds are `slskd` / `slskd`. Change them in `slskd.yml`
   before exposing this anywhere beyond the tailnet; everything in
@@ -591,7 +591,7 @@ declarative:
 - **`vpnNamespaces.wg.portMappings`** (in `qbittorrent.nix`, `arr.nix`):
   DNATs PREROUTING for `8080` (qBittorrent UI) and `9696` (Prowlarr UI) so
   external (caddy) traffic can be forwarded into the namespace.
-- **`vpnNamespaces.wg.openVPNPorts`** (in `qbittorrent.nix`): accepts inbound
+- **`vpnNamespaces.wg.vpn.allowed{TCP,UDP}Ports`** (in `qbittorrent.nix`): accepts inbound
   on `6881` TCP+UDP on `wg0` so DHT replies don't get dropped by the
   namespace's default-DROP INPUT after conntrack expires.
 
