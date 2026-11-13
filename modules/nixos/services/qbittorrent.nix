@@ -107,7 +107,7 @@ in
       inherit (cfg) webuiPort;
       inherit (cfg) torrentingPort;
       # The peer port lives inside the VPN namespace (opened there via
-      # openVPNPorts); a hole in the host firewall would go unused.
+      # vpn.allowed{TCP,UDP}Ports); a hole in the host firewall would go unused.
       openFirewall = false;
       serverConfig = {
         Preferences = {
@@ -237,12 +237,10 @@ in
         # Accept inbound on the BT port via the WG interface so DHT replies
         # (UDP) and any outbound-initiated peer connections aren't dropped by
         # the namespace's default-DROP INPUT chain after conntrack expires.
-        openVPNPorts = [
-          {
-            port = cfg.torrentingPort;
-            protocol = "both";
-          }
-        ];
+        vpn = {
+          allowedTCPPorts = [ cfg.torrentingPort ];
+          allowedUDPPorts = [ cfg.torrentingPort ];
+        };
       };
     };
   };

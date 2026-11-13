@@ -188,12 +188,7 @@ in
         ];
         # Accept inbound Soulseek peer port on wg0 — needed so DHT-like
         # outbound-initiated transfers don't drop after conntrack expires.
-        openVPNPorts = [
-          {
-            port = cfg.peerPort;
-            protocol = "tcp";
-          }
-        ];
+        vpn.allowedTCPPorts = [ cfg.peerPort ];
       };
     };
 
