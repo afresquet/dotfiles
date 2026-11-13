@@ -7,7 +7,7 @@
 }:
 let
   packageFiles = utils.importDirWithNames ./.;
-  helix-hm = import ../modules/home-manager/cli/helix.nix {
+  helix-hm = import ../modules/cli/helix/home.nix {
     inherit lib pkgs;
     config = {
       helix.enable = true;
