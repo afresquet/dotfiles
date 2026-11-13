@@ -6,8 +6,7 @@
 # the same set as last reported does nothing, so pushes while a warning is
 # open stay quiet; no warnings closes the issue. Each report carries a hash
 # of the warnings to compare against. Needs RUN_URL plus notify.sh's
-# environment. In a workflow step it sets the `notified` output when it
-# opened or commented on the issue.
+# environment.
 set -euo pipefail
 
 title="Evaluation warnings"
@@ -36,6 +35,4 @@ fi
 fence='```'
 printf 'Run: %s\n\nEvaluation warnings on main:\n\n%s\n%s\n%s\n\n<!-- warnings-hash: %s -->\n' \
   "$RUN_URL" "$fence" "$warnings" "$fence" "$hash" | "$notify" issue "$title"
-# The caller pokes the issue agent only when there's something new for it.
-if [ -n "${GITHUB_OUTPUT:-}" ]; then echo "notified=true" >>"$GITHUB_OUTPUT"; fi
 "$notify" telegram "$(printf '⚠️ Evaluation warnings on %s main: %s\n\n%s' "$GH_REPO" "$RUN_URL" "$warnings")"

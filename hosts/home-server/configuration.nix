@@ -58,6 +58,7 @@ in
   issueAgent = {
     enable = true;
     secretFile = ../../secrets/github-agent.age;
+    webhookSecretFile = ../../secrets/github-webhook.age;
     telegramSecretFile = ../../secrets/telegram-github.age;
   };
   slskd.enable = true;

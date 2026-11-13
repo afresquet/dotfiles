@@ -62,8 +62,13 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
-  # Fine-grained GitHub token for the issue agent: the dotfiles repo only,
-  # read/write on contents, pull requests and issues. A GH_TOKEN= line.
+  # The issue agent's GitHub App webhook secret: the raw value, one line.
+  "github-webhook.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
+  # Private key (PEM) of the GitHub App the issue agent acts as.
   "github-agent.age".publicKeys = [
     keys.afresquet
     keys.homeServer

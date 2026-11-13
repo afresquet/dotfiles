@@ -62,7 +62,6 @@ jobs:
           exit "$rc"
 
       - name: Report warnings
-        id: report
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -72,10 +71,3 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           WARNINGS: ${{ steps.eval.outputs.warnings }}
         run: .github/scripts/report-warnings.sh <<<"$WARNINGS"
-
-      - if: steps.report.outputs.notified == 'true'
-        uses: ./.github/actions/poke-agent
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          url: ${{ vars.AGENT_POKE_URL }}

@@ -9,5 +9,8 @@
   programs.helix.settings.editor.clipboard-provider = "termcode";
 
   agentTelegram.enable = true;
-  issueAgent.enable = true;
+  issueAgent = {
+    enable = true;
+    appId = 5747695;
+  };
 }
