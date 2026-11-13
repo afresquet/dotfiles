@@ -448,6 +448,53 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
   → Jellyfin picks up via real-time monitoring
 ```
 
+## 15. Issue agent
+
+Opens PRs for GitHub issues labelled `agent` (the CI workflows label theirs)
+and sends them over Telegram; you review and merge on GitHub. It runs as the
+`issue-agent` user service, started by a webhook the workflows call over the
+tailnet, with an hourly check as fallback. It only evaluates, never builds:
+CI builds the PR.
+
+1. **GitHub token.** Fine-grained token, repository access *only* the
+   dotfiles repo, permissions *Contents*, *Pull requests* and *Issues*:
+   read and write. Then `agenix -e secrets/github-agent.age` with a single
+   `GH_TOKEN=github_pat_...` line, and `git add` it.
+2. **Tailscale access rules** (admin console → Access controls, JSON
+   editor). The default policy (`"src": ["*"]` to everything) would let the
+   CI runner reach every device and port, so replace it. Tagged devices aren't
+   `autogroup:member`; give each tag in use its own rule or it loses access.
+   `home-server`'s address is `tailscale ip -4` on the Pi.
+
+   ```jsonc
+   "hosts": { "home-server": "<tailscale ip -4 on the Pi>" },
+   "tagOwners": { "tag:ci": ["autogroup:admin"] },
+   "grants": [
+     { "src": ["autogroup:member"], "dst": ["*"], "ip": ["*"] },
+     // ...one rule per other tag in use...
+     // GitHub Actions may poke the issue agent, and reach nothing else.
+     { "src": ["tag:ci"], "dst": ["home-server"], "ip": ["tcp:9871"] }
+   ]
+   ```
+
+   Check it on the Preview rules tab, and on the Pi with
+   `sudo tailscale debug netmap | jq '.PacketFilterRules'`.
+
+3. **Tailscale OAuth client**: Settings → Trust credentials
+   (`/admin/settings/trust-credentials`) → **Credential** → **OAuth**, scope
+   *Auth Keys* write with tag `tag:ci`, nothing else. The secret is shown only
+   once. In the GitHub repo (Settings → Secrets and variables → Actions), add
+   secrets `TS_OAUTH_CLIENT_ID` and `TS_OAUTH_SECRET`, and a variable
+   `AGENT_POKE_URL` = `http://home-server:9871/`. Until these exist the
+   workflows skip the poke and the hourly check picks issues up.
+4. Rebuild (system and home). Test with `systemctl --user start issue-agent`
+   on the Pi, or by labelling an issue `agent` once step 3 is done.
+
+Logs: `journalctl --user -u issue-agent`; each issue's context, transcript
+and PR text are in `~/.local/state/issue-agent/out/<n>/`. It reruns on an
+issue when its content changes (a new comment from CI or from you), so
+comment on the issue to steer it.
+
 ## VPN namespace (Mullvad WireGuard via `vpn-confinement`)
 
 qBittorrent, Prowlarr, and Byparr run inside a Linux network namespace named

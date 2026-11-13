@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Usage:
 #   notify.sh find <title>             print the number of the open issue titled <title>
-#   notify.sh issue <title>            body on stdin; comment on that issue, or open it
+#   notify.sh issue <title>            body on stdin; comment on that issue, or open
+#                                      it labelled `agent` for home-server's issue agent
 #   notify.sh close <title> <comment>  close that issue, if open
 #   notify.sh telegram <text>          message the TELEGRAM_CHAT_ID chat
 #
@@ -24,7 +25,10 @@ case "${1:-}" in
     if [ -n "$n" ]; then
       gh issue comment "$n" --body "$body"
     else
-      gh issue create --title "$2" --body "$body"
+      # Only if missing (it fails when the label exists); leaves yours alone.
+      gh label create agent --color de7356 \
+        --description "To be handled by an agent" >/dev/null 2>&1 || true
+      gh issue create --title "$2" --body "$body" --label agent
     fi
     ;;
   close)
@@ -46,7 +50,7 @@ case "${1:-}" in
       >/dev/null || echo "::warning::Telegram notification failed"
     ;;
   *)
-    sed -n '2,6p' "$0" >&2
+    sed -n '2,7p' "$0" >&2
     exit 2
     ;;
 esac
