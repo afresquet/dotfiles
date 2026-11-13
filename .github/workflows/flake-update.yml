@@ -125,10 +125,18 @@ jobs:
       # The push above doesn't trigger Check, so report the new lock's
       # warnings for main here.
       - name: Report warnings
+        id: report
         if: steps.commit.outputs.committed == 'true'
         env:
           WARNINGS: ${{ needs.check.outputs.warnings }}
         run: .github/scripts/report-warnings.sh <<<"$WARNINGS"
+
+      - if: steps.report.outputs.notified == 'true'
+        uses: ./.github/actions/poke-agent
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          url: ${{ vars.AGENT_POKE_URL }}
 
   notify:
     needs: [update, check, build, commit]
@@ -153,3 +161,9 @@ jobs:
           printf 'Run: %s\n\nFailed jobs:\n%s\n' "$RUN_URL" "$failed" |
             .github/scripts/notify.sh issue "Flake update failed"
           .github/scripts/notify.sh telegram "❌ Flake update failed for $GH_REPO: $RUN_URL"
+
+      - uses: ./.github/actions/poke-agent
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          url: ${{ vars.AGENT_POKE_URL }}

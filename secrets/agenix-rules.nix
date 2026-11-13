@@ -62,6 +62,21 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  # Fine-grained GitHub token for the issue agent: the dotfiles repo only,
+  # read/write on contents, pull requests and issues. A GH_TOKEN= line.
+  "github-agent.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
+  # The GitHub notifications Telegram bot (same values as the repo's
+  # TELEGRAM_* Actions secrets), for the issue agent's PR messages.
+  # TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines.
+  "telegram-github.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
   "agent-telegram-mac-mini.age".publicKeys = [
     keys.afresquet
     keys.alvarosMacMini

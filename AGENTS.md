@@ -178,7 +178,7 @@ config uses unstable (stable lacks claude-code, hunk, herdr-core).
 
 `secrets/agenix-rules.nix` maps each `.age` file to the public keys that can
 decrypt it (the user key plus the host key of every machine that needs it).
-Adding a secret: add the rule, `agenix -e secrets/<name>.age` (user runs
+Adding a secret: add the rule, `agenix -e <name>.age` from `secrets/` (user runs
 this), `git add -N`, reference it as `age.secrets.<name>.file` in the module
 that needs it. Never print or commit decrypted contents. `keys.nix` holds
 public keys only.

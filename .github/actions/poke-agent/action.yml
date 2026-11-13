@@ -1,0 +1,39 @@
+name: Poke the issue agent
+description: >-
+  Tell home-server's issue agent to check for issues now, over the tailnet.
+  The request carries nothing; the agent fetches the issues from GitHub
+  itself. Skipped unless the OAuth client and URL are configured.
+
+# Callers pass secrets and a variable; unset ones arrive as "" and the steps
+# below skip.
+inputs:
+  oauth-client-id:
+    description: Tailscale OAuth client (auth_keys scope, tag:ci only).
+    required: true
+  oauth-secret:
+    description: Its secret.
+    required: true
+  url:
+    description: The agent's webhook, e.g. http://home-server:9871/.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    # Joins as an ephemeral tag:ci node, removed when the job ends. The
+    # tailnet's access rules let tag:ci reach the webhook port and nothing
+    # else.
+    - if: inputs.oauth-client-id != '' && inputs.oauth-secret != '' && inputs.url != ''
+      uses: tailscale/github-action@v3
+      with:
+        oauth-client-id: ${{ inputs.oauth-client-id }}
+        oauth-secret: ${{ inputs.oauth-secret }}
+        tags: tag:ci
+
+    - if: inputs.oauth-client-id != '' && inputs.oauth-secret != '' && inputs.url != ''
+      shell: bash
+      env:
+        URL: ${{ inputs.url }}
+      # A missed poke is caught by the agent's hourly check; don't fail the
+      # run that reported the issue over it.
+      run: curl -fsS -m 30 --retry 3 -X POST "$URL" || echo "::warning::Couldn't poke the issue agent"

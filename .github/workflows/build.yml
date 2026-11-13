@@ -94,6 +94,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Report
+        id: report
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
@@ -112,3 +113,11 @@ jobs:
           printf 'Run: %s\n\nflake.lock on main (%s) failed to build:\n%s\n' \
             "$RUN_URL" "${{ github.sha }}" "$failed" | .github/scripts/notify.sh issue "$title"
           .github/scripts/notify.sh telegram "❌ flake.lock on main failed to build for $GH_REPO: $RUN_URL"
+          echo "failed=true" >> "$GITHUB_OUTPUT"
+
+      - if: steps.report.outputs.failed == 'true'
+        uses: ./.github/actions/poke-agent
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          url: ${{ vars.AGENT_POKE_URL }}
