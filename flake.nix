@@ -216,11 +216,12 @@
 
       overlays = import ./overlays (libAndUtils // { inherit inputs; });
 
-      nixosModules = import ./modules/nixos libAndUtils;
+      # modules/<category>/<feature>/<class>.nix, one output per platform.
+      nixosModules = utils.classModules "nixos" ./modules;
 
-      darwinModules = import ./modules/darwin libAndUtils;
+      darwinModules = utils.classModules "darwin" ./modules;
 
-      homeModules = import ./modules/home-manager libAndUtils;
+      homeModules = utils.classModules "home" ./modules;
 
       nixosConfigurations = {
         Alvaro-Desktop = nixosSystem {
