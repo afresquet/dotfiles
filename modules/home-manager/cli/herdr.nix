@@ -2,20 +2,16 @@
   lib,
   config,
   pkgs,
-  inputs,
   ...
 }:
 let
   cfg = config.herdr;
 
-  herdrPkgs = inputs.nixpkgs-herdr.legacyPackages.${pkgs.stdenv.hostPlatform.system};
-
   # This test expects a token from the future to match no process; in the
-  # build sandbox it matches its own sleeper.
-  herdr-core = herdrPkgs.herdr-core.overrideAttrs (old: {
-    checkFlags = old.checkFlags ++ [
-      "--skip=sweep::tests::a_process_older_than_its_token_is_never_read"
-    ];
+  # build sandbox it matches its own sleeper. nixpkgs doesn't skip it.
+  flakySkip = "--skip=sweep::tests::a_process_older_than_its_token_is_never_read";
+  herdr-core = pkgs.herdr-core.overrideAttrs (old: {
+    checkFlags = old.checkFlags ++ [ flakySkip ];
   });
 in
 {
@@ -33,6 +29,13 @@ in
 
   # herdr-core (`hc`) on every host, so the desktop app can add them as machines.
   config = lib.mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !lib.elem flakySkip pkgs.herdr-core.checkFlags;
+        message = "herdr: nixpkgs' herdr-core now skips sweep::tests::a_process_older_than_its_token_is_never_read itself; drop the checkFlags override in modules/home-manager/cli/herdr.nix";
+      }
+    ];
+
     programs.herdr.enable = true;
 
     home.packages = [

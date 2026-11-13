@@ -3,10 +3,6 @@
 
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-    # herdr-desktop landed in nixpkgs (NixOS/nixpkgs#584646) at an older
-    # version than this fork's. The herdr-desktop module asserts once nixpkgs
-    # catches up, at which point this input can go.
-    nixpkgs-herdr.url = "github:rohan879/nixpkgs/a2008e937ced490810d4b4fe6250c73139671983";
     systems.url = "github:nix-systems/default";
     nix-darwin = {
       url = "github:LnL7/nix-darwin";

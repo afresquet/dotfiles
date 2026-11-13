@@ -163,12 +163,12 @@ the `bind` section of the same file.
 Overlays in `overlays/` patch a specific nixpkgs version and `throw` with a
 reminder when the version changes; some modules carry an `assertions` entry
 that fires when an upstream fix lands (see `codex.nix`, `anki.nix`,
-`herdr-desktop.nix`, `avahi.nix`). When one of these fires after a flake
-update, do what the message says (check upstream, then remove the patch or
-assertion); don't silence it.
+`avahi.nix`). When one of these fires after a flake update, do what the
+message says (check upstream, then remove the patch or assertion); don't
+silence it.
 
-`nixpkgs-herdr` is a temporary nixpkgs fork for `herdr-desktop`; `nixos-raspberrypi`
-and `hyprland` deliberately don't follow `nixpkgs` so their binary caches hit.
+`nixos-raspberrypi` and `hyprland` deliberately don't follow `nixpkgs` so
+their binary caches hit.
 The Pi's system runs the stable nixpkgs `nixos-raspberrypi` pins while its home
 config uses unstable (stable lacks claude-code, hunk, herdr-core).
 
