@@ -29,7 +29,6 @@ in
 
   monitoring.enable = true;
   agentTelegram = {
-    enable = true;
     secretFile = ../../secrets/agent-telegram-mac-mini.age;
   };
 
