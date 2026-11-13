@@ -38,20 +38,41 @@ let
     + lib.optionalString isDarwin ''
       ${checkCommand} || { rc=$?; [ "$rc" -eq 1 ] && exit 0; exit "$rc"; }
     ''
-    + ''
-      exec ${lib.getExe config.programs.home-manager.package} switch --refresh \
-        --flake ${lib.escapeShellArg "${cfg.flake}#${name}"}
-    '';
+    + (
+      if isDarwin then
+        # launchd has no ExecStartPre/ExecStopPost, so notify around the
+        # switch here, passing the result the way systemd would.
+        ''
+          ${lib.optionalString cfg.telegram "export TELEGRAM_ENV_FILE=${lib.escapeShellArg config.agentTelegram.envFile}"}
+          ${notify "start"} || true
+          rc=0
+          ${switch} || rc=$?
+          if [ "$rc" -eq 0 ]; then SERVICE_RESULT=success; else SERVICE_RESULT=exit-code; fi
+          export SERVICE_RESULT
+          ${notify "stop"} || true
+          exit "$rc"
+        ''
+      else
+        ''
+          exec ${switch}
+        ''
+    );
   };
 
-  # "-": a failed notification must never block or fail the upgrade.
+  switch = "${lib.getExe config.programs.home-manager.package} switch --refresh --flake ${lib.escapeShellArg "${cfg.flake}#${name}"}";
+
   notify =
     phase:
-    "-${lib.getExe pkgs.upgrade-notify} ${
+    "${lib.getExe pkgs.upgrade-notify} ${
       lib.escapeShellArgs [
         phase
         "Home Manager upgrade"
-        "journalctl --user -u home-manager-auto-upgrade"
+        (
+          if isDarwin then
+            "${config.home.homeDirectory}/Library/Logs/home-manager-auto-upgrade.log"
+          else
+            "journalctl --user -u home-manager-auto-upgrade"
+        )
       ]
     }";
 in
@@ -62,10 +83,15 @@ in
     };
 
     notify = lib.mkEnableOption "desktop notifications when the switch starts and finishes" // {
-      # Linux only: the systemd unit carries the hooks; Macs have no
-      # equivalent of ExecStopPost on a launchd agent.
+      # Linux only: upgrade-notify's desktop notifications are notify-send.
       default = isLinux && config.desktop;
     };
+
+    telegram =
+      lib.mkEnableOption "Telegram messages when the switch starts and finishes, through this machine's agentTelegram bot"
+      // {
+        default = config.agentTelegram.enable;
+      };
 
     flake = lib.mkOption {
       type = lib.types.str;
@@ -86,6 +112,10 @@ in
           {
             assertion = outputs.homeConfigurations ? ${name};
             message = "autoUpgrade: no homeConfigurations.\"${name}\" in the flake; it switches to <username>@<hostname>.";
+          }
+          {
+            assertion = cfg.telegram -> config.agentTelegram.enable;
+            message = "autoUpgrade.telegram sends through the agentTelegram bot; enable agentTelegram too.";
           }
         ];
 
@@ -108,10 +138,14 @@ in
             # ExecStartPre, so a no-op check sends no notification.
             ExecCondition = checkCommand;
             ExecStart = lib.getExe upgradeScript;
+            Environment =
+              lib.optional cfg.notify "NOTIFY_DESKTOP=1"
+              ++ lib.optional cfg.telegram "TELEGRAM_ENV_FILE=${config.agentTelegram.envFile}";
           }
-          // lib.optionalAttrs cfg.notify {
-            ExecStartPre = notify "start";
-            ExecStopPost = notify "stop";
+          # "-": a failed notification must never block or fail the upgrade.
+          // lib.optionalAttrs (cfg.notify || cfg.telegram) {
+            ExecStartPre = "-${notify "start"}";
+            ExecStopPost = "-${notify "stop"}";
           };
         };
         systemd.user.timers.home-manager-auto-upgrade = {

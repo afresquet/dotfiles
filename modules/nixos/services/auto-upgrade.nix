@@ -66,6 +66,13 @@ in
     notify = lib.mkEnableOption "desktop notifications when the upgrade starts and finishes" // {
       default = config.desktop;
     };
+
+    telegram =
+      lib.mkEnableOption "Telegram messages when the upgrade starts and finishes, through this machine's agentTelegram bot"
+      // {
+        # `or`: hosts that pick services individually may not import it.
+        default = config.agentTelegram.enable or false;
+      };
   };
 
   config = lib.mkIf cfg.enable {
@@ -94,15 +101,31 @@ in
       }
 
       # The "-" prefix in `notify`: a failed notification must never block
-      # or fail the upgrade. nixos-upgrade runs as root, so upgrade-notify
-      # hands the notification to this user's session bus.
-      (lib.mkIf cfg.notify {
-        environment.NOTIFY_USER = config.username;
+      # or fail the upgrade.
+      (lib.mkIf (cfg.notify || cfg.telegram) {
         serviceConfig = {
           ExecStartPre = notify "start";
           ExecStopPost = notify "stop";
         };
       })
+      # nixos-upgrade runs as root, so upgrade-notify hands the desktop
+      # notification to this user's session bus.
+      (lib.mkIf cfg.notify {
+        environment = {
+          NOTIFY_DESKTOP = "1";
+          NOTIFY_USER = config.username;
+        };
+      })
+      (lib.mkIf cfg.telegram {
+        environment.TELEGRAM_ENV_FILE = config.age.secrets.agent-telegram.path;
+      })
+    ];
+
+    assertions = [
+      {
+        assertion = cfg.telegram -> (config.agentTelegram.enable or false);
+        message = "autoUpgrade.telegram sends through the agentTelegram bot; enable agentTelegram too.";
+      }
     ];
   };
 }
