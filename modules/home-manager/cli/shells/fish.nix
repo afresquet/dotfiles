@@ -4,9 +4,7 @@ let
 in
 {
   options = {
-    fish.enable = lib.mkEnableOption "fish" // {
-      default = true;
-    };
+    fish.enable = lib.mkEnableOption "fish";
   };
 
   config = lib.mkIf cfg.enable {
