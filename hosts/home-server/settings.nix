@@ -5,4 +5,5 @@
   username = "pi";
   description = "Pi";
   desktop = false;
+  agentTelegram.enable = true;
 }

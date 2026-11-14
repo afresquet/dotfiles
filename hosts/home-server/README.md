@@ -69,7 +69,7 @@ the Pi-hole vhost) or `http://pihole.home-server/`.
 
 - Login password is whatever's in `pihole-webpassword.age`.
 - No other config required — DNS records, upstreams, listening mode all
-  declarative in `modules/nixos/services/pihole.nix`.
+  declarative in `modules/services/pihole/nixos.nix`.
 
 ## 5. Home Assistant
 
@@ -125,7 +125,7 @@ From now on the password persists across rebuilds — the wrapper module
 substitutes the agenix-decrypted hash into `qBittorrent.conf` at start.
 
 Everything else (save path, seeding limits, host header validation, WG
-interface binding) is declarative in `modules/nixos/services/qbittorrent.nix`.
+interface binding) is declarative in `modules/services/qbittorrent/nixos.nix`.
 
 **Important:** the qbittorrent module hardcodes `Session\InterfaceAddress` to
 the Mullvad-assigned IP for the WireGuard tunnel (currently `10.75.78.187`).
@@ -407,7 +407,7 @@ YAML says.
 
 4. *(Optional)* **Share music back.** Soulseek etiquette is to upload some
    of your library in return. Add a read-only bind to
-   `modules/nixos/services/slskd.nix` (e.g.
+   `modules/services/slskd/nixos.nix` (e.g.
    `"/mnt/hdd/media/music:/music:ro"`) and add `/music` under
    `shares.directories` in `slskd.yml`. Skip if you'd rather lurk.
 
