@@ -14,7 +14,7 @@
         assertions = [
           {
             assertion = !lib.versionAtLeast raspberrypiRelease "26.11";
-            message = "avahi: nixos-raspberrypi now pins nixpkgs ${raspberrypiRelease}, which has services.avahi.settings; drop the legacy publish fallback in modules/services/avahi.nix";
+            message = "avahi: nixos-raspberrypi now pins nixpkgs ${raspberrypiRelease}, which has services.avahi.settings; drop the legacy publish fallback in modules/system/avahi.nix";
           }
         ];
 

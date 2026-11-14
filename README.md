@@ -18,6 +18,8 @@ The flake is [dendritic](https://github.com/mightyiam/dendritic): every
 `.nix` file under `modules/` is a flake-parts module, loaded by import-tree,
 and `flake.nix` only lists inputs.
 
+- Directories group aspects by purpose: `nix/`, `system/`, `desktop/`,
+  `terminal/`, `cli/`, `dev/`, `ai/`, `apps/`, `gaming/`, `homelab/`.
 - Each file is an *aspect*: one concern (Tailscale, Hyprland, the issue
   agent) publishing a module per platform it touches as
   `flake.modules.{nixos,darwin,homeManager}.<name>`. There are no enable
@@ -48,7 +50,7 @@ and `flake.nix` only lists inputs.
 
 ## Rebuilding
 
-The `nh` aliases from `modules/cli/nh.nix`, run from anywhere:
+The `nh` aliases from `modules/nix/nh.nix`, run from anywhere:
 
 | Alias | Runs |
 |-------|------|

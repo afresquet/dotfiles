@@ -71,7 +71,9 @@ The flake is dendritic: `flake.nix` only declares inputs and hands every
 `.nix` file under `modules/` to flake-parts through import-tree. Each of those
 files is a flake-parts module; paths with a `_`-prefixed component are
 skipped, which is where non-module files (hardware configs, dashboards, YAML)
-live. Directories are only organisation: moving a file changes nothing.
+live. Directories group aspects by purpose and mean nothing to Nix; moving a
+file only matters for its relative paths (`../../secrets/...`) and for the
+order list options merge in.
 
 ```
 flake.nix               inputs; outputs = mkFlake (import-tree ./modules)
@@ -86,9 +88,22 @@ modules/
   hosts/<host>.nix      one machine: its system and home configurations
   hosts/_<host>/        its non-module files (hardware config, Home
                         Assistant packages, the Pi's runbook)
-  cli/ programs/ services/ gaming/ desktop/ polyfills/
-                        aspects, one concern per file, whatever platforms
-                        it spans
+  aspects, one concern per file whatever platforms it spans, grouped by
+  purpose:
+  nix/                  managing the machines themselves: auto-upgrade,
+                        dotfiles-sync, nh, agenix, allowed-unfree
+  system/               OS plumbing: boot, locale, network, audio, bluetooth,
+                        printing, fonts, ssh, tailscale, primary-user, ...
+  desktop/              the graphical session: Hyprland, Stylix, SDDM,
+                        Waybar, rofi, swaync, hyprlock, ...
+  terminal/             terminal emulators, shells, prompt, multiplexer
+  cli/                  command-line tools
+  dev/                  development: git, editors, containers, VMs
+  ai/                   coding agents, their skills, the Telegram and issue
+                        agents
+  apps/                 GUI applications
+  gaming/               games, launchers, streaming
+  homelab/              the Pi's services and the monitoring stack
 pkgs/                   custom packages -> packages.<system>, `additions`
 overlays/               patches to nixpkgs packages -> `modifications`
 secrets/                agenix: keys.nix (public keys), agenix-rules.nix, *.age
@@ -101,7 +116,7 @@ which publishes a module for each platform it touches through flake-parts'
 `flake.modules.<class>.<name>`, class `nixos`, `darwin` or `homeManager`:
 
 ```nix
-# modules/programs/docker.nix
+# modules/dev/docker.nix
 { self, ... }:
 {
   flake.modules.nixos.docker =
@@ -121,7 +136,7 @@ which publishes a module for each platform it touches through flake-parts'
 - **No enable options.** Importing an aspect is what turns it on. Options are
   for real choices a host makes (`autoUpgrade.dates`, `hyprlock.fingerprint`,
   `waybar.laptop`), not for switching the aspect itself.
-- **Adding an aspect**: create the file anywhere under `modules/`, publish
+- **Adding an aspect**: create the file in the directory for its purpose, publish
   `flake.modules.<class>.<name>`, `git add -N` it. Nothing registers it; it
   stays unused until something imports it.
 - **Giving a host an aspect**: add it to the host's `imports` in
@@ -232,8 +247,8 @@ other's internals:
 |--------|-------------|--------------|
 | `reverseProxy.services.<name>` | `nixos.caddy` | Caddy vhost + blackbox probe URL |
 | `dashboard.services.<name>` | `nixos.dashboard` | Homepage tile and widget |
-| `monitoring.exporters.<name>` | `services/monitoring/_nixos-options.nix` | Prometheus scrape job + firewall hole |
-| `monitoring.dashboards.<name>` | `services/monitoring/_nixos-options.nix` | Grafana dashboard provisioning |
+| `monitoring.exporters.<name>` | `homelab/monitoring/_nixos-options.nix` | Prometheus scrape job + firewall hole |
+| `monitoring.dashboards.<name>` | `homelab/monitoring/_nixos-options.nix` | Grafana dashboard provisioning |
 
 A contributor imports the aspect that declares the option
 (`self.modules.nixos.caddy`, `self.modules.nixos.dashboard`) or, for
@@ -285,7 +300,7 @@ holds public keys only; aspects and hosts read them as `config.meta.keys`.
   `postActivation.text` with `lib.mkAfter`.
 - launchd daemons that run Nix store binaries wrap `ProgramArguments` in
   `/bin/sh -c '/bin/wait4path "$0" && exec "$0" "$@"'` because `/nix` mounts
-  late at boot. Copy the pattern from `modules/services/monitoring/_darwin-*.nix`.
+  late at boot. Copy the pattern from `modules/homelab/monitoring/_darwin-*.nix`.
 - The Mac mini is headless; changes to it are applied over Screen Sharing or
   SSH by the user. `programs.nh` is NixOS-only; on Macs `nh` is a home-manager
   package.

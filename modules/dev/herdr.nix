@@ -31,7 +31,7 @@
         assertions = [
           {
             assertion = !lib.elem flakySkip pkgs.herdr-core.checkFlags;
-            message = "herdr: nixpkgs' herdr-core now skips sweep::tests::a_process_older_than_its_token_is_never_read itself; drop the checkFlags override in modules/cli/herdr.nix";
+            message = "herdr: nixpkgs' herdr-core now skips sweep::tests::a_process_older_than_its_token_is_never_read itself; drop the checkFlags override in modules/dev/herdr.nix";
           }
         ];
 
