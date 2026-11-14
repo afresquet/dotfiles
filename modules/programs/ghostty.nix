@@ -1,7 +1,5 @@
 {
   flake.modules.homeManager.ghostty = {
-    key = "self.modules.homeManager.ghostty";
-
     config = {
       programs.ghostty = {
         enable = true;

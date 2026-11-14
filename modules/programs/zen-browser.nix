@@ -8,7 +8,6 @@
       ...
     }:
     {
-      key = "self.modules.homeManager.zen-browser";
       imports = [ inputs.zen-browser.homeModules.beta ];
 
       config = {

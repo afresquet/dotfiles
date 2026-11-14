@@ -116,8 +116,6 @@
   flake.modules.homeManager.desktop =
     { lib, ... }:
     {
-      key = "self.modules.homeManager.desktop";
-
       imports = with self.modules.homeManager; [
         base
         alacritty

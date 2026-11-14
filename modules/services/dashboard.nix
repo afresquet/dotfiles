@@ -40,7 +40,6 @@
       ) groupOrder;
     in
     {
-      key = "self.modules.nixos.dashboard";
       imports = [
         inputs.agenix.nixosModules.default
         self.modules.nixos.caddy

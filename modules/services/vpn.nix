@@ -4,13 +4,10 @@
     {
       lib,
       config,
-      options,
       ...
     }:
     let
       cfg = config.vpn;
-      # Whether the monitoring aspect is on this host (it declares serverHost).
-      monitoringEnabled = lib.hasAttrByPath [ "monitoring" "serverHost" ] options;
       exporterPort = 9586;
 
       # Hand-written dashboard, kept as a static JSON file so UI edits can be
@@ -21,7 +18,6 @@
       wireguardDashboardJson = ./monitoring/_dashboards/wireguard.json;
     in
     {
-      key = "self.modules.nixos.vpn";
       imports = [
         inputs.vpn-confinement.nixosModules.default
         ./monitoring/_nixos-options.nix
@@ -48,7 +44,7 @@
           allowedIngress = [
             "127.0.0.1/32"
           ];
-          portMappings = lib.mkIf monitoringEnabled [
+          portMappings = [
             # Expose the wireguard exporter on the host so the Mac can scrape it.
             # The exporter has to live inside the namespace because wg0 is here.
             {
@@ -60,7 +56,7 @@
         };
 
         # ─── Monitoring ───
-        services.prometheus.exporters.wireguard = lib.mkIf monitoringEnabled {
+        services.prometheus.exporters.wireguard = {
           enable = true;
           listenAddress = "0.0.0.0";
           port = exporterPort;
@@ -70,16 +66,16 @@
 
         # The wireguard exporter has to see wg0, which only exists inside the
         # namespace. Confine the systemd unit there — same trick prowlarr uses.
-        systemd.services.prometheus-wireguard-exporter.vpnConfinement = lib.mkIf monitoringEnabled {
+        systemd.services.prometheus-wireguard-exporter.vpnConfinement = {
           enable = true;
           vpnNamespace = cfg.namespace;
         };
 
-        monitoring.exporters.wireguard = lib.mkIf monitoringEnabled {
+        monitoring.exporters.wireguard = {
           port = exporterPort;
         };
 
-        monitoring.dashboards.wireguard = lib.mkIf monitoringEnabled {
+        monitoring.dashboards.wireguard = {
           json = wireguardDashboardJson;
         };
       };

@@ -7,11 +7,8 @@
 # as `nixosAllowedUnfree` so packages the system allows stay allowed.
 let
   allowedUnfree =
-    class:
     { lib, config, ... }:
     {
-      key = "self.modules.${class}.allowed-unfree";
-
       options = {
         allowedUnfree = lib.mkOption {
           type = lib.types.listOf lib.types.str;
@@ -32,6 +29,6 @@ let
     };
 in
 {
-  flake.modules.nixos.allowed-unfree = allowedUnfree "nixos";
-  flake.modules.homeManager.allowed-unfree = allowedUnfree "homeManager";
+  flake.modules.nixos.allowed-unfree = allowedUnfree;
+  flake.modules.homeManager.allowed-unfree = allowedUnfree;
 }

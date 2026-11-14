@@ -9,8 +9,6 @@
       cfg = config.skills;
     in
     {
-      key = "self.modules.homeManager.skills";
-
       options.skills = {
 
         sources = lib.mkOption {

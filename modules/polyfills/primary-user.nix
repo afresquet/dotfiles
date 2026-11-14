@@ -4,8 +4,6 @@
   flake.modules.nixos.primary-user =
     { lib, ... }:
     {
-      key = "self.modules.nixos.primary-user";
-
       options.system.primaryUser = lib.mkOption {
         type = lib.types.str;
         example = "afresquet";

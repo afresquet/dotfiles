@@ -28,8 +28,6 @@
       ...
     }:
     {
-      key = "self.modules.homeManager.base";
-
       imports = with self.modules.homeManager; [
         agenix
         bat

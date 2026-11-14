@@ -3,7 +3,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -12,11 +11,8 @@
       # Tailnet-only Caddy listener exposing /metrics. The admin endpoint
       # (port 2019) stays bound to localhost for security.
       metricsPort = 9101;
-      # Whether the monitoring aspect is on this host (it declares serverHost).
-      monitoringEnabled = lib.hasAttrByPath [ "monitoring" "serverHost" ] options;
     in
     {
-      key = "self.modules.nixos.caddy";
       imports = [
         ./monitoring/_nixos-options.nix
       ];
@@ -84,7 +80,7 @@
           # Without it, only Caddy's own runtime metrics would be exposed. Only
           # set when monitoring is on — no point collecting metrics nothing
           # scrapes.
-          globalConfig = lib.optionalString monitoringEnabled ''
+          globalConfig = ''
             servers {
               metrics
             }
@@ -98,7 +94,7 @@
             ) cfg.services
             # Dedicated tailnet-only listener for /metrics. The Caddy admin
             # endpoint (2019) stays localhost-only; this exposes just metrics.
-            // lib.optionalAttrs monitoringEnabled {
+            // {
               ":${toString metricsPort}".extraConfig = "metrics /metrics";
             };
         };
@@ -106,7 +102,7 @@
         # Contribute Caddy's metrics endpoint to the monitoring registry so the
         # Mac-side Prometheus scrapes it without the monitoring module needing
         # to know about Caddy.
-        monitoring.exporters.caddy = lib.mkIf monitoringEnabled {
+        monitoring.exporters.caddy = {
           port = metricsPort;
         };
 
