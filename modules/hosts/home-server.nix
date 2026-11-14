@@ -25,23 +25,18 @@ in
           imports = with self.modules.nixos; [
             inputs.nixos-raspberrypi.nixosModules.raspberry-pi-5.base
             inputs.nixos-raspberrypi.nixosModules.sd-image
-            base
-            pihole
+            server
             home-assistant
             zigbee
-            caddy
             qbittorrent
             arr
             navidrome
             git-server
-            agent-telegram
             issue-agent
             slskd
             explo
             jellyfin
-            vpn
-            dashboard
-            monitoring
+            auto-upgrade-telegram
           ];
 
           networking.hostName = "Home-Server";
@@ -305,8 +300,7 @@ in
         imports = with self.modules.homeManager; [
           base
           wl-clipboard
-          auto-upgrade
-          agent-telegram
+          auto-upgrade-telegram
           issue-agent
         ];
 

@@ -13,30 +13,21 @@ in
   flake.darwinConfigurations.Alvaros-Mac-mini = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       (
-        { config, ... }:
+        { lib, config, ... }:
         {
           imports = with self.modules.darwin; [
-            inputs.determinate.darwinModules.default
+            base
             brave
             rpi-imager
-            auto-upgrade
             openssh
             screensharing
             tailscale
-            agent-telegram
             monitoring
+            auto-upgrade-telegram
           ];
 
           networking.hostName = "Alvaros-Mac-mini";
           system.primaryUser = "afresquet";
-
-          # Custom packages (export-grafana-dashboard, upgrade-notify) and the
-          # nixpkgs patches every host shares.
-          nixpkgs.overlays = [
-            self.overlays.additions
-            self.overlays.modifications
-          ];
-
           users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys = with keys; [
             afresquet
             alvaroDesktop
@@ -80,23 +71,14 @@ in
             pmset -a womp 1 powernap 0
           '';
 
-          # Determinate manages the Nix installation and owns nix.conf; our settings
-          # go to /etc/nix/nix.custom.conf through its module.
           determinateNix = {
-            enable = true;
             customSettings = {
-              # These caches are set here for everyone because the user is not a
-              # trusted Nix user (that is root in all but name), so a flake's own
-              # `nixConfig` caches are ignored. Without them the Pi kernel and
-              # firmware, and the harvest project's devenv shell, get compiled from
-              # source.
-              extra-substituters = [
-                "https://nixos-raspberrypi.cachix.org"
-                "https://devenv.cachix.org"
-              ];
-              extra-trusted-public-keys = [
+              # The Pi kernel and firmware are compiled from source without this
+              # cache (see darwin.base for why it is set for everyone). Ahead of
+              # devenv's, as before.
+              extra-substituters = lib.mkBefore [ "https://nixos-raspberrypi.cachix.org" ];
+              extra-trusted-public-keys = lib.mkBefore [
                 "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-                "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
               ];
               # Everything built here is signed with this key, so the Pis accept
               # packages copied from this Mac (their `trusted-public-keys` has
@@ -118,13 +100,6 @@ in
               cpuCount = 4;
             };
           };
-
-          # Used for backwards compatibility, please read the changelog before changing.
-          # $ darwin-rebuild changelog
-          system.stateVersion = 5;
-
-          # The platform the configuration will be used on.
-          nixpkgs.hostPlatform = "aarch64-darwin";
         }
       )
     ];
@@ -144,8 +119,7 @@ in
           {
             imports = with self.modules.homeManager; [
               desktop
-              auto-upgrade
-              agent-telegram
+              auto-upgrade-telegram
             ];
 
             home.username = "afresquet";

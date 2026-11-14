@@ -6,25 +6,15 @@
   flake.darwinConfigurations.mac-afresquet = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       {
-        imports = [ inputs.determinate.darwinModules.default ];
+        imports = [ self.modules.darwin.base ];
 
         networking.hostName = "mac-afresquet";
         system.primaryUser = "alvaro.fresquet";
 
-        determinateNix = {
-          enable = true;
-          customSettings = {
-            cores = 2;
-            max-jobs = 4;
-            extra-substituters = [ "https://devenv.cachix.org" ];
-            extra-trusted-public-keys = [
-              "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
-            ];
-          };
+        determinateNix.customSettings = {
+          cores = 2;
+          max-jobs = 4;
         };
-
-        system.stateVersion = 5;
-        nixpkgs.hostPlatform = "aarch64-darwin";
       }
     ];
   };
