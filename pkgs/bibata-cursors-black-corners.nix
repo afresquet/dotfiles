@@ -1,8 +1,4 @@
-{
-  bibata-cursors,
-  librsvg,
-  ...
-}:
+{ bibata-cursors, librsvg, ... }:
 bibata-cursors.overrideAttrs (old: {
   pname = "bibata-cursors-black-corners";
 
