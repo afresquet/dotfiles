@@ -6,11 +6,30 @@
   ...
 }:
 {
-  imports = [
-    outputs.homeModules.cli.default
-    outputs.homeModules.polyfills.default
-    outputs.homeModules.services.default
-  ];
+  # Every category without a graphical session. terminal and dev also hold
+  # GUI apps (a terminal emulator, desktop clients), which only the desktop
+  # layer (hosts/home.nix) adds.
+  imports =
+    with outputs.homeModules;
+    [
+      nix.default
+      system.default
+      cli.default
+      ai.default
+    ]
+    ++ lib.attrValues (
+      removeAttrs terminal [
+        "default"
+        "ghostty"
+      ]
+    )
+    ++ lib.attrValues (
+      removeAttrs dev [
+        "default"
+        "herdr-desktop"
+        "insomnia"
+      ]
+    );
 
   home.username = config.username;
   home.homeDirectory = lib.mkDefault (

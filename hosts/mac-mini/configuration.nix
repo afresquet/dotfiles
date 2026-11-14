@@ -10,8 +10,11 @@ in
 {
   imports = [
     inputs.determinate.darwinModules.default
-    outputs.darwinModules.programs.default
-    outputs.darwinModules.services.default
+    outputs.darwinModules.nix.default
+    outputs.darwinModules.system.default
+    outputs.darwinModules.ai.default
+    outputs.darwinModules.apps.default
+    outputs.darwinModules.homelab.default
 
     ./settings.nix
   ];

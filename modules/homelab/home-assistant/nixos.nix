@@ -16,7 +16,7 @@ let
   # Body of HA's `prometheus:` integration. Drops as the include target so
   # we own the metric filter declaratively without touching configuration.yaml.
   prometheusYaml = builtins.toFile "ha-prometheus.yaml" ''
-    # Nix-managed (modules/nixos/services/home-assistant.nix). Edit there.
+    # Managed by the dotfiles flake; edit it there, not here.
     filter:
       include_domains:
         - sensor
@@ -211,7 +211,7 @@ in
         # duplicate key HA would refuse to parse.
         [ -f "$config" ] || printf 'default_config:\n' > "$config"
         if ! ${pkgs.gnugrep}/bin/grep -Eq '^homeassistant:' "$config"; then
-          printf '\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nhomeassistant:\n  packages: !include_dir_named packages\n' \
+          printf '\n# Managed by the dotfiles flake.\nhomeassistant:\n  packages: !include_dir_named packages\n' \
             >> "$config"
         elif ! ${pkgs.gnugrep}/bin/grep -Eq '^\s+packages: !include_dir_named packages' "$config"; then
           echo "configuration.yaml has a homeassistant: block without the packages include" >&2
@@ -243,7 +243,7 @@ in
         # exist. Seed it with default_config (what HA itself writes on first
         # run) plus our include, so the integration is wired from boot one.
         if [ ! -f "$config" ]; then
-          printf 'default_config:\n\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nprometheus: !include prometheus.yaml\n' \
+          printf 'default_config:\n\n# Managed by the dotfiles flake.\nprometheus: !include prometheus.yaml\n' \
             > "$config"
           exit 0
         fi
@@ -253,7 +253,7 @@ in
         # `prometheus: !include …` and inline `prometheus:` blocks, avoiding
         # the duplicate-key parse error HA would otherwise hit.
         if ! ${pkgs.gnugrep}/bin/grep -Eq '^prometheus:' "$config"; then
-          printf '\n# Nix-managed (modules/nixos/services/home-assistant.nix).\nprometheus: !include prometheus.yaml\n' \
+          printf '\n# Managed by the dotfiles flake.\nprometheus: !include prometheus.yaml\n' \
             >> "$config"
         fi
       '';

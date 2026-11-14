@@ -87,8 +87,10 @@ in
 
     # Single postActivation block aggregates each sub-module's data dirs.
     # Hooked into the wired-in `postActivation` slot because nix-darwin
-    # doesn't reliably run custom slots.
-    system.activationScripts.postActivation.text = lib.mkAfter (
+    # doesn't reliably run custom slots. mkOrder rather than mkAfter: after
+    # the host's own snippet but ahead of other services' mkAfter ones, so
+    # the script doesn't change with the order modules are imported in.
+    system.activationScripts.postActivation.text = lib.mkOrder 1400 (
       lib.concatMapStringsSep "\n" (d: "install -d -m 0755 ${d}") cfg._activationDirs
     );
   };

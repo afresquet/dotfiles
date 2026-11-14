@@ -3,6 +3,9 @@ let
   cfg = config.silicon;
 in
 {
+  # programs.silicon, until home-manager has it.
+  imports = [ ./polyfill.nix ];
+
   options = {
     silicon.enable = lib.mkEnableOption "silicon" // {
       default = true;

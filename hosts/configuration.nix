@@ -9,10 +9,14 @@
 }:
 {
   imports = [
-    outputs.nixosModules.polyfills.default
-    outputs.nixosModules.programs.default
-    outputs.nixosModules.services.default
+    outputs.nixosModules.nix.default
+    outputs.nixosModules.system.default
+    outputs.nixosModules.desktop.default
+    outputs.nixosModules.dev.default
+    outputs.nixosModules.ai.default
+    outputs.nixosModules.apps.default
     outputs.nixosModules.gaming.default
+    outputs.nixosModules.homelab.default
   ];
 
   nixpkgs.overlays = [

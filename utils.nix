@@ -89,9 +89,9 @@ in
   importDirWithNames = dir: map (entry: { inherit (entry) path name; }) (dirEntries dir);
 
   # One platform's modules from modules/: each category as an attribute set
-  # of its features plus `default` (the whole category), and top-level
-  # features (hyprland, stylix) as plain modules. Only what has a file for
-  # this platform appears.
+  # of its features plus `default` (the whole category); a feature folder
+  # placed directly in modules/ would be a plain module. Only what has a file
+  # for this platform appears.
   classModules =
     class: dir:
     lib.listToAttrs (

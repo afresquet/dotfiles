@@ -14,28 +14,28 @@ in
     inputs.nixos-raspberrypi.nixosModules.raspberry-pi-5.base
     inputs.nixos-raspberrypi.nixosModules.sd-image
 
-    outputs.nixosModules.polyfills.default
-    outputs.nixosModules.services.ssh
-    outputs.nixosModules.services.avahi
-    outputs.nixosModules.services.tailscale
-    outputs.nixosModules.services.pihole
-    outputs.nixosModules.services.home-assistant
-    outputs.nixosModules.services.zigbee
-    outputs.nixosModules.services.caddy
-    outputs.nixosModules.services.bluetooth
-    outputs.nixosModules.services.qbittorrent
-    outputs.nixosModules.services.arr
-    outputs.nixosModules.services.navidrome
-    outputs.nixosModules.services.git-server
-    outputs.nixosModules.services.agent-telegram
-    outputs.nixosModules.services.issue-agent
-    outputs.nixosModules.services.slskd
-    outputs.nixosModules.services.explo
-    outputs.nixosModules.services.jellyfin
-    outputs.nixosModules.services.vpn
-    outputs.nixosModules.services.dashboard
-    outputs.nixosModules.services.auto-upgrade
-    outputs.nixosModules.services.monitoring
+    outputs.nixosModules.nix.allowedUnfree
+    outputs.nixosModules.system.ssh
+    outputs.nixosModules.system.avahi
+    outputs.nixosModules.system.tailscale
+    outputs.nixosModules.homelab.pihole
+    outputs.nixosModules.homelab.home-assistant
+    outputs.nixosModules.homelab.zigbee
+    outputs.nixosModules.homelab.caddy
+    outputs.nixosModules.system.bluetooth
+    outputs.nixosModules.homelab.qbittorrent
+    outputs.nixosModules.homelab.arr
+    outputs.nixosModules.homelab.navidrome
+    outputs.nixosModules.homelab.git-server
+    outputs.nixosModules.ai.agent-telegram
+    outputs.nixosModules.ai.issue-agent
+    outputs.nixosModules.homelab.slskd
+    outputs.nixosModules.homelab.explo
+    outputs.nixosModules.homelab.jellyfin
+    outputs.nixosModules.homelab.vpn
+    outputs.nixosModules.homelab.dashboard
+    outputs.nixosModules.nix.auto-upgrade
+    outputs.nixosModules.homelab.monitoring
 
     ./settings.nix
   ];

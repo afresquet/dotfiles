@@ -48,7 +48,7 @@ nix eval --raw '.#homeConfigurations."alvaro.fresquet@mac-afresquet".activationP
 ```
 
 Evaluate every configuration a change can reach, not just the one you were
-thinking about: `modules/cli` is shared by all five home configs
+thinking about: everything `hosts/home-base.nix` imports is shared by all five home configs
 including the headless Pi, and the Mac mini's system config evaluates the
 Pi's whole NixOS config through `piConfig`. To inspect a single option, use
 `nix eval --json .#<config>.config.<option.path>`.
@@ -70,17 +70,33 @@ hosts/
   home-base.nix       shared by every home config, including the Pi
   home.nix            desktop layer: GUI programs, Hyprland, Stylix
   <host>/             settings.nix + configuration.nix + home.nix per host
-modules/
-  <category>/         cli, gaming, polyfills, programs, services
-    <feature>/        one folder per feature, one file per platform:
+modules/              one folder per feature, grouped by purpose:
+  nix/                the Nix setup itself: auto-upgrade, dotfiles-sync, nh,
+                      agenix, allowedUnfree
+  system/             machine basics: boot, locale, network, audio,
+                      bluetooth, printing, fonts, ssh, tailscale, ...
+  desktop/            the Hyprland session: hyprland, stylix, sddm, waybar,
+                      rofi, swaync, mako, hyprlock, ...
+  terminal/           emulators (ghostty, foot, ...), shells/, prompt,
+                      multiplexer
+  cli/                command-line tools
+  dev/                development: git, helix, direnv, docker, vscode, ...
+  ai/                 claude, codex, copilot, skills/, agent-telegram,
+                      issue-agent, ollama
+  apps/               GUI applications
+  gaming/             steam, lutris, sunshine, ...
+  homelab/            the Pi's services: caddy, dashboard, monitoring,
+                      pihole, home-assistant, arr, vpn, ...
+    <feature>/        one file per platform:
       nixos.nix         NixOS module
       darwin.nix        nix-darwin module
       home.nix          home-manager module
       common.nix        what those share (option declarations), imported
                         by them; never exported on its own
       <class>/default.nix  instead of <class>.nix when a platform needs
-                        several files (services/monitoring)
-  hyprland/, stylix/  standalone home-manager features (home.nix)
+                        several files (homelab/monitoring)
+      *.nix, data       anything else a feature needs (helper modules it
+                        imports, JSON, CSS), not exported on its own
 pkgs/                 custom packages -> packages.<system> and the
                       `additions` overlay
 overlays/             patches to nixpkgs packages -> `modifications` overlay
@@ -88,30 +104,39 @@ secrets/              agenix: keys.nix (public keys), agenix-rules.nix, *.age
 ```
 
 A feature's platforms live side by side, e.g.
-`modules/services/auto-upgrade/{nixos,darwin,home}.nix` or
-`modules/services/tailscale/{common,nixos,darwin}.nix`; a single-platform
+`modules/nix/auto-upgrade/{nixos,darwin,home}.nix` or
+`modules/ai/agent-telegram/{common,nixos,darwin,home}.nix`; a single-platform
 feature is a folder with one file (`modules/gaming/steam/nixos.nix`). A folder
 with no platform file and no `common.nix` is a subcategory
-(`modules/cli/shells/`, `modules/cli/terminals/`), exported as one module that
-imports its features.
+(`modules/terminal/shells/`), exported as one module that imports its
+features. Pick the category by what the feature is for, not by platform.
 
 `utils.classModules` builds one flake output per platform from that tree:
 `outputs.nixosModules`, `darwinModules` and `homeModules`, each
 `<category>.<feature>` plus `<category>.default` (the whole category, in
-directory order), and top-level features (`homeModules.hyprland`,
-`homeModules.stylix`) as plain modules. Hosts import a whole category with
-`outputs.nixosModules.<category>.default` or one feature with
-`outputs.nixosModules.<category>.<feature>` (the Pi picks services
-individually). Creating `modules/<category>/<feature>/<class>.nix` is enough
-to register it.
+directory order); a category only appears for a platform it has files for.
+Creating `modules/<category>/<feature>/<class>.nix` is enough to register it.
 
-A feature keeps all its platforms in one folder when they share a category.
-Some don't, because moving a home module to another category changes
-`home.packages` order and with it every home derivation: `agent-telegram`
-(system in `services`, home in `cli`), `nh` (`programs` / `cli`) and
-`silicon` (`cli` program + `polyfills` option). The import order inside a
-category is directory order, so renaming a feature folder can reorder lists
-too; check derivations after moving things.
+Hosts import whole categories (`outputs.nixosModules.<category>.default`) or
+single features (`outputs.nixosModules.<category>.<feature>`; the Pi picks its
+services this way):
+
+- `hosts/configuration.nix` (NixOS desktops) and `hosts/mac-mini` import every
+  category their platform has.
+- `hosts/home-base.nix` (every home config) imports the categories that work
+  without a graphical session: nix, system, cli, ai, and terminal and dev
+  minus their GUI apps (ghostty, herdr-desktop, insomnia), which it lists by
+  name. A new GUI app in terminal or dev goes on that list.
+- `hosts/home.nix` (desktop layer) adds desktop, apps and gaming, and the
+  whole of terminal and dev; the parts home-base already imported are the
+  same paths, so the module system imports them once.
+
+Module import order follows category and directory order, and it decides the
+order of merged lists (`home.packages`, `environment.systemPackages`,
+activation snippets of equal priority). Package order doesn't matter, but
+order-sensitive text does: give such snippets an explicit
+`lib.mkBefore`/`mkAfter`/`mkOrder` instead of relying on where the module
+sits (see `homelab/monitoring/darwin`).
 
 ## Module conventions
 
@@ -166,7 +191,7 @@ in
 
 ### Pi services talk to each other through options
 
-The NixOS modules under `modules/services/` contribute to each other instead
+The NixOS modules under `modules/homelab/` contribute to each other instead
 of knowing each other's internals:
 
 | Option | Declared in | What it does |
@@ -183,7 +208,7 @@ A module that contributes to one of these imports the file that declares it
 contributor: default.nix imports caddy and dashboard, and the module system
 does not tolerate import cycles. Gate monitoring contributions on
 `config.monitoring.enable`. Grafana dashboard JSON lives in
-`modules/services/monitoring/dashboards/`.
+`modules/homelab/monitoring/dashboards/` (`export-grafana-dashboard` writes there).
 
 The Mac mini reads these options from the Pi's evaluated config (`piConfig`)
 to generate its Prometheus and Grafana provisioning, so a new exporter or
@@ -192,7 +217,7 @@ dashboard is a one-module change on the Pi side.
 ### Workspaces
 
 Hyprland named workspaces are declared once in `hyprland.workspaces` (icon +
-`extraRules`) in `modules/hyprland/home.nix`; Waybar icons and
+`extraRules`) in `modules/desktop/hyprland/home.nix`; Waybar icons and
 workspace rules derive from it. Hosts set per-monitor rules through
 `hyprland.workspaces.<name>.extraRules`. Keybinds and launch commands live in
 the `bind` section of the same file.
@@ -227,7 +252,7 @@ public keys only.
   `postActivation.text` with `lib.mkAfter`.
 - launchd daemons that run Nix store binaries wrap `ProgramArguments` in
   `/bin/sh -c '/bin/wait4path "$0" && exec "$0" "$@"'` because `/nix` mounts
-  late at boot. Copy the pattern from `modules/services/monitoring/darwin`.
+  late at boot. Copy the pattern from `modules/homelab/monitoring/darwin`.
 - The Mac mini is headless; changes to it are applied over Screen Sharing or
   SSH by the user. `programs.nh` is NixOS-only; on Macs `nh` is a home-manager
   package.
@@ -235,11 +260,11 @@ public keys only.
   instantiates nixpkgs itself, which is why NixOS and home-manager keep
   separate unfree lists.
 - The Pi's login shell is bash (for ssh tooling) and hands off to nushell
-  interactively; the Macs do the same from zsh. Keep `cli/shells/bash` and `zsh`
+  interactively; the Macs do the same from zsh. Keep `terminal/shells/bash` and `zsh`
   handoff logic intact when touching shells.
 - `hosts/home-server/README.md` is the post-install runbook for the Pi's
   services, including the VPN namespace addressing rules. Read it before
-  changing anything under `modules/services/` that touches networking.
+  changing anything under `modules/homelab/` or `modules/system/` that touches networking.
 
 ## Style
 
