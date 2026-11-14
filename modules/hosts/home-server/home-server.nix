@@ -50,21 +50,21 @@ in
                 config.users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys;
           };
           agentTelegram = {
-            secretFile = ../../secrets/agent-telegram-home-server.age;
+            secretFile = ../../../secrets/agent-telegram-home-server.age;
           };
           issueAgent = {
-            secretFile = ../../secrets/github-agent.age;
-            webhookSecretFile = ../../secrets/github-webhook.age;
-            telegramSecretFile = ../../secrets/telegram-github.age;
+            secretFile = ../../../secrets/github-agent.age;
+            webhookSecretFile = ../../../secrets/github-webhook.age;
+            telegramSecretFile = ../../../secrets/telegram-github.age;
           };
           monitoring.serverHost = "alvaros-mac-mini.${tailnet}";
 
           home-assistant-container = {
             hacs.enable = true;
             packages = {
-              dune_weaver = ./_home-server/home-assistant/dune-weaver.yaml;
-              laundry_done = ./_home-server/home-assistant/laundry-done.yaml;
-              nyx_food = ./_home-server/home-assistant/nyx-food.yaml;
+              dune_weaver = ./home-assistant/dune-weaver.yaml;
+              laundry_done = ./home-assistant/laundry-done.yaml;
+              nyx_food = ./home-assistant/nyx-food.yaml;
             };
           };
           zigbee.device = "/dev/serial/by-id/usb-ITead_Sonoff_Zigbee_3.0_USB_Dongle_Plus_121080dc0ca1ef11824eaaa361ce3355-if00-port0";
@@ -115,7 +115,7 @@ in
           networking.nameservers = [ "127.0.0.1" ];
 
           age.secrets.desktop-mac = {
-            file = ../../secrets/desktop-mac.age;
+            file = ../../../secrets/desktop-mac.age;
             owner = config.system.primaryUser;
           };
           environment.systemPackages = [
@@ -158,7 +158,7 @@ in
           assertions = [
             {
               assertion = config.boot.kernelPackages.kernel.modDirVersion == "6.18.59";
-              message = "Home-Server kernel is now ${config.boot.kernelPackages.kernel.modDirVersion}: the NVMe/PCIe power-saving workaround in modules/hosts/home-server.nix was for silent freezes on 6.18.59. Check raspberrypi/linux for a fix, then drop `nvme_core.default_ps_max_latency_us=0` and `pcie_aspm=off` (watch for unclean shutdowns afterwards) along with this assertion.";
+              message = "Home-Server kernel is now ${config.boot.kernelPackages.kernel.modDirVersion}: the NVMe/PCIe power-saving workaround in modules/hosts/home-server/home-server.nix was for silent freezes on 6.18.59. Check raspberrypi/linux for a fix, then drop `nvme_core.default_ps_max_latency_us=0` and `pcie_aspm=off` (watch for unclean shutdowns afterwards) along with this assertion.";
             }
           ];
 

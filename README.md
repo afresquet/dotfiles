@@ -31,9 +31,9 @@ and `flake.nix` only lists inputs.
   (both Macs), `homeManager.base` (every home, the Pi included),
   `homeManager.desktop` (every graphical home) and
   `homeManager.linux-desktop` (Hyprland).
-- `modules/hosts/<host>.nix` builds a machine's system and home
+- `modules/hosts/<host>/<host>.nix` builds a machine's system and home
   configurations from aspects and sets what is particular to it; its
-  hardware config and other plain files sit in `modules/hosts/_<host>/`.
+  hardware config and other files sit next to it in the same folder.
 - `modules/meta.nix` holds values shared across files (tailnet suffix,
   wallpaper, SSH public keys).
 - The Pi's services contribute to each other through
@@ -60,7 +60,7 @@ The `nh` aliases from `modules/nix/nh.nix`, run from anywhere:
 | `nca` | `nh clean all` |
 
 The flake path is `~/dotfiles`. The Pi's SD image is built by the GitHub workflow in
-`.github/workflows/build-home-server.yml`; `modules/hosts/_home-server/README.md` is
+`.github/workflows/build-home-server.yml`; `modules/hosts/home-server/README.md` is
 the post-install checklist for its services.
 
 ## Secrets

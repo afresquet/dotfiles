@@ -19,7 +19,7 @@ in
             sunshine
             quickemu
             openlogi
-            ./_desktop/hardware-configuration.nix
+            ./hardware-configuration.nix
           ];
 
           networking.hostName = "Alvaro-Desktop";

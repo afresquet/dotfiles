@@ -1,3 +1,4 @@
+{ self, ... }:
 {
   flake.modules.nixos.caddy =
     {
@@ -14,7 +15,7 @@
     in
     {
       imports = [
-        ./monitoring/_nixos-options.nix
+        self.modules.nixos.monitoring-options
       ];
 
       options.reverseProxy = {

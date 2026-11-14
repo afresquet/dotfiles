@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, self, ... }:
 {
   flake.modules.nixos.vpn =
     {
@@ -15,12 +15,12 @@
       # wireguard exporter (`wireguard_sent_bytes_total` / `_received_` /
       # `_latest_handshake_*`); the popular grafana.com dashboards (12177 etc.)
       # target mdlayher's exporter with completely different metric names.
-      wireguardDashboardJson = ./monitoring/_dashboards/wireguard.json;
+      wireguardDashboardJson = ./monitoring/dashboards/wireguard.json;
     in
     {
       imports = [
         inputs.vpn-confinement.nixosModules.default
-        ./monitoring/_nixos-options.nix
+        self.modules.nixos.monitoring-options
       ];
 
       options.vpn = {

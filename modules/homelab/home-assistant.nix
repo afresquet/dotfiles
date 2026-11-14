@@ -44,13 +44,13 @@
       # Minimal hand-written HA dashboard. No good Prometheus-based HA dashboard
       # exists on grafana.com (most are InfluxDB). Stored as a static JSON file
       # so UI edits round-trip via `export-grafana-dashboard`.
-      haDashboardJson = ./monitoring/_dashboards/home-assistant.json;
+      haDashboardJson = ./monitoring/dashboards/home-assistant.json;
     in
     {
       imports = [
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
-        ./monitoring/_nixos-options.nix
+        self.modules.nixos.monitoring-options
       ];
 
       options = {

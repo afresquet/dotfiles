@@ -16,7 +16,7 @@ in
           desktop
           openlogi
           inputs.nixos-hardware.nixosModules.framework-13-7040-amd
-          ./_laptop/hardware-configuration.nix
+          ./hardware-configuration.nix
         ];
 
         networking.hostName = "Alvaro-Laptop";

@@ -41,7 +41,7 @@ in
         inputs.agenix.nixosModules.default
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
-        ./monitoring/_nixos-options.nix
+        self.modules.nixos.monitoring-options
       ];
 
       options = {

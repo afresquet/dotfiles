@@ -14,9 +14,7 @@
     in
     {
       imports = [
-        ./_nixos-options.nix
-        ./_nixos-alloy.nix
-        ./_nixos-exporters.nix
+        self.modules.nixos.monitoring-options
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
       ];
@@ -122,9 +120,6 @@
     {
       imports = [
         inputs.agenix.darwinModules.default
-        ./_darwin-prometheus.nix
-        ./_darwin-grafana.nix
-        ./_darwin-loki.nix
       ];
 
       options.monitoring = {
@@ -154,16 +149,16 @@
         };
 
         # ─── Internal aggregators ───
-        # Sub-modules contribute their own datasource yaml + data dirs through
-        # these. Keeps each daemon's wiring self-contained without forcing the
-        # default.nix to know about them.
+        # prometheus.nix, grafana.nix and loki.nix contribute their datasource
+        # yaml and data dirs through these, so each daemon's wiring stays in its
+        # own file.
 
         _datasources = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
           default = { };
           internal = true;
           description = ''
-            Grafana datasource provisioning files contributed by sub-modules,
+            Grafana datasource provisioning files contributed by the daemon files,
             keyed by base filename (the resulting path is `datasources/<key>.yaml`).
           '';
         };
@@ -173,8 +168,8 @@
           default = [ ];
           internal = true;
           description = ''
-            Paths each sub-module needs `mkdir -p`'d at activation. Default.nix
-            emits a single `install -d` block from this aggregate.
+            Paths each daemon file needs `mkdir -p`'d at activation; one
+            `install -d` block below creates them all.
           '';
         };
       };
@@ -197,7 +192,7 @@
         # mac-mini host config because it's only useful where Grafana runs.
         environment.systemPackages = [ pkgs.export-grafana-dashboard ];
 
-        # Single postActivation block aggregates each sub-module's data dirs.
+        # Single postActivation block aggregates each daemon's data dirs.
         # Hooked into the wired-in `postActivation` slot because nix-darwin
         # doesn't reliably run custom slots.
         system.activationScripts.postActivation.text = lib.mkAfter (

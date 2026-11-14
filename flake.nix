@@ -69,7 +69,13 @@
     };
   };
 
-  # Every .nix file under modules/ is a flake-parts module (import-tree skips
-  # paths with a `_`-prefixed component). See AGENTS.md for the layout.
-  outputs = inputs: inputs.flake-parts.lib.mkFlake { inherit inputs; } (inputs.import-tree ./modules);
+  # Every .nix file under modules/ is a flake-parts module, except the
+  # generated hardware configs: those are plain NixOS modules their host file
+  # imports, kept verbatim from nixos-generate-config. See AGENTS.md for the
+  # layout.
+  outputs =
+    inputs:
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
+      inputs.import-tree.matchNot ".*/hardware-configuration\\.nix" ./modules
+    );
 }

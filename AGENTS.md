@@ -69,9 +69,12 @@ If evaluation fails with "Path ... is not tracked by Git", the file is new:
 
 The flake is dendritic: `flake.nix` only declares inputs and hands every
 `.nix` file under `modules/` to flake-parts through import-tree. Each of those
-files is a flake-parts module; paths with a `_`-prefixed component are
-skipped, which is where non-module files (hardware configs, dashboards, YAML)
-live. Directories group aspects by purpose and mean nothing to Nix; moving a
+files is a flake-parts module. import-tree only loads `.nix` files, so data
+(dashboards, YAML, CSS, the runbook) sits next to the module that uses it
+under its plain name. The one exception is `hardware-configuration.nix`:
+`flake.nix` excludes it with `import-tree.matchNot`, because it is a plain
+NixOS module kept verbatim from `nixos-generate-config` (treefmt skips it too)
+that its host file imports as `./hardware-configuration.nix`. Directories group aspects by purpose and mean nothing to Nix; moving a
 file only matters for its relative paths (`../../secrets/...`) and for the
 order list options merge in.
 
@@ -85,9 +88,9 @@ modules/
   roles/                aspects that are sets of other aspects:
                         nixos.{base,desktop,server}, darwin.base,
                         homeManager.{base,desktop,linux-desktop}
-  hosts/<host>.nix      one machine: its system and home configurations
-  hosts/_<host>/        its non-module files (hardware config, Home
-                        Assistant packages, the Pi's runbook)
+  hosts/<host>/         one folder per machine: <host>.nix (its system and
+                        home configurations), hardware-configuration.nix,
+                        the Pi's Home Assistant YAML and runbook (README.md)
   aspects, one concern per file whatever platforms it spans, grouped by
   purpose:
   nix/                  managing the machines themselves: auto-upgrade,
@@ -140,7 +143,7 @@ which publishes a module for each platform it touches through flake-parts'
   `flake.modules.<class>.<name>`, `git add -N` it. Nothing registers it; it
   stays unused until something imports it.
 - **Giving a host an aspect**: add it to the host's `imports` in
-  `modules/hosts/<host>.nix` (they are written inside
+  `modules/hosts/<host>/<host>.nix` (they are written inside
   `with self.modules.<class>; [ ... ]`, so just its name), or to a role in
   `modules/roles/` when every host of that role should have it.
 - **Import as often as you like.** `modules/flake/flake-parts.nix` declares
@@ -163,6 +166,9 @@ which publishes a module for each platform it touches through flake-parts'
   `config.services.x.enable` guards): `auto-upgrade-telegram` imports
   `auto-upgrade` and `agent-telegram` and turns on the upgrade messages; the
   desktops have auto-upgrade without a bot and don't import it.
+- **One aspect, several files**: a big aspect can be split; every file that
+  defines `flake.modules.<class>.<name>` adds to the same aspect (see
+  monitoring).
 - **Values an aspect's platforms share** go in the file's `let` (the
   tailscale options module, the issue agent's webhook port, the Helix settings
   that also build the `hx` package).
@@ -206,7 +212,7 @@ in its host file; the work MacBook is updated by hand.
 
 ### Hosts
 
-`modules/hosts/<host>.nix` defines `flake.nixosConfigurations.<host>` (or
+`modules/hosts/<host>/<host>.nix` defines `flake.nixosConfigurations.<host>` (or
 `darwinConfigurations`) and `flake.homeConfigurations."<user>@<host>"`
 directly with `nixpkgs.lib.nixosSystem` (`nixos-raspberrypi.lib.nixosSystem`
 for the Pi), `nix-darwin.lib.darwinSystem` and
@@ -247,13 +253,14 @@ other's internals:
 |--------|-------------|--------------|
 | `reverseProxy.services.<name>` | `nixos.caddy` | Caddy vhost + blackbox probe URL |
 | `dashboard.services.<name>` | `nixos.dashboard` | Homepage tile and widget |
-| `monitoring.exporters.<name>` | `homelab/monitoring/_nixos-options.nix` | Prometheus scrape job + firewall hole |
-| `monitoring.dashboards.<name>` | `homelab/monitoring/_nixos-options.nix` | Grafana dashboard provisioning |
+| `monitoring.exporters.<name>` | `nixos.monitoring-options` | Prometheus scrape job + firewall hole |
+| `monitoring.dashboards.<name>` | `nixos.monitoring-options` | Grafana dashboard provisioning |
 
 A contributor imports the aspect that declares the option
 (`self.modules.nixos.caddy`, `self.modules.nixos.dashboard`) or, for
-monitoring, the options file by path (`./monitoring/_nixos-options.nix`),
-never the monitoring aspect itself: that one runs the node exporter, Alloy
+monitoring, `self.modules.nixos.monitoring-options` (just the
+`monitoring.exporters` / `monitoring.dashboards` declarations), never the
+monitoring aspect itself: that one runs the node exporter, Alloy
 and the firewall holes, and imports caddy and dashboard. A service's metrics
 are part of the service: it always runs its exporter and declares its
 `monitoring.exporters` / `monitoring.dashboards` entries, unconditionally,
@@ -261,6 +268,16 @@ like its vhost; the monitoring aspect (in the `server` role) and the Mac
 mini consume them. The Mac mini builds its Prometheus and Grafana
 provisioning from the Pi's evaluated options, so a new exporter or dashboard
 is a one-file change on the Pi side.
+
+The monitoring aspect itself is spread over `modules/homelab/monitoring/`:
+several files define `flake.modules.nixos.monitoring` or
+`flake.modules.darwin.monitoring`, and the definitions merge into one
+aspect. `monitoring.nix` holds the shared options, the Caddy/dashboard
+entries and firewall (nixos) and the agenix secrets, `piConfig` and
+activation dirs (darwin); `exporters.nix` and `alloy.nix` add the Pi's
+exporters and log shipping; `prometheus.nix`, `grafana.nix` and `loki.nix`
+the Mac mini's daemons; `options.nix` is the separate `monitoring-options`
+aspect; `dashboards/` holds the JSON that services point at.
 
 ### Workspaces
 
@@ -300,7 +317,7 @@ holds public keys only; aspects and hosts read them as `config.meta.keys`.
   `postActivation.text` with `lib.mkAfter`.
 - launchd daemons that run Nix store binaries wrap `ProgramArguments` in
   `/bin/sh -c '/bin/wait4path "$0" && exec "$0" "$@"'` because `/nix` mounts
-  late at boot. Copy the pattern from `modules/homelab/monitoring/_darwin-*.nix`.
+  late at boot. Copy the pattern from `modules/homelab/monitoring/{prometheus,grafana,loki}.nix`.
 - The Mac mini is headless; changes to it are applied over Screen Sharing or
   SSH by the user. `programs.nh` is NixOS-only; on Macs `nh` is a home-manager
   package.
@@ -310,7 +327,7 @@ holds public keys only; aspects and hosts read them as `config.meta.keys`.
 - The Pi's login shell is bash (for ssh tooling) and hands off to nushell
   interactively; the Macs do the same from zsh. Keep the handoff in the
   `bash` and `zsh` aspects intact when touching shells.
-- `modules/hosts/_home-server/README.md` is the post-install runbook for the
+- `modules/hosts/home-server/README.md` is the post-install runbook for the
   Pi's services, including the VPN namespace addressing rules. Read it before
   changing a Pi service aspect that touches networking.
 
