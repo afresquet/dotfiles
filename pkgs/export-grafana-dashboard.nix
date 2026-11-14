@@ -17,7 +17,7 @@ pkgs.writeShellApplication {
     writes the result for committing to the flake.
 
     Default output:
-      \$HOME/dotfiles/modules/nixos/services/monitoring/dashboards/<uid>.json
+      \$HOME/dotfiles/modules/services/monitoring/_dashboards/<uid>.json
 
     Env vars:
       GRAFANA_URL       (default: http://grafana.home-server)
@@ -28,7 +28,7 @@ pkgs.writeShellApplication {
     fi
 
     uid="$1"
-    out="''${2:-$HOME/dotfiles/modules/nixos/services/monitoring/dashboards/$uid.json}"
+    out="''${2:-$HOME/dotfiles/modules/services/monitoring/_dashboards/$uid.json}"
     grafana_url="''${GRAFANA_URL:-http://grafana.home-server}"
     grafana_user="''${GRAFANA_USERNAME:-admin}"
 
