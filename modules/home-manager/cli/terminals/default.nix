@@ -1,4 +1,0 @@
-{ utils, ... }:
-{
-  imports = utils.importDir ./.;
-}

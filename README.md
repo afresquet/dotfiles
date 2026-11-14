@@ -14,32 +14,38 @@ only gets home-manager.
 
 ## Layout
 
-- `flake.nix` wires inputs, hosts and the shared helpers; `utils.nix` holds
-  the directory-import helpers every module tree uses.
-- `hosts/<host>/` has one `settings.nix` (hostname, user, monitors, and
-  other per-host facts declared in `hosts/settings.nix`), plus
-  `configuration.nix` for the system and `home.nix` for home-manager.
-  `hosts/configuration.nix` is shared by the NixOS desktops,
-  `hosts/home-base.nix` by every home config and `hosts/home.nix` adds the
-  desktop layer (GUI programs, Hyprland, Stylix).
-- `modules/{nixos,darwin,home-manager}/` are categories of modules. Every
-  module exposes a top-level `<name>.enable` option and is imported through
-  its category's `default.nix`; `modules/shared/` holds option declarations
-  used on more than one platform.
-- `modules/nixos/services/` modules contribute to each other through
+The flake is [dendritic](https://github.com/mightyiam/dendritic): every
+`.nix` file under `modules/` is a flake-parts module, loaded by import-tree,
+and `flake.nix` only lists inputs.
+
+- Each file is an *aspect*: one concern (Tailscale, Hyprland, the issue
+  agent) publishing a module per platform it touches as
+  `flake.modules.{nixos,darwin,homeManager}.<name>`. There are no enable
+  options: a machine has an aspect because its configuration imports it.
+- `modules/roles/` holds aspects that group others: `nixos.base`,
+  `nixos.desktop`, `homeManager.base` (every home, the Pi included),
+  `homeManager.desktop` (every graphical home) and
+  `homeManager.linux-desktop` (Hyprland).
+- `modules/hosts/<host>.nix` builds a machine's system and home
+  configurations from aspects and sets what is particular to it; its
+  hardware config and other plain files sit in `modules/hosts/_<host>/`.
+- `modules/meta.nix` holds values shared across files (tailnet suffix,
+  wallpaper, SSH public keys).
+- The Pi's services contribute to each other through
   `reverseProxy.services`, `dashboard.services`, `monitoring.exporters` and
-  `monitoring.dashboards`; a module imports the module whose options it
-  contributes to. The Mac's monitoring reads the Pi's evaluated config
-  (`piConfig`) to build its Prometheus and Grafana provisioning.
+  `monitoring.dashboards`. The Mac's monitoring reads the Pi's evaluated
+  config (`piConfig`) to build its Prometheus and Grafana provisioning.
 - `pkgs/` are custom packages exposed as `packages.<system>` and through the
   `additions` overlay; `overlays/` holds patches to nixpkgs packages, each of
   which throws once the pinned version moves so it gets removed.
 - `secrets/` is agenix: `keys.nix` lists the public keys, `agenix-rules.nix`
   says which keys decrypt which secret.
 
+`AGENTS.md` covers adding an aspect, giving a host one, and sharing values.
+
 ## Rebuilding
 
-The `nh` aliases from `modules/home-manager/cli/nh.nix`, run from anywhere:
+The `nh` aliases from `modules/cli/nh.nix`, run from anywhere:
 
 | Alias | Runs |
 |-------|------|
@@ -48,9 +54,8 @@ The `nh` aliases from `modules/home-manager/cli/nh.nix`, run from anywhere:
 | `nhms` | `nh home switch` |
 | `nca` | `nh clean all` |
 
-The flake path comes from the `dotfilesDir` setting, which defaults to
-`~/dotfiles`. The Pi's SD image is built by the GitHub workflow in
-`.github/workflows/build-home-server.yml`; `hosts/home-server/README.md` is
+The flake path is `~/dotfiles`. The Pi's SD image is built by the GitHub workflow in
+`.github/workflows/build-home-server.yml`; `modules/hosts/_home-server/README.md` is
 the post-install checklist for its services.
 
 ## Secrets
