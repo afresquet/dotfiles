@@ -95,6 +95,12 @@ in
       # `alvaros-mac-mini-1`) without trusting a user. The file is root's,
       # mode 600, and is not in this repo.
       secret-key-files = [ "/etc/nix/signing-key.sec" ];
+      # /nix is a case-sensitive APFS volume (installed with
+      # `--case-sensitive`). Nix doesn't detect that and renames colliding
+      # names (terminfo/l -> l~nix~case~hack~1) by default on macOS, and the
+      # native Linux builder reads the store directly and sees the renamed
+      # files, so NixOS initrds built here lose terminfo/l/linux.
+      use-case-hack = false;
     };
 
     # The Linux builder VM (Pi images) defaults to 8 GiB / 1 CPU, which gets
