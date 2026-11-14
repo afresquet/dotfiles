@@ -31,7 +31,6 @@
       imports = [ self.modules.nixos.primary-user ];
 
       options.autoUpgrade = {
-
         flake = lib.mkOption {
           type = lib.types.str;
           default = "github:afresquet/dotfiles";
@@ -135,7 +134,6 @@
     in
     {
       options.autoUpgrade = {
-
         flake = lib.mkOption {
           type = lib.types.str;
           default = "github:afresquet/dotfiles";
@@ -285,7 +283,6 @@
     in
     {
       options.autoUpgrade = {
-
         # The linux-desktop aspect turns them on.
         notify = lib.mkEnableOption "desktop notifications when the switch starts and finishes";
 

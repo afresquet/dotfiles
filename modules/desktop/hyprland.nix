@@ -23,57 +23,53 @@ in
         self.modules.homeManager.ghostty
       ];
 
-      options = {
-        hyprland = {
-          monitors = lib.mkOption {
-            description = "Outputs in left-to-right order; workspace keybinds number them from 1.";
-            default = [ ];
-            type = lib.types.listOf (
-              lib.types.submodule {
-                options = {
-                  name = lib.mkOption { type = lib.types.str; };
-                  width = lib.mkOption { type = lib.types.int; };
-                  height = lib.mkOption { type = lib.types.int; };
-                  refreshRate = lib.mkOption { type = lib.types.float; };
-                  x = lib.mkOption { type = lib.types.int; };
-                  y = lib.mkOption { type = lib.types.int; };
-                  scale = lib.mkOption {
-                    type = lib.types.either lib.types.str lib.types.number;
-                    default = "auto";
-                  };
-                  enable = lib.mkOption { type = lib.types.bool; };
+      options.hyprland = {
+        monitors = lib.mkOption {
+          description = "Outputs in left-to-right order; workspace keybinds number them from 1.";
+          default = [ ];
+          type = lib.types.listOf (
+            lib.types.submodule {
+              options = {
+                name = lib.mkOption { type = lib.types.str; };
+                width = lib.mkOption { type = lib.types.int; };
+                height = lib.mkOption { type = lib.types.int; };
+                refreshRate = lib.mkOption { type = lib.types.float; };
+                x = lib.mkOption { type = lib.types.int; };
+                y = lib.mkOption { type = lib.types.int; };
+                scale = lib.mkOption {
+                  type = lib.types.either lib.types.str lib.types.number;
+                  default = "auto";
                 };
-              }
-            );
-          };
+                enable = lib.mkOption { type = lib.types.bool; };
+              };
+            }
+          );
+        };
 
-          # Named workspaces. Each one gets a `hl.workspace_rule`, a Waybar icon
-          # and (elsewhere in this module) its launch keybind.
-          workspaces = lib.mkOption {
-            type = lib.types.attrsOf (
-              lib.types.submodule {
-                options = {
-                  icon = lib.mkOption {
-                    type = lib.types.str;
-                    description = "Icon Waybar shows for the workspace.";
-                  };
-                  extraRules = lib.mkOption {
-                    type = lib.types.attrsOf lib.types.anything;
-                    default = { };
-                    example = {
-                      monitor = "DP-1";
-                    };
-                    description = ''
-                      Extra `hl.workspace_rule` fields for this workspace. Field
-                      names use the Lua API spelling (underscores), not the legacy
-                      hyprlang hyphens.
-                    '';
-                  };
+        # Named workspaces. Each one gets a `hl.workspace_rule`, a Waybar icon
+        # and (elsewhere in this module) its launch keybind.
+        workspaces = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                icon = lib.mkOption {
+                  type = lib.types.str;
+                  description = "Icon Waybar shows for the workspace.";
                 };
-              }
-            );
-            default = { };
-          };
+                extraRules = lib.mkOption {
+                  type = lib.types.attrsOf lib.types.anything;
+                  default = { };
+                  example.monitor = "DP-1";
+                  description = ''
+                    Extra `hl.workspace_rule` fields for this workspace. Field
+                    names use the Lua API spelling (underscores), not the legacy
+                    hyprlang hyphens.
+                  '';
+                };
+              };
+            }
+          );
+          default = { };
         };
       };
 

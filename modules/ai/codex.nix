@@ -1,11 +1,9 @@
 {
   flake.modules.homeManager.codex = _: {
-    config = {
-      programs.codex = {
-        enable = true;
+    programs.codex = {
+      enable = true;
 
-        mutableSettings = true;
-      };
+      mutableSettings = true;
     };
   };
 }

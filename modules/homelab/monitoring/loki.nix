@@ -104,31 +104,29 @@
               url: http://127.0.0.1:${toString port}
         '';
 
-        launchd.daemons.loki = {
-          serviceConfig = {
-            Label = "com.grafana.loki";
-            # See wait4path rationale on the prometheus daemon.
-            ProgramArguments =
-              let
-                exe = "${pkgs.grafana-loki}/bin/loki";
-              in
-              [
-                "/bin/sh"
-                "-c"
-                ''
-                  /bin/wait4path "$0"
-                  exec "$0" "$@"
-                ''
-                exe
-                "-config.file=${lokiConfig}"
-              ];
-            WorkingDirectory = cfg.lokiDataDir;
-            RunAtLoad = true;
-            KeepAlive = true;
-            ThrottleInterval = 60;
-            StandardOutPath = "/var/log/loki.log";
-            StandardErrorPath = "/var/log/loki.err";
-          };
+        launchd.daemons.loki.serviceConfig = {
+          Label = "com.grafana.loki";
+          # See wait4path rationale on the prometheus daemon.
+          ProgramArguments =
+            let
+              exe = "${pkgs.grafana-loki}/bin/loki";
+            in
+            [
+              "/bin/sh"
+              "-c"
+              ''
+                /bin/wait4path "$0"
+                exec "$0" "$@"
+              ''
+              exe
+              "-config.file=${lokiConfig}"
+            ];
+          WorkingDirectory = cfg.lokiDataDir;
+          RunAtLoad = true;
+          KeepAlive = true;
+          ThrottleInterval = 60;
+          StandardOutPath = "/var/log/loki.log";
+          StandardErrorPath = "/var/log/loki.err";
         };
       };
     };

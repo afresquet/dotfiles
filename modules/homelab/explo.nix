@@ -1,11 +1,7 @@
 { inputs, self, ... }:
 {
   flake.modules.nixos.explo =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.explo;
       # When slskd is wg-confined (default), Explo (host network) reaches it via
@@ -24,7 +20,6 @@
       ];
 
       options.explo = {
-
         port = lib.mkOption {
           type = lib.types.port;
           default = 7288;

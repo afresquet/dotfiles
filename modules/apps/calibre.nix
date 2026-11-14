@@ -1,12 +1,7 @@
 {
   flake.modules.nixos.calibre =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.calibre ];
-      };
+      environment.systemPackages = [ pkgs.calibre ];
     };
 }

@@ -19,7 +19,6 @@
       ];
 
       options.reverseProxy = {
-
         interface = lib.mkOption {
           type = lib.types.str;
           default = "tailscale0";
@@ -103,9 +102,7 @@
         # Contribute Caddy's metrics endpoint to the monitoring registry so the
         # Mac-side Prometheus scrapes it without the monitoring module needing
         # to know about Caddy.
-        monitoring.exporters.caddy = {
-          port = metricsPort;
-        };
+        monitoring.exporters.caddy.port = metricsPort;
 
         systemd.services.caddy = {
           # Default UMask is 0077 → access logs land at 0600, so other services

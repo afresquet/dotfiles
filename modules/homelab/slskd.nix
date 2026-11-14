@@ -1,11 +1,7 @@
 { self, ... }:
 {
   flake.modules.nixos.slskd =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.slskd;
       # Per-service opt-out: VPN may be enabled globally but slskd specifically
@@ -23,7 +19,6 @@
       ];
 
       options.slskd = {
-
         useVpn = lib.mkOption {
           type = lib.types.bool;
           default = true;

@@ -1,7 +1,5 @@
 {
   flake.modules.homeManager.skim = _: {
-    config = {
-      programs.skim.enable = true;
-    };
+    programs.skim.enable = true;
   };
 }

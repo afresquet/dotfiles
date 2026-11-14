@@ -53,46 +53,43 @@
         self.modules.nixos.monitoring-options
       ];
 
-      options = {
-        home-assistant-container = {
+      options.home-assistant-container = {
+        dataDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/home-assistant";
+          description = "Directory for Home Assistant persistent configuration.";
+        };
 
-          dataDir = lib.mkOption {
+        image = lib.mkOption {
+          type = lib.types.str;
+          default = "ghcr.io/home-assistant/home-assistant:stable";
+          description = "Container image to run.";
+        };
+
+        packages = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          example = lib.literalExpression "{ dune_weaver = ./home-assistant/dune-weaver.yaml; }";
+          description = ''
+            Home Assistant packages, as name → YAML file. Installed into
+            <dataDir>/packages and loaded via `homeassistant: packages:`.
+            Entities and automations defined here are read-only in the UI.
+          '';
+        };
+
+        hacs = {
+          enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
+
+          version = lib.mkOption {
             type = lib.types.str;
-            default = "/var/lib/home-assistant";
-            description = "Directory for Home Assistant persistent configuration.";
+            default = "2.0.5";
+            description = "HACS release tag to install.";
           };
 
-          image = lib.mkOption {
+          hash = lib.mkOption {
             type = lib.types.str;
-            default = "ghcr.io/home-assistant/home-assistant:stable";
-            description = "Container image to run.";
-          };
-
-          packages = lib.mkOption {
-            type = lib.types.attrsOf lib.types.path;
-            default = { };
-            example = lib.literalExpression "{ dune_weaver = ./home-assistant/dune-weaver.yaml; }";
-            description = ''
-              Home Assistant packages, as name → YAML file. Installed into
-              <dataDir>/packages and loaded via `homeassistant: packages:`.
-              Entities and automations defined here are read-only in the UI.
-            '';
-          };
-
-          hacs = {
-            enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
-
-            version = lib.mkOption {
-              type = lib.types.str;
-              default = "2.0.5";
-              description = "HACS release tag to install.";
-            };
-
-            hash = lib.mkOption {
-              type = lib.types.str;
-              default = "sha256-iMomioxH7Iydy+bzJDbZxt6BX31UkCvqhXrxYFQV8Gw=";
-              description = "SRI hash of the HACS release zip (unpacked).";
-            };
+            default = "sha256-iMomioxH7Iydy+bzJDbZxt6BX31UkCvqhXrxYFQV8Gw=";
+            description = "SRI hash of the HACS release zip (unpacked).";
           };
         };
       };
@@ -142,7 +139,6 @@
             type = "homeassistant";
             url = "http://127.0.0.1:8123";
             key = "{{HOMEPAGE_VAR_HOMEASSISTANT_TOKEN}}";
-
           };
         };
 
@@ -156,9 +152,7 @@
               "/etc/localtime:/etc/localtime:ro"
               "/run/dbus:/run/dbus"
             ];
-            environment = {
-              TZ = config.time.timeZone;
-            };
+            environment.TZ = config.time.timeZone;
             extraOptions = [
               "--network=host"
               "--cap-add=NET_ADMIN"
@@ -270,9 +264,7 @@
           metricsPath = "/api/prometheus";
           bearerTokenFile = "/run/agenix/home-assistant-llat";
         };
-        monitoring.dashboards.home-assistant = {
-          json = haDashboardJson;
-        };
+        monitoring.dashboards.home-assistant.json = haDashboardJson;
       };
     };
 }

@@ -5,12 +5,10 @@
       cfg = config.hyprlock;
     in
     {
-      options = {
-        hyprlock = {
-          # Requires fprintd on the system and `security.pam.services.hyprlock`
-          # without fprintAuth, so password and fingerprint run in parallel.
-          fingerprint = lib.mkEnableOption "fingerprint unlock";
-        };
+      options.hyprlock = {
+        # Requires fprintd on the system and `security.pam.services.hyprlock`
+        # without fprintAuth, so password and fingerprint run in parallel.
+        fingerprint = lib.mkEnableOption "fingerprint unlock";
       };
 
       config = {
@@ -28,14 +26,12 @@
 
         services.hypridle = {
           enable = true;
-          settings = {
-            general = {
-              lock_cmd = "pidof hyprlock || hyprlock";
-              # Lock before suspend (lid close, wlogout) and wait until the lock
-              # screen is up so the desktop never flashes on resume.
-              before_sleep_cmd = "loginctl lock-session";
-              inhibit_sleep = 3;
-            };
+          settings.general = {
+            lock_cmd = "pidof hyprlock || hyprlock";
+            # Lock before suspend (lid close, wlogout) and wait until the lock
+            # screen is up so the desktop never flashes on resume.
+            before_sleep_cmd = "loginctl lock-session";
+            inhibit_sleep = 3;
           };
         };
       };

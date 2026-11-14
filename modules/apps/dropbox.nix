@@ -1,15 +1,10 @@
 {
   flake.modules.nixos.dropbox =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = with pkgs; [
-          maestral
-          maestral-gui
-        ];
-      };
+      environment.systemPackages = with pkgs; [
+        maestral
+        maestral-gui
+      ];
     };
 }

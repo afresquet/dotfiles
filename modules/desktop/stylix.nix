@@ -4,11 +4,7 @@ let
 in
 {
   flake.modules.homeManager.stylix =
-    {
-      lib,
-      pkgs,
-      ...
-    }:
+    { lib, pkgs, ... }:
     {
       imports = [ inputs.stylix.homeModules.stylix ];
 

@@ -5,10 +5,8 @@
     {
       imports = [ self.modules.nixos.primary-user ];
 
-      config = {
-        virtualisation.docker.enable = true;
+      virtualisation.docker.enable = true;
 
-        users.extraGroups.docker.members = [ config.system.primaryUser ];
-      };
+      users.extraGroups.docker.members = [ config.system.primaryUser ];
     };
 }

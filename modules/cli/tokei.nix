@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.tokei =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.tokei ];
-      };
+      home.packages = [ pkgs.tokei ];
     };
 }

@@ -10,11 +10,7 @@
       cfg = config.btop;
     in
     {
-      options = {
-        btop = {
-          rocmSupport = lib.mkEnableOption "btop ROCm (AMD GPU) support";
-        };
-      };
+      options.btop.rocmSupport = lib.mkEnableOption "btop ROCm (AMD GPU) support";
 
       config = {
         programs.btop = {

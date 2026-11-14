@@ -1,7 +1,5 @@
 {
   flake.modules.homeManager.bat = _: {
-    config = {
-      programs.bat.enable = true;
-    };
+    programs.bat.enable = true;
   };
 }

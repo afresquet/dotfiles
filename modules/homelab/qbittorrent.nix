@@ -46,7 +46,6 @@
       ];
 
       options.qbittorrent = {
-
         profileDir = lib.mkOption {
           type = lib.types.str;
           default = "/mnt/hdd/qbittorrent";
@@ -208,9 +207,7 @@
           };
         };
 
-        monitoring.exporters.qbittorrent = {
-          port = 17871;
-        };
+        monitoring.exporters.qbittorrent.port = 17871;
         monitoring.dashboards.qbittorrent = {
           # Nixpkgs `prometheus-qbittorrent-exporter` ships martabal's fork
           # (binary `qbit-exp`), not caseyscarborough's — different metric set,
@@ -221,22 +218,20 @@
           hash = "sha256-GFH+qQv7A9KGb0HW2NuBvv3YA4lEiEL0BcAftd/7vnc=";
         };
 
-        vpnNamespaces = {
-          ${config.vpn.namespace} = {
-            portMappings = [
-              {
-                from = cfg.webuiPort;
-                to = cfg.webuiPort;
-                protocol = "tcp";
-              }
-            ];
-            # Accept inbound on the BT port via the WG interface so DHT replies
-            # (UDP) and any outbound-initiated peer connections aren't dropped by
-            # the namespace's default-DROP INPUT chain after conntrack expires.
-            vpn = {
-              allowedTCPPorts = [ cfg.torrentingPort ];
-              allowedUDPPorts = [ cfg.torrentingPort ];
-            };
+        vpnNamespaces.${config.vpn.namespace} = {
+          portMappings = [
+            {
+              from = cfg.webuiPort;
+              to = cfg.webuiPort;
+              protocol = "tcp";
+            }
+          ];
+          # Accept inbound on the BT port via the WG interface so DHT replies
+          # (UDP) and any outbound-initiated peer connections aren't dropped by
+          # the namespace's default-DROP INPUT chain after conntrack expires.
+          vpn = {
+            allowedTCPPorts = [ cfg.torrentingPort ];
+            allowedUDPPorts = [ cfg.torrentingPort ];
           };
         };
       };

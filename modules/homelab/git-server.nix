@@ -16,7 +16,6 @@
       imports = [ self.modules.nixos.primary-user ];
 
       options.gitServer = {
-
         port = lib.mkOption {
           type = lib.types.port;
           default = 23231;

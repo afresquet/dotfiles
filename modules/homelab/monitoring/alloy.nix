@@ -1,10 +1,6 @@
 {
   flake.modules.nixos.monitoring =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.monitoring;
 
@@ -84,9 +80,7 @@
 
         monitoring.exporters.alloy = { inherit port; };
 
-        monitoring.dashboards.logs = {
-          json = ./dashboards/logs.json;
-        };
+        monitoring.dashboards.logs.json = ./dashboards/logs.json;
       };
     };
 }

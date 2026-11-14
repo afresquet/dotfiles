@@ -14,7 +14,6 @@
       imports = [ self.modules.nixos.primary-user ];
 
       options = {
-
         # Off by default: it takes a USB controller away from the host entirely, so it
         # is only worth enabling while a guest actually needs real USB hardware.
         quickemu.usbPassthrough =

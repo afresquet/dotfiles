@@ -4,11 +4,7 @@
 { inputs, self, ... }:
 {
   flake.modules.nixos.monitoring =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.monitoring;
     in
@@ -123,7 +119,6 @@
       ];
 
       options.monitoring = {
-
         targetHost = lib.mkOption {
           type = lib.types.str;
           default = "home-server";

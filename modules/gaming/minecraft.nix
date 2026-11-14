@@ -1,12 +1,7 @@
 {
   flake.modules.nixos.minecraft =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.prismlauncher ];
-      };
+      environment.systemPackages = [ pkgs.prismlauncher ];
     };
 }

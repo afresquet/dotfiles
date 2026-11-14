@@ -1,7 +1,5 @@
 {
   flake.modules.homeManager.ripgrep = _: {
-    config = {
-      programs.ripgrep.enable = true;
-    };
+    programs.ripgrep.enable = true;
   };
 }

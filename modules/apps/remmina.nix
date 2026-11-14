@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.remmina =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.remmina ];
-      };
+      home.packages = [ pkgs.remmina ];
     };
 }

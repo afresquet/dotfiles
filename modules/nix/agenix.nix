@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.agenix =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.agenix ];
-      };
+      home.packages = [ pkgs.agenix ];
     };
 }

@@ -1,11 +1,7 @@
 { self, ... }:
 {
   flake.modules.nixos.zigbee =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.zigbee;
     in
@@ -16,7 +12,6 @@
       ];
 
       options.zigbee = {
-
         device = lib.mkOption {
           type = lib.types.str;
           description = ''

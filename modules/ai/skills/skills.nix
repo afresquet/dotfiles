@@ -1,16 +1,11 @@
 {
   flake.modules.homeManager.skills =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.skills;
     in
     {
       options.skills = {
-
         sources = lib.mkOption {
           type = with lib.types; attrsOf (either lines path);
           default = { };

@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.wl-clipboard =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.wl-clipboard-rs ];
-      };
+      home.packages = [ pkgs.wl-clipboard-rs ];
     };
 }

@@ -16,14 +16,12 @@
         self.modules.homeManager.swaync
       ];
 
-      options = {
-        waybar = {
-          statsIcon = lib.mkOption {
-            type = lib.types.str;
-            default = "";
-          };
-          laptop = lib.mkEnableOption "laptop-specific modules and behaviour";
+      options.waybar = {
+        statsIcon = lib.mkOption {
+          type = lib.types.str;
+          default = "";
         };
+        laptop = lib.mkEnableOption "laptop-specific modules and behaviour";
       };
 
       config = {
@@ -107,9 +105,7 @@
               spacing = 10;
               icon-size = 16;
             };
-            privacy = {
-              icon-size = 14;
-            };
+            privacy.icon-size = 14;
             # Speaker: click to mute, right click for the mixer, scroll to change volume.
             pulseaudio =
               let

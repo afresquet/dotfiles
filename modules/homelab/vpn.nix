@@ -1,11 +1,7 @@
 { inputs, self, ... }:
 {
   flake.modules.nixos.vpn =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.vpn;
       exporterPort = 9586;
@@ -24,7 +20,6 @@
       ];
 
       options.vpn = {
-
         namespace = lib.mkOption {
           type = lib.types.str;
           default = "wg";
@@ -71,13 +66,9 @@
           vpnNamespace = cfg.namespace;
         };
 
-        monitoring.exporters.wireguard = {
-          port = exporterPort;
-        };
+        monitoring.exporters.wireguard.port = exporterPort;
 
-        monitoring.dashboards.wireguard = {
-          json = wireguardDashboardJson;
-        };
+        monitoring.dashboards.wireguard.json = wireguardDashboardJson;
       };
     };
 }

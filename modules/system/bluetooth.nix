@@ -10,12 +10,9 @@
       cfg = config.bluetooth;
     in
     {
-      options = {
-        bluetooth = {
-
-          xboxController.enable = lib.mkEnableOption "xpadneo (Xbox controller driver)" // {
-            default = true;
-          };
+      options.bluetooth = {
+        xboxController.enable = lib.mkEnableOption "xpadneo (Xbox controller driver)" // {
+          default = true;
         };
       };
 

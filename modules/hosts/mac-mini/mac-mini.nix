@@ -36,9 +36,7 @@ in
             heeler
           ];
 
-          agentTelegram = {
-            secretFile = ../../../secrets/agent-telegram-mac-mini.age;
-          };
+          agentTelegram.secretFile = ../../../secrets/agent-telegram-mac-mini.age;
 
           # Server-mode: this Mini is headless, runs Prometheus/Grafana 24/7, and
           # should come back from anything (sleep, freeze, power loss) without the

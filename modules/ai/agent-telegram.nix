@@ -7,24 +7,19 @@ let
   shared =
     { lib, ... }:
     {
-      options.agentTelegram = {
-        secretFile = lib.mkOption {
-          type = lib.types.path;
-          description = ''
-            agenix file with TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines, one
-            bot per machine. Decrypted to /run/agenix/agent-telegram, readable by
-            the primary user only (home-manager's agentTelegram reads it there).
-          '';
-        };
+      options.agentTelegram.secretFile = lib.mkOption {
+        type = lib.types.path;
+        description = ''
+          agenix file with TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines, one
+          bot per machine. Decrypted to /run/agenix/agent-telegram, readable by
+          the primary user only (home-manager's agentTelegram reads it there).
+        '';
       };
     };
 in
 {
   flake.modules.nixos.agent-telegram =
-    {
-      config,
-      ...
-    }:
+    { config, ... }:
     let
       cfg = config.agentTelegram;
     in
@@ -35,24 +30,19 @@ in
         inputs.agenix.nixosModules.default
       ];
 
-      config = {
-        age.secrets.agent-telegram = {
-          file = cfg.secretFile;
-          owner = config.system.primaryUser;
-          mode = "0400";
-        };
-
-        # The Telegram session is a systemd user service; without lingering it
-        # only runs while the user is logged in.
-        users.users.${config.system.primaryUser}.linger = true;
+      age.secrets.agent-telegram = {
+        file = cfg.secretFile;
+        owner = config.system.primaryUser;
+        mode = "0400";
       };
+
+      # The Telegram session is a systemd user service; without lingering it
+      # only runs while the user is logged in.
+      users.users.${config.system.primaryUser}.linger = true;
     };
 
   flake.modules.darwin.agent-telegram =
-    {
-      config,
-      ...
-    }:
+    { config, ... }:
     let
       cfg = config.agentTelegram;
     in
@@ -62,12 +52,10 @@ in
         inputs.agenix.darwinModules.default
       ];
 
-      config = {
-        age.secrets.agent-telegram = {
-          file = cfg.secretFile;
-          owner = config.system.primaryUser;
-          mode = "0400";
-        };
+      age.secrets.agent-telegram = {
+        file = cfg.secretFile;
+        owner = config.system.primaryUser;
+        mode = "0400";
       };
     };
 

@@ -1,14 +1,9 @@
 {
   flake.modules.nixos.mullvad =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.mullvad-vpn ];
+      environment.systemPackages = [ pkgs.mullvad-vpn ];
 
-        services.mullvad-vpn.enable = true;
-      };
+      services.mullvad-vpn.enable = true;
     };
 }

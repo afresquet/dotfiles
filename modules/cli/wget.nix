@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.wget =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.wget ];
-      };
+      home.packages = [ pkgs.wget ];
     };
 }

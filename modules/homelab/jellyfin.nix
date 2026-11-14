@@ -1,11 +1,7 @@
 { self, ... }:
 {
   flake.modules.nixos.jellyfin =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.jellyfin;
     in
@@ -16,7 +12,6 @@
       ];
 
       options.jellyfin = {
-
         port = lib.mkOption {
           type = lib.types.port;
           default = 8096;

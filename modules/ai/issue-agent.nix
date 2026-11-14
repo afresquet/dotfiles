@@ -35,7 +35,6 @@ in
       # system: secrets, lingering, and the Funnel that takes GitHub's webhook
       # deliveries to the listener.
       options.issueAgent = {
-
         secretFile = lib.mkOption {
           type = lib.types.path;
           description = ''
@@ -599,7 +598,6 @@ in
     in
     {
       options.issueAgent = {
-
         repo = lib.mkOption {
           type = lib.types.str;
           default = "afresquet/dotfiles";

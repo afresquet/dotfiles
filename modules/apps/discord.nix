@@ -1,22 +1,17 @@
 { self, ... }:
 {
   flake.modules.nixos.discord =
-    {
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     {
       imports = [ self.modules.nixos.allowed-unfree ];
 
-      config = {
-        environment.systemPackages = with pkgs; [
-          discord
-        ];
+      environment.systemPackages = with pkgs; [
+        discord
+      ];
 
-        allowedUnfree = [
-          "discord"
-          "discord-unwrapped"
-        ];
-      };
+      allowedUnfree = [
+        "discord"
+        "discord-unwrapped"
+      ];
     };
 }

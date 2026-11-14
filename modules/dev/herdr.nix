@@ -17,7 +17,6 @@
       });
     in
     {
-
       # Shared with the desktop app, which embeds herdr-core's path.
       options.herdr.corePackage = lib.mkOption {
         type = lib.types.package;

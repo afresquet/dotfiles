@@ -217,14 +217,12 @@
         '';
       };
 
-      direnvExportHook = {
-        hooks = [
-          {
-            type = "command";
-            command = lib.getExe direnvExportScript;
-          }
-        ];
-      };
+      direnvExportHook.hooks = [
+        {
+          type = "command";
+          command = lib.getExe direnvExportScript;
+        }
+      ];
 
       fetchUsageHook = {
         matcher = "";
@@ -239,36 +237,34 @@
     {
       imports = [ self.modules.homeManager.allowed-unfree ];
 
-      config = {
-        programs.claude-code = {
-          enable = true;
+      programs.claude-code = {
+        enable = true;
 
-          mutableSettings = true;
+        mutableSettings = true;
 
-          settings = {
-            theme = "dark";
-            verbose = false;
-            outputStyle = "Concise";
-            agentPushNotifEnabled = true;
-            attribution = {
-              commit = "";
-              pr = "";
-            };
-            statusLine = {
-              type = "command";
-              command = lib.getExe statusLineScript;
-              padding = 0;
-            };
-            hooks = {
-              PreToolUse = [ fetchUsageHook ];
-              Stop = [ fetchUsageHook ];
-              SessionStart = [ direnvExportHook ];
-              CwdChanged = [ direnvExportHook ];
-            };
+        settings = {
+          theme = "dark";
+          verbose = false;
+          outputStyle = "Concise";
+          agentPushNotifEnabled = true;
+          attribution = {
+            commit = "";
+            pr = "";
+          };
+          statusLine = {
+            type = "command";
+            command = lib.getExe statusLineScript;
+            padding = 0;
+          };
+          hooks = {
+            PreToolUse = [ fetchUsageHook ];
+            Stop = [ fetchUsageHook ];
+            SessionStart = [ direnvExportHook ];
+            CwdChanged = [ direnvExportHook ];
           };
         };
-
-        allowedUnfree = [ "claude-code" ];
       };
+
+      allowedUnfree = [ "claude-code" ];
     };
 }

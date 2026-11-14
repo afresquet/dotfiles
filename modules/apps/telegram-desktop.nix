@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.telegram-desktop =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.telegram-desktop ];
-      };
+      home.packages = [ pkgs.telegram-desktop ];
     };
 }

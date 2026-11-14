@@ -46,12 +46,10 @@ let
       inline-diagnostics.cursor-line = "warning";
     };
 
-    keys.normal = {
-      esc = [
-        "collapse_selection"
-        "keep_primary_selection"
-      ];
-    };
+    keys.normal.esc = [
+      "collapse_selection"
+      "keep_primary_selection"
+    ];
   };
 in
 {
@@ -73,203 +71,190 @@ in
     };
 
   flake.modules.homeManager.helix =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        programs.helix = {
-          enable = true;
+      programs.helix = {
+        enable = true;
 
-          inherit settings;
+        inherit settings;
 
-          languages = {
-            language = [
-              {
-                name = "nix";
-                formatter = {
-                  command = "nixfmt";
-                };
-                auto-format = true;
-              }
+        languages = {
+          language = [
+            {
+              name = "nix";
+              formatter.command = "nixfmt";
+              auto-format = true;
+            }
 
-              {
-                name = "html";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "html"
-                  ];
-                };
-              }
-
-              {
-                name = "css";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "css"
-                  ];
-                };
-              }
-
-              {
-                name = "json";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "json"
-                  ];
-                };
-              }
-
-              {
-                name = "javascript";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "typescript"
-                  ];
-                };
-                auto-format = true;
-              }
-
-              {
-                name = "typescript";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "typescript"
-                  ];
-                };
-                auto-format = true;
-              }
-
-              {
-                name = "tsx";
-                formatter = {
-                  command = "prettier";
-                  args = [
-                    "--parser"
-                    "typescript"
-                  ];
-                };
-                auto-format = true;
-              }
-
-              {
-                name = "go";
-                formatter = {
-                  command = "goimports";
-                };
-                auto-format = true;
-              }
-
-              {
-                name = "toml";
-                formatter = {
-                  command = "taplo";
-                  args = [
-                    "fmt"
-                    "-"
-                  ];
-                };
-              }
-
-              {
-                name = "python";
-                language-servers = [
-                  "pyright"
-                  "ruff"
-                ];
-                formatter = {
-                  command = "black";
-                  args = [
-                    "--line-length"
-                    "88"
-                    "--quiet"
-                    "-"
-                  ];
-                };
-              }
-
-              {
-                name = "sql";
-                formatter.command = "sleek";
-                auto-format = true;
-              }
-            ];
-
-            language-server = {
-              rust-analyzer.config = {
-                check.command = "clippy";
-              };
-
-              yaml-language-server.config.yaml = {
-                format.enable = true;
-                validation = true;
-                schemas = {
-                  "https://json.schemastore.org/github-workflow.json" = ".github/workflows/*.{yml,yaml}";
-                };
-              };
-
-              pyright.config = {
-                python.analisis.typeCheckingMode = "basic";
-              };
-
-              ruff = {
-                command = "ruff";
-                config.settings.args = [
-                  "--ignore"
-                  "E501"
+            {
+              name = "html";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "html"
                 ];
               };
-            };
-          };
+            }
 
-          themes = {
-            catppuccin_mocha = {
-              inherits = "catppuccin_mocha";
-              "ui.background" = { };
-            };
-          };
+            {
+              name = "css";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "css"
+                ];
+              };
+            }
 
-          extraPackages = with pkgs; [
-            # nix
-            nil
-            nixfmt
-            # rust
-            rust-analyzer
-            # html css json
-            vscode-langservers-extracted
-            prettier
-            # javascript typescript
-            typescript
-            typescript-language-server
-            # bash
-            bash-language-server
-            # docker
-            dockerfile-language-server
-            # toml
-            taplo
-            # yaml
-            yaml-language-server
-            # python
-            pyright
-            ruff
-            black
-            # sql
-            sleek
-            # lldb
-            lldb
+            {
+              name = "json";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "json"
+                ];
+              };
+            }
+
+            {
+              name = "javascript";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "typescript"
+                ];
+              };
+              auto-format = true;
+            }
+
+            {
+              name = "typescript";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "typescript"
+                ];
+              };
+              auto-format = true;
+            }
+
+            {
+              name = "tsx";
+              formatter = {
+                command = "prettier";
+                args = [
+                  "--parser"
+                  "typescript"
+                ];
+              };
+              auto-format = true;
+            }
+
+            {
+              name = "go";
+              formatter.command = "goimports";
+              auto-format = true;
+            }
+
+            {
+              name = "toml";
+              formatter = {
+                command = "taplo";
+                args = [
+                  "fmt"
+                  "-"
+                ];
+              };
+            }
+
+            {
+              name = "python";
+              language-servers = [
+                "pyright"
+                "ruff"
+              ];
+              formatter = {
+                command = "black";
+                args = [
+                  "--line-length"
+                  "88"
+                  "--quiet"
+                  "-"
+                ];
+              };
+            }
+
+            {
+              name = "sql";
+              formatter.command = "sleek";
+              auto-format = true;
+            }
           ];
+
+          language-server = {
+            rust-analyzer.config = {
+              check.command = "clippy";
+            };
+
+            yaml-language-server.config.yaml = {
+              format.enable = true;
+              validation = true;
+              schemas."https://json.schemastore.org/github-workflow.json" = ".github/workflows/*.{yml,yaml}";
+            };
+
+            pyright.config = {
+              python.analisis.typeCheckingMode = "basic";
+            };
+
+            ruff = {
+              command = "ruff";
+              config.settings.args = [
+                "--ignore"
+                "E501"
+              ];
+            };
+          };
         };
+
+        themes.catppuccin_mocha = {
+          inherits = "catppuccin_mocha";
+          "ui.background" = { };
+        };
+
+        extraPackages = with pkgs; [
+          # nix
+          nil
+          nixfmt
+          # rust
+          rust-analyzer
+          # html css json
+          vscode-langservers-extracted
+          prettier
+          # javascript typescript
+          typescript
+          typescript-language-server
+          # bash
+          bash-language-server
+          # docker
+          dockerfile-language-server
+          # toml
+          taplo
+          # yaml
+          yaml-language-server
+          # python
+          pyright
+          ruff
+          black
+          # sql
+          sleek
+          # lldb
+          lldb
+        ];
       };
     };
 }

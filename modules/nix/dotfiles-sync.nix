@@ -83,12 +83,10 @@
       };
     in
     {
-      options.dotfiles-sync = {
-        interval = lib.mkOption {
-          type = lib.types.ints.positive;
-          default = 15;
-          description = "Minutes between syncs.";
-        };
+      options.dotfiles-sync.interval = lib.mkOption {
+        type = lib.types.ints.positive;
+        default = 15;
+        description = "Minutes between syncs.";
       };
 
       config = lib.mkMerge [

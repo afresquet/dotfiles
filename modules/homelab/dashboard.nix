@@ -1,11 +1,7 @@
 { inputs, self, ... }:
 {
   flake.modules.nixos.dashboard =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.dashboard;
 
@@ -46,7 +42,6 @@
       ];
 
       options.dashboard = {
-
         port = lib.mkOption {
           type = lib.types.port;
           default = 3000;
@@ -186,12 +181,10 @@
               };
             }
             {
-              datetime = {
-                format = {
-                  dateStyle = "long";
-                  timeStyle = "short";
-                  hour12 = false;
-                };
+              datetime.format = {
+                dateStyle = "long";
+                timeStyle = "short";
+                hour12 = false;
               };
             }
           ];

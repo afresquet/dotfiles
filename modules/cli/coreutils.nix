@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.coreutils =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.uutils-coreutils-noprefix ];
-      };
+      home.packages = [ pkgs.uutils-coreutils-noprefix ];
     };
 }

@@ -1,12 +1,7 @@
 {
   flake.modules.nixos.heroic =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.heroic ];
-      };
+      environment.systemPackages = [ pkgs.heroic ];
     };
 }

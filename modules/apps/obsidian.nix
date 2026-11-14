@@ -1,17 +1,12 @@
 { self, ... }:
 {
   flake.modules.nixos.obsidian =
-    {
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     {
       imports = [ self.modules.nixos.allowed-unfree ];
 
-      config = {
-        environment.systemPackages = [ pkgs.obsidian ];
+      environment.systemPackages = [ pkgs.obsidian ];
 
-        allowedUnfree = [ "obsidian" ];
-      };
+      allowedUnfree = [ "obsidian" ];
     };
 }

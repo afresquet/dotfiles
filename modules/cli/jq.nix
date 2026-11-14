@@ -1,14 +1,9 @@
 {
   flake.modules.homeManager.jq =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        programs.jq.enable = true;
+      programs.jq.enable = true;
 
-        home.packages = [ pkgs.jqp ];
-      };
+      home.packages = [ pkgs.jqp ];
     };
 }

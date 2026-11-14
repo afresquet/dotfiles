@@ -335,6 +335,14 @@ holds public keys only; aspects and hosts read them as `config.meta.keys`.
 
 - nixfmt formatting (`nix fmt`), no `with lib;` or `with pkgs;` at file scope,
   `inherit` where statix suggests it, no unused lambda arguments.
+- Write compactly; nixfmt keeps whatever layout it is given. Argument sets go
+  on one line (`{ lib, config, pkgs, ... }:`) and nixfmt expands them where
+  its rules require. No blank line right after an opening `{`/`[`/`(` or
+  right before its closing one; blank lines only separate groups. A module
+  that declares no options puts its config at top level, without a
+  `config = { … }` wrapper. A set with a single key is written as a path
+  (`options.pihole = { … }`, `home.packages = [ … ]`), but several keys stay
+  grouped under their common prefix rather than repeated as dotted paths.
 - Comments explain why, not what: the reason a workaround exists, the upstream
   issue number, what breaks without it. Keep that standard.
 - Commit messages are short lowercase summaries (`hyprland keybinds`,

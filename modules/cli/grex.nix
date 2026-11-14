@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.grex =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.grex ];
-      };
+      home.packages = [ pkgs.grex ];
     };
 }

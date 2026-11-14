@@ -126,43 +126,41 @@
               isDefault: true
         '';
 
-        launchd.daemons.prometheus = {
-          serviceConfig = {
-            Label = "com.prometheus.prometheus";
-            # /bin/sh + wait4path wrapper: Determinate Nix mounts /nix from its
-            # own APFS volume via a separate launchd job, so at boot xpcproxy
-            # can hit ENOENT on the /nix/store binary, exit 78 instantly, and
-            # land the daemon in launchd's penalty box (where KeepAlive stops
-            # rescuing it). Wrapping in /bin/sh — always present pre-mount —
-            # lets us block on wait4path until /nix actually appears, then exec.
-            ProgramArguments =
-              let
-                exe = "${pkgs.prometheus}/bin/prometheus";
-              in
-              [
-                "/bin/sh"
-                "-c"
-                ''
-                  /bin/wait4path "$0"
-                  exec "$0" "$@"
-                ''
-                exe
-                "--config.file=${prometheusConfig}"
-                "--storage.tsdb.path=${cfg.prometheusDataDir}"
-                "--storage.tsdb.retention.time=${cfg.retention}"
-                "--web.listen-address=${cfg.bindAddress}:${toString port}"
-                "--web.external-url=http://prometheus.home-server/"
-              ];
-            WorkingDirectory = cfg.prometheusDataDir;
-            RunAtLoad = true;
-            KeepAlive = true;
-            # Retained as defense-in-depth for *genuine* crashes — the wait4path
-            # wrapper handles the pre-mount race that originally pushed this
-            # daemon into the penalty box.
-            ThrottleInterval = 60;
-            StandardOutPath = "/var/log/prometheus.log";
-            StandardErrorPath = "/var/log/prometheus.err";
-          };
+        launchd.daemons.prometheus.serviceConfig = {
+          Label = "com.prometheus.prometheus";
+          # /bin/sh + wait4path wrapper: Determinate Nix mounts /nix from its
+          # own APFS volume via a separate launchd job, so at boot xpcproxy
+          # can hit ENOENT on the /nix/store binary, exit 78 instantly, and
+          # land the daemon in launchd's penalty box (where KeepAlive stops
+          # rescuing it). Wrapping in /bin/sh — always present pre-mount —
+          # lets us block on wait4path until /nix actually appears, then exec.
+          ProgramArguments =
+            let
+              exe = "${pkgs.prometheus}/bin/prometheus";
+            in
+            [
+              "/bin/sh"
+              "-c"
+              ''
+                /bin/wait4path "$0"
+                exec "$0" "$@"
+              ''
+              exe
+              "--config.file=${prometheusConfig}"
+              "--storage.tsdb.path=${cfg.prometheusDataDir}"
+              "--storage.tsdb.retention.time=${cfg.retention}"
+              "--web.listen-address=${cfg.bindAddress}:${toString port}"
+              "--web.external-url=http://prometheus.home-server/"
+            ];
+          WorkingDirectory = cfg.prometheusDataDir;
+          RunAtLoad = true;
+          KeepAlive = true;
+          # Retained as defense-in-depth for *genuine* crashes — the wait4path
+          # wrapper handles the pre-mount race that originally pushed this
+          # daemon into the penalty box.
+          ThrottleInterval = 60;
+          StandardOutPath = "/var/log/prometheus.log";
+          StandardErrorPath = "/var/log/prometheus.err";
         };
       };
     };

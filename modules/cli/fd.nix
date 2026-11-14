@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.fd =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.fd ];
-      };
+      home.packages = [ pkgs.fd ];
     };
 }

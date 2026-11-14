@@ -1,17 +1,12 @@
 { inputs, self, ... }:
 {
   flake.modules.homeManager.tilth =
-    {
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     {
       imports = [ self.modules.homeManager.skills ];
 
-      config = {
-        home.packages = [ pkgs.tilth ];
+      home.packages = [ pkgs.tilth ];
 
-        skills.sources.tilth = "${inputs.tilth}/skills/SKILL.md";
-      };
+      skills.sources.tilth = "${inputs.tilth}/skills/SKILL.md";
     };
 }

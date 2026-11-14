@@ -12,15 +12,12 @@
       cursors = pkgs.bibata-cursors-black-corners;
     in
     {
-      options = {
-        sddm = {
-
-          # Extra KEY=VALUE pairs for the greeter process, e.g. a per-host
-          # QT_SCALE_FACTOR. Merged into SDDM's single GreeterEnvironment string.
-          greeterEnvironment = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
-          };
+      options.sddm = {
+        # Extra KEY=VALUE pairs for the greeter process, e.g. a per-host
+        # QT_SCALE_FACTOR. Merged into SDDM's single GreeterEnvironment string.
+        greeterEnvironment = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
         };
       };
 

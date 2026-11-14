@@ -1,18 +1,11 @@
 {
   flake.modules.nixos.rpi-imager =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.rpi-imager ];
-      };
+      environment.systemPackages = [ pkgs.rpi-imager ];
     };
 
   flake.modules.darwin.rpi-imager = _: {
-    config = {
-      homebrew.casks = [ "raspberry-pi-imager" ];
-    };
+    homebrew.casks = [ "raspberry-pi-imager" ];
   };
 }

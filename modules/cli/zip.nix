@@ -1,18 +1,13 @@
 {
   flake.modules.homeManager.zip =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = with pkgs; [
-          zip
-          xz
-          unzip
-          p7zip
-          zstd
-        ];
-      };
+      home.packages = with pkgs; [
+        zip
+        xz
+        unzip
+        p7zip
+        zstd
+      ];
     };
 }

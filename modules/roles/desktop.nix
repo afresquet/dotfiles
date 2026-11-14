@@ -89,27 +89,25 @@
       # when this is set. A session variable so every login gets it via PAM.
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
-      nix = {
-        settings = {
-          auto-optimise-store = true;
-          experimental-features = [
-            "nix-command"
-            "flakes"
-          ];
-          substituters = [
-            "https://cache.nixos.org"
-            "https://nix-community.cachix.org"
-            "https://hyprland.cachix.org"
-            "https://devenv.cachix.org"
-            "https://nixos-raspberrypi.cachix.org"
-          ];
-          trusted-public-keys = [
-            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-            "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
-            "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-            "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-          ];
-        };
+      nix.settings = {
+        auto-optimise-store = true;
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        substituters = [
+          "https://cache.nixos.org"
+          "https://nix-community.cachix.org"
+          "https://hyprland.cachix.org"
+          "https://devenv.cachix.org"
+          "https://nixos-raspberrypi.cachix.org"
+        ];
+        trusted-public-keys = [
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          "devenv.cachix.org-1:w1cLUi8dv3hnoSPGAuibQv+f9TZLr6cv/Hm9XgU50cw="
+          "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
+          "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+        ];
       };
     };
 

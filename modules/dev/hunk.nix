@@ -1,19 +1,14 @@
 { inputs, ... }:
 {
   flake.modules.homeManager.hunk =
-    {
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     {
       imports = [ inputs.hunk.homeManagerModules.default ];
 
-      config = {
-        programs.hunk = {
-          enable = true;
-          package = pkgs.hunk;
-          enableClaudeIntegration = true;
-        };
+      programs.hunk = {
+        enable = true;
+        package = pkgs.hunk;
+        enableClaudeIntegration = true;
       };
     };
 }

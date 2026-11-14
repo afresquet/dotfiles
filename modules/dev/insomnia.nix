@@ -1,12 +1,7 @@
 {
   flake.modules.homeManager.insomnia =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        home.packages = [ pkgs.insomnia ];
-      };
+      home.packages = [ pkgs.insomnia ];
     };
 }

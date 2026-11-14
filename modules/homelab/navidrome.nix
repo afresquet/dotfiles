@@ -1,11 +1,7 @@
 { self, ... }:
 {
   flake.modules.nixos.navidrome =
-    {
-      lib,
-      config,
-      ...
-    }:
+    { lib, config, ... }:
     let
       cfg = config.navidrome;
     in
@@ -16,7 +12,6 @@
       ];
 
       options.navidrome = {
-
         port = lib.mkOption {
           type = lib.types.port;
           default = 4533;

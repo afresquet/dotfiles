@@ -73,7 +73,6 @@
       ];
 
       options.arrStack = {
-
         dataRoot = lib.mkOption {
           type = lib.types.str;
           default = "/mnt/hdd";
@@ -119,19 +118,17 @@
         # needs to reach them on the namespace's bridge side (192.168.15.5) to
         # push indexer config. Open just those ports on the wg-br interface so we
         # don't expose them anywhere else.
-        networking.firewall.interfaces.wg-br = {
-          allowedTCPPorts = lib.attrValues (
-            lib.filterAttrs (
-              n: _:
-              builtins.elem n [
-                "radarr"
-                "sonarr"
-                "lidarr"
-                "readarr"
-              ]
-            ) apps
-          );
-        };
+        networking.firewall.interfaces.wg-br.allowedTCPPorts = lib.attrValues (
+          lib.filterAttrs (
+            n: _:
+            builtins.elem n [
+              "radarr"
+              "sonarr"
+              "lidarr"
+              "readarr"
+            ]
+          ) apps
+        );
         services.prowlarr.enable = true;
         services.bazarr.enable = true;
         services.seerr.enable = true;
@@ -317,7 +314,6 @@
                 type = meta.widgetType;
                 url = "http://${widgetHost}:${toString port}";
                 key = "{{HOMEPAGE_VAR_${lib.toUpper name}_API_KEY}}";
-
               };
             }
           ) apps;

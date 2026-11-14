@@ -2,20 +2,18 @@
   flake.modules.homeManager.nushell =
     { config, ... }:
     {
-      config = {
-        programs.nushell = {
-          enable = true;
+      programs.nushell = {
+        enable = true;
 
-          extraConfig = ''
-            $env.config = {
-              show_banner: false,
-            }
-          '';
+        extraConfig = ''
+          $env.config = {
+            show_banner: false,
+          }
+        '';
 
-          loadSessionVariables = true;
+        loadSessionVariables = true;
 
-          shellAliases = config.home.shellAliases;
-        };
+        shellAliases = config.home.shellAliases;
       };
     };
 }

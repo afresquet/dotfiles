@@ -49,9 +49,7 @@ in
               lib.remove keys.heeler
                 config.users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys;
           };
-          agentTelegram = {
-            secretFile = ../../../secrets/agent-telegram-home-server.age;
-          };
+          agentTelegram.secretFile = ../../../secrets/agent-telegram-home-server.age;
           issueAgent = {
             secretFile = ../../../secrets/github-agent.age;
             webhookSecretFile = ../../../secrets/github-webhook.age;

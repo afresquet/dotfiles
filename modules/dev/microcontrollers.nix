@@ -1,17 +1,12 @@
 {
   flake.modules.nixos.microcontrollers =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = with pkgs; [ arduino-ide ];
+      environment.systemPackages = with pkgs; [ arduino-ide ];
 
-        services.udev.packages = with pkgs; [
-          platformio-core
-          openocd
-        ];
-      };
+      services.udev.packages = with pkgs; [
+        platformio-core
+        openocd
+      ];
     };
 }

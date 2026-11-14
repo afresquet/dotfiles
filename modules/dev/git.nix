@@ -5,11 +5,9 @@
       cfg = config.git;
     in
     {
-      options = {
-        git = {
-          email = lib.mkOption { type = lib.types.str; };
-          signingKey = lib.mkOption { type = lib.types.str; };
-        };
+      options.git = {
+        email = lib.mkOption { type = lib.types.str; };
+        signingKey = lib.mkOption { type = lib.types.str; };
       };
 
       config = {

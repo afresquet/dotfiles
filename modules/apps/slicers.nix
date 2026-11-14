@@ -1,27 +1,20 @@
 { self, ... }:
 {
   flake.modules.nixos.slicers =
-    {
-      pkgs,
-      ...
-    }:
+    { pkgs, ... }:
     {
       imports = [ self.modules.nixos.allowed-unfree ];
 
-      config = {
-        xdg.mime.defaultApplications = {
-          "x-scheme-handler/bambustudio" = "BambuStudio.desktop";
-        };
+      xdg.mime.defaultApplications."x-scheme-handler/bambustudio" = "BambuStudio.desktop";
 
-        environment.systemPackages = with pkgs; [
-          bambu-studio
-          cura
-          orca-slicer
-          prusa-slicer
-          openscad-unstable
-        ];
+      environment.systemPackages = with pkgs; [
+        bambu-studio
+        cura
+        orca-slicer
+        prusa-slicer
+        openscad-unstable
+      ];
 
-        allowedUnfree = [ "bambu-studio" ];
-      };
+      allowedUnfree = [ "bambu-studio" ];
     };
 }

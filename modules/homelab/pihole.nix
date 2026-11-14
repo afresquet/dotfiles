@@ -44,30 +44,26 @@ in
         self.modules.nixos.monitoring-options
       ];
 
-      options = {
-        pihole = {
+      options.pihole = {
+        dataDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/pihole";
+          description = "Directory for Pi-hole persistent state.";
+        };
 
-          dataDir = lib.mkOption {
-            type = lib.types.str;
-            default = "/var/lib/pihole";
-            description = "Directory for Pi-hole persistent state.";
-          };
+        upstreamDns = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [
+            "1.1.1.1"
+            "1.0.0.1"
+          ];
+          description = "Upstream DNS servers Pi-hole forwards queries to.";
+        };
 
-          upstreamDns = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [
-              "1.1.1.1"
-              "1.0.0.1"
-            ];
-            description = "Upstream DNS servers Pi-hole forwards queries to.";
-          };
-
-          adminPort = lib.mkOption {
-            type = lib.types.port;
-            default = 8081;
-            description = "Localhost port the admin UI is exposed on (proxied externally).";
-          };
-
+        adminPort = lib.mkOption {
+          type = lib.types.port;
+          default = 8081;
+          description = "Localhost port the admin UI is exposed on (proxied externally).";
         };
       };
 
@@ -178,7 +174,6 @@ in
             url = "http://127.0.0.1:${toString cfg.adminPort}";
             version = 6;
             key = "{{HOMEPAGE_VAR_PIHOLE_API_KEY}}";
-
           };
         };
 
@@ -219,9 +214,7 @@ in
         systemd.services.prometheus-pihole-exporter.serviceConfig.EnvironmentFile =
           "/run/pihole-exporter/env";
 
-        monitoring.exporters.pihole = {
-          port = 9617;
-        };
+        monitoring.exporters.pihole.port = 9617;
         monitoring.dashboards.pihole = {
           id = 10176;
           revision = 3;

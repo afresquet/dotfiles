@@ -1,12 +1,7 @@
 {
   flake.modules.nixos.vlc =
+    { pkgs, ... }:
     {
-      pkgs,
-      ...
-    }:
-    {
-      config = {
-        environment.systemPackages = [ pkgs.vlc ];
-      };
+      environment.systemPackages = [ pkgs.vlc ];
     };
 }

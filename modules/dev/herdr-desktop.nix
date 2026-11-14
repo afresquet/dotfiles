@@ -10,7 +10,6 @@
       cfg = config.herdr-desktop;
     in
     {
-
       # Exposed so other modules (the Hyprland workspace bind) can lib.getExe it.
       options.herdr-desktop.package = lib.mkOption {
         type = lib.types.package;
