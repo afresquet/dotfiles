@@ -15,6 +15,10 @@ in
     in
     {
       imports = [
+        self.modules.homeManager.cliphist
+        self.modules.homeManager.swaync
+        self.modules.homeManager.hyprlock
+        self.modules.homeManager.swayosd
         self.modules.homeManager.zen-browser
         self.modules.homeManager.ghostty
       ];
@@ -147,34 +151,20 @@ in
                 launcher = "${rofi} -show drun";
                 emoji = ''${rofi} -modi "emoji:rofimoji" -show emoji'';
                 screenshot = lib.getExe pkgs.grimblast;
-                brightness = lib.getExe pkgs.brightnessctl;
                 media = lib.getExe pkgs.playerctl;
 
                 # Volume, mic and brightness keys go through swayosd for the popup.
                 osd = lib.getExe' config.services.swayosd.package "swayosd-client";
-                keyCmd =
-                  if config.services.swayosd.enable then
-                    {
-                      volumeUp = "${osd} --output-volume +5";
-                      volumeDown = "${osd} --output-volume -5";
-                      mute = "${osd} --output-volume mute-toggle";
-                      micUp = "${osd} --input-volume +5";
-                      micDown = "${osd} --input-volume -5";
-                      micMute = "${osd} --input-volume mute-toggle";
-                      brightnessUp = "${osd} --brightness +5";
-                      brightnessDown = "${osd} --brightness -5";
-                    }
-                  else
-                    {
-                      volumeUp = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit 1.0";
-                      volumeDown = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%- --limit 1.0";
-                      mute = "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle";
-                      micUp = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0";
-                      micDown = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%- --limit 1.0";
-                      micMute = "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle";
-                      brightnessUp = "${brightness} set 5%+";
-                      brightnessDown = "${brightness} set 5%-";
-                    };
+                keyCmd = {
+                  volumeUp = "${osd} --output-volume +5";
+                  volumeDown = "${osd} --output-volume -5";
+                  mute = "${osd} --output-volume mute-toggle";
+                  micUp = "${osd} --input-volume +5";
+                  micDown = "${osd} --input-volume -5";
+                  micMute = "${osd} --input-volume mute-toggle";
+                  brightnessUp = "${osd} --brightness +5";
+                  brightnessDown = "${osd} --brightness -5";
+                };
 
                 # Shown by the SUPER + ? cheat sheet; binds without one are left out.
                 bindDescriptions = {
@@ -610,17 +600,13 @@ in
                     (mkBind "SUPER + SHIFT + J" (moveDir "down"))
                   ]
                   ++ resizeBinds
-                  ++ lib.optional config.programs.hyprlock.enable (
-                    mkBind "SUPER + Escape" (execDsp "loginctl lock-session")
-                  )
-                  ++ lib.optional config.services.swaync.enable (
-                    mkBind "SUPER + N" (
+                  ++ [ (mkBind "SUPER + Escape" (execDsp "loginctl lock-session")) ]
+                  ++ [
+                    (mkBind "SUPER + N" (
                       execDsp "${lib.getExe' config.services.swaync.package "swaync-client"} --toggle-panel --skip-wait"
-                    )
-                  )
-                  ++ lib.optional config.services.cliphist.enable (
-                    mkBind "SUPER + SHIFT + V" (execDsp (lib.getExe config.cliphist.picker))
-                  )
+                    ))
+                  ]
+                  ++ [ (mkBind "SUPER + SHIFT + V" (execDsp (lib.getExe config.cliphist.picker))) ]
                   ++ workspaceNumbers
                   ++ [
                     (mkBind "SUPER + S" ''hl.dsp.workspace.toggle_special("scratchpad")'')

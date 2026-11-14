@@ -19,9 +19,7 @@ in
       ];
     };
 
-    systemd.services.alloy.serviceConfig.SupplementaryGroups = lib.mkAfter (
-      lib.optional config.services.caddy.enable "caddy"
-    );
+    systemd.services.alloy.serviceConfig.SupplementaryGroups = lib.mkAfter [ "caddy" ];
 
     environment.etc."alloy/config.alloy".text = ''
       loki.relabel "journal" {

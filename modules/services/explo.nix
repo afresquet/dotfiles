@@ -4,27 +4,20 @@
     {
       lib,
       config,
-      options,
       ...
     }:
     let
       cfg = config.explo;
-      slskdEnabled = options ? slskd;
       # When slskd is wg-confined (default), Explo (host network) reaches it via
       # the namespace's host-side bridge address rather than 127.0.0.1.
-      slskdUrl =
-        if slskdEnabled then
-          "http://${
-            if (options ? vpn) then
-              config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
-            else
-              "127.0.0.1"
-          }:${toString config.slskd.webuiPort}"
-        else
-          null;
+      slskdUrl = "http://${
+        config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+      }:${toString config.slskd.webuiPort}";
     in
     {
       imports = [
+        self.modules.nixos.slskd
+        self.modules.nixos.vpn
         inputs.agenix.nixosModules.default
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
@@ -101,7 +94,7 @@
             # /data; needs the slskd dir mounted into Explo so the rename(2) is
             # cross-mount-aware. The path inside Explo (/slskd/) matches the
             # default SLSKD_DIR Explo reads from.
-            ++ lib.optional slskdEnabled "${config.slskd.downloadsDir}:/slskd";
+            ++ [ "${config.slskd.downloadsDir}:/slskd" ];
             environmentFiles = [ config.age.secrets.explo-env.path ];
             environment = {
               TZ = config.time.timeZone;
@@ -110,7 +103,7 @@
               EXPLO_SYSTEM = "subsonic";
               SYSTEM_URL = "http://127.0.0.1:4533";
             }
-            // lib.optionalAttrs slskdEnabled {
+            // {
               DOWNLOAD_SERVICES = "slskd";
               SLSKD_URL = slskdUrl;
               MIGRATE_DOWNLOADS = "true";

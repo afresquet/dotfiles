@@ -4,7 +4,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -29,7 +28,6 @@
         }";
     in
     {
-      key = "self.modules.nixos.auto-upgrade";
       imports = [ self.modules.nixos.primary-user ];
 
       options.autoUpgrade = {
@@ -68,13 +66,10 @@
 
         notify = lib.mkEnableOption "desktop notifications when the upgrade starts and finishes";
 
-        telegram =
-          lib.mkEnableOption "Telegram messages when the upgrade starts and finishes, through this machine's agentTelegram bot"
-          // {
-            # On wherever the agent-telegram aspect is: its bot sends them.
-            default = options ? agentTelegram;
-            defaultText = lib.literalExpression "options ? agentTelegram";
-          };
+        # Set by the auto-upgrade-telegram aspect.
+
+        # Set by the auto-upgrade-telegram aspect.
+        telegram = lib.mkEnableOption "Telegram messages when the upgrade starts and finishes, through this machine's agentTelegram bot";
       };
 
       config = {
@@ -129,7 +124,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -140,8 +134,6 @@
       lockFile = "dotfiles-lock";
     in
     {
-      key = "self.modules.darwin.auto-upgrade";
-
       options.autoUpgrade = {
 
         flake = lib.mkOption {
@@ -154,13 +146,10 @@
           '';
         };
 
-        telegram =
-          lib.mkEnableOption "Telegram messages when the upgrade starts and finishes, through this machine's agentTelegram bot"
-          // {
-            # On wherever the agent-telegram aspect is: its bot sends them.
-            default = options ? agentTelegram;
-            defaultText = lib.literalExpression "options ? agentTelegram";
-          };
+        # Set by the auto-upgrade-telegram aspect.
+
+        # Set by the auto-upgrade-telegram aspect.
+        telegram = lib.mkEnableOption "Telegram messages when the upgrade starts and finishes, through this machine's agentTelegram bot";
       };
 
       # nix-darwin has no system.autoUpgrade; this is the launchd equivalent of
@@ -223,7 +212,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -296,20 +284,15 @@
         }";
     in
     {
-      key = "self.modules.homeManager.auto-upgrade";
-
       options.autoUpgrade = {
 
         # The linux-desktop aspect turns them on.
         notify = lib.mkEnableOption "desktop notifications when the switch starts and finishes";
 
-        telegram =
-          lib.mkEnableOption "Telegram messages when the switch starts and finishes, through this machine's agentTelegram bot"
-          // {
-            # On wherever the agent-telegram aspect is: its bot sends them.
-            default = options ? agentTelegram;
-            defaultText = lib.literalExpression "options ? agentTelegram";
-          };
+        # Set by the auto-upgrade-telegram aspect.
+
+        # Set by the auto-upgrade-telegram aspect.
+        telegram = lib.mkEnableOption "Telegram messages when the switch starts and finishes, through this machine's agentTelegram bot";
 
         configuration = lib.mkOption {
           type = lib.types.str;

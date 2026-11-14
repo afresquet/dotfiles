@@ -4,7 +4,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -40,6 +39,7 @@
     in
     {
       imports = [
+        self.modules.nixos.vpn
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
         ./monitoring/_nixos-options.nix
@@ -95,7 +95,7 @@
             # write the source file).
             UMask = "0002";
           };
-          vpnConfinement = lib.mkIf (options ? vpn) {
+          vpnConfinement = {
             enable = true;
             vpnNamespace = config.vpn.namespace;
           };
@@ -118,7 +118,7 @@
               # Skip auth for the wg bridge subnet so the prometheus exporter
               # (running on the host) can scrape without credentials. The bridge
               # is internal-only — nothing on the LAN can reach this subnet.
-              "WebUI\\AuthSubnetWhitelistEnabled" = options ? vpn;
+              "WebUI\\AuthSubnetWhitelistEnabled" = true;
               "WebUI\\AuthSubnetWhitelist" = bridgeSubnet;
             };
             BitTorrent = {
@@ -153,11 +153,9 @@
           description = "Torrent client (Mullvad)";
           widget = {
             type = "qbittorrent";
-            url =
-              if (options ? vpn) then
-                "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString cfg.webuiPort}"
-              else
-                "http://127.0.0.1:${toString cfg.webuiPort}";
+            url = "http://${
+              config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+            }:${toString cfg.webuiPort}";
             username = "admin";
             password = "{{HOMEPAGE_VAR_QBITTORRENT_PASSWORD}}";
           };
@@ -168,11 +166,9 @@
           # When confined to the VPN namespace, caddy can't reach 127.0.0.1:<port>
           # (vpn-confinement only DNATs PREROUTING traffic). Proxy via the
           # namespace's bridge-side address instead.
-          upstream =
-            if (options ? vpn) then
-              "${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString cfg.webuiPort}"
-            else
-              "127.0.0.1:${toString cfg.webuiPort}";
+          upstream = "${
+            config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+          }:${toString cfg.webuiPort}";
         };
 
         # ─── Monitoring ───
@@ -188,15 +184,12 @@
           after = [
             "qbittorrent.service"
           ]
-          ++ lib.optional (options ? vpn) "wg.service";
+          ++ [ "wg.service" ];
           serviceConfig = {
             ExecStart = "${pkgs.prometheus-qbittorrent-exporter}/bin/qbit-exp";
             Environment = [
               "QBITTORRENT_BASE_URL=http://${
-                if (options ? vpn) then
-                  config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
-                else
-                  "127.0.0.1"
+                config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
               }:${toString cfg.webuiPort}"
               "QBITTORRENT_USERNAME=admin"
               # Auth bypass on the wg bridge subnet means any password is accepted.
@@ -215,24 +208,20 @@
           };
         };
 
-        monitoring.exporters.qbittorrent =
-          lib.mkIf (lib.hasAttrByPath [ "monitoring" "serverHost" ] options)
-            {
-              port = 17871;
-            };
-        monitoring.dashboards.qbittorrent =
-          lib.mkIf (lib.hasAttrByPath [ "monitoring" "serverHost" ] options)
-            {
-              # Nixpkgs `prometheus-qbittorrent-exporter` ships martabal's fork
-              # (binary `qbit-exp`), not caseyscarborough's — different metric set,
-              # so the grafana.com dashboards (14708, 15116) have broken panels.
-              # The matching dashboard lives in the fork's repo, pinned to the
-              # exporter version we run.
-              url = "https://raw.githubusercontent.com/martabal/qbittorrent-exporter/v1.13.0/grafana/dashboard.json";
-              hash = "sha256-GFH+qQv7A9KGb0HW2NuBvv3YA4lEiEL0BcAftd/7vnc=";
-            };
+        monitoring.exporters.qbittorrent = {
+          port = 17871;
+        };
+        monitoring.dashboards.qbittorrent = {
+          # Nixpkgs `prometheus-qbittorrent-exporter` ships martabal's fork
+          # (binary `qbit-exp`), not caseyscarborough's — different metric set,
+          # so the grafana.com dashboards (14708, 15116) have broken panels.
+          # The matching dashboard lives in the fork's repo, pinned to the
+          # exporter version we run.
+          url = "https://raw.githubusercontent.com/martabal/qbittorrent-exporter/v1.13.0/grafana/dashboard.json";
+          hash = "sha256-GFH+qQv7A9KGb0HW2NuBvv3YA4lEiEL0BcAftd/7vnc=";
+        };
 
-        vpnNamespaces = lib.mkIf (options ? vpn) {
+        vpnNamespaces = {
           ${config.vpn.namespace} = {
             portMappings = [
               {

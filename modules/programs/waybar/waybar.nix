@@ -11,7 +11,10 @@
       cfg = config.waybar;
     in
     {
-      imports = [ self.modules.homeManager.ghostty ];
+      imports = [
+        self.modules.homeManager.ghostty
+        self.modules.homeManager.swaync
+      ];
 
       options = {
         waybar = {
@@ -74,8 +77,8 @@
                 "tray"
                 "privacy"
               ]
-              ++ lib.optional config.services.swaync.enable "custom/notification"
               ++ [
+                "custom/notification"
                 "clock"
                 "custom/session"
               ];

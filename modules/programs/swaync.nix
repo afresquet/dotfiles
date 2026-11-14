@@ -1,3 +1,4 @@
+{ self, ... }:
 {
   flake.modules.homeManager.swaync =
     {
@@ -29,6 +30,7 @@
       on = "[ \"$SWAYNC_TOGGLE_STATE\" = true ]";
     in
     {
+      imports = [ self.modules.homeManager.wlogout ];
 
       # Notifications plus a control center (SUPER + N or the Waybar bell) with a
       # media player, volume and do-not-disturb. Replaces mako.
@@ -93,9 +95,7 @@
                   (button "screenshot" "󰹑" "sleep 0.4\nSLURP_RECTS= ${lib.getExe pkgs.grimblast} copysave area")
                   (button "lock" "󰌾" "loginctl lock-session")
                 ]
-                ++ lib.optional config.programs.wlogout.enable (
-                  button "power" "󰐥" (lib.getExe config.wlogout.launcher)
-                );
+                ++ [ (button "power" "󰐥" (lib.getExe config.wlogout.launcher)) ];
               };
             };
           };

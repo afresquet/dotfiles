@@ -58,7 +58,6 @@ in
             imports = with self.modules.homeManager; [
               linux-desktop
               herdr-desktop
-              hyprlock
             ];
 
             home.username = "afresquet";

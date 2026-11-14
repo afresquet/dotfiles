@@ -4,7 +4,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -15,8 +14,6 @@
         hash = cfg.hacs.hash;
         stripRoot = false;
       };
-      # Whether the monitoring aspect is on this host (it declares serverHost).
-      monitoringEnabled = lib.hasAttrByPath [ "monitoring" "serverHost" ] options;
 
       # Body of HA's `prometheus:` integration. Drops as the include target so
       # we own the metric filter declaratively without touching configuration.yaml.
@@ -229,7 +226,7 @@
         # block in HA's config. We own the integration's body declaratively via
         # an `!include`d sub-file; configuration.yaml gets the include directive
         # idempotently appended on first run.
-        systemd.services.home-assistant-prometheus-config = lib.mkIf monitoringEnabled {
+        systemd.services.home-assistant-prometheus-config = {
           description = "Install Prometheus integration config for HA";
           wantedBy = [ "podman-home-assistant.service" ];
           before = [ "podman-home-assistant.service" ];
@@ -263,15 +260,17 @@
         };
 
         # Container needs to restart when our integration config changes.
-        systemd.services.podman-home-assistant.restartTriggers =
-          lib.optional monitoringEnabled prometheusYaml ++ lib.optional (cfg.packages != { }) packagesDir;
+        systemd.services.podman-home-assistant.restartTriggers = [
+          prometheusYaml
+        ]
+        ++ lib.optional (cfg.packages != { }) packagesDir;
 
-        monitoring.exporters.home-assistant = lib.mkIf monitoringEnabled {
+        monitoring.exporters.home-assistant = {
           port = 8123;
           metricsPath = "/api/prometheus";
           bearerTokenFile = "/run/agenix/home-assistant-llat";
         };
-        monitoring.dashboards.home-assistant = lib.mkIf monitoringEnabled {
+        monitoring.dashboards.home-assistant = {
           json = haDashboardJson;
         };
       };

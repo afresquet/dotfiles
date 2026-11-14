@@ -12,15 +12,12 @@ in
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
     let
       cfg = config.pihole;
       proxy = config.reverseProxy;
-      # Whether the monitoring aspect is on this host (it declares serverHost).
-      monitoringEnabled = lib.hasAttrByPath [ "monitoring" "serverHost" ] options;
       proxyHostnames = lib.concatLists (
         lib.mapAttrsToList (_: svc: [ svc.host ] ++ svc.aliases) proxy.services
       );
@@ -28,7 +25,7 @@ in
       # runtime (substituted into the rendered FTLCONF_dns_hosts env file when the
       # IP is auto-discovered from tailscaled).
       dnsHostEntries = ip: lib.concatStringsSep ";" (map (h: "${ip} ${h}") proxyHostnames);
-      shouldServeProxyDns = config.services.caddy.enable && proxyHostnames != [ ];
+      shouldServeProxyDns = proxyHostnames != [ ];
       hasStaticDnsTarget = proxy.dnsTarget != null;
 
       # Forward queries for the user's Tailscale MagicDNS suffix to tailscaled's
@@ -106,7 +103,7 @@ in
         # Caddy resolves hostname upstreams (e.g. *.ts.net) at startup via the
         # Pi's resolver, which is this container. Order Caddy after it so the
         # lookup doesn't race the resolver coming up.
-        systemd.services.caddy = lib.mkIf config.services.caddy.enable {
+        systemd.services.caddy = {
           after = [ "podman-pihole.service" ];
           wants = [ "podman-pihole.service" ];
         };
@@ -189,7 +186,7 @@ in
         # Pi-hole exposes its own Prometheus exporter and a community Grafana
         # dashboard. The Mac's monitoring module aggregates these via piConfig,
         # so this is the only place that knows about pihole-flavored monitoring.
-        services.prometheus.exporters.pihole = lib.mkIf monitoringEnabled {
+        services.prometheus.exporters.pihole = {
           enable = true;
           listenAddress = "0.0.0.0";
           port = 9617;
@@ -201,7 +198,7 @@ in
         # Translate the agenix-stored Pi-hole 6 admin password
         # (FTLCONF_webserver_api_password=…) into the PIHOLE_PASSWORD env var the
         # eko/pihole-exporter binary expects. Keeps us from re-keying secrets.
-        systemd.services.pihole-exporter-env = lib.mkIf monitoringEnabled {
+        systemd.services.pihole-exporter-env = {
           description = "Translate Pi-hole web password into PIHOLE_PASSWORD env";
           wantedBy = [ "prometheus-pihole-exporter.service" ];
           before = [ "prometheus-pihole-exporter.service" ];
@@ -220,12 +217,12 @@ in
         };
 
         systemd.services.prometheus-pihole-exporter.serviceConfig.EnvironmentFile =
-          lib.mkIf monitoringEnabled "/run/pihole-exporter/env";
+          "/run/pihole-exporter/env";
 
-        monitoring.exporters.pihole = lib.mkIf monitoringEnabled {
+        monitoring.exporters.pihole = {
           port = 9617;
         };
-        monitoring.dashboards.pihole = lib.mkIf monitoringEnabled {
+        monitoring.dashboards.pihole = {
           id = 10176;
           revision = 3;
           hash = "sha256-MB4J1WAqLlV2eMFG67sYUbhJk3g1LnfjU+iEWejgyKE=";

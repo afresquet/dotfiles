@@ -4,7 +4,6 @@
     {
       lib,
       config,
-      options,
       pkgs,
       ...
     }:
@@ -33,13 +32,9 @@
       # config.xml.
       # TODO: bazarr — uses a different config format (YAML, not XML), so it
       # needs its own key extractor before it can join arrExporters.
-      # Whether the monitoring aspect is on this host (it declares serverHost).
-      monitoringEnabled = lib.hasAttrByPath [ "monitoring" "serverHost" ] options;
-      prowlarrUrl =
-        if (options ? vpn) then
-          "http://${config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress}:${toString apps.prowlarr}"
-        else
-          "http://127.0.0.1:${toString apps.prowlarr}";
+      prowlarrUrl = "http://${
+        config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
+      }:${toString apps.prowlarr}";
       arrExporters = {
         radarr = {
           port = 9707;
@@ -70,6 +65,8 @@
     in
     {
       imports = [
+        self.modules.nixos.qbittorrent
+        self.modules.nixos.vpn
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
         ./monitoring/_nixos-options.nix
@@ -122,7 +119,7 @@
         # needs to reach them on the namespace's bridge side (192.168.15.5) to
         # push indexer config. Open just those ports on the wg-br interface so we
         # don't expose them anywhere else.
-        networking.firewall.interfaces.wg-br = lib.mkIf (options ? vpn) {
+        networking.firewall.interfaces.wg-br = {
           allowedTCPPorts = lib.attrValues (
             lib.filterAttrs (
               n: _:
@@ -203,7 +200,7 @@
             # attaching podman to the existing netns. Prowlarr's "FlareSolverr"
             # indexer proxy config keeps working unchanged (Byparr serves the
             # same API).
-            (lib.mkIf (options ? vpn) {
+            {
               byparr = {
                 image = "ghcr.io/thephaseless/byparr:latest";
                 autoStart = true;
@@ -217,15 +214,15 @@
                   "--cgroups=split"
                 ];
               };
-            })
+            }
           ];
         };
 
         users.users = lib.mkMerge [
           (lib.mapAttrs (_: _: { extraGroups = [ "media" ]; }) mediaApps)
-          (lib.optionalAttrs (options ? qbittorrent) {
+          {
             qbittorrent.extraGroups = [ "media" ];
-          })
+          }
           {
             # services.lidarr.enable is no longer set (we run the nightly
             # container instead), so the user it used to create must be declared
@@ -247,7 +244,7 @@
             # prowlarr is in the VPN namespace, so caddy must reach it via the
             # namespace's bridge IP rather than the host's 127.0.0.1.
             upstreamHost =
-              if (options ? vpn) && name == "prowlarr" then
+              if name == "prowlarr" then
                 config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
               else
                 "127.0.0.1";
@@ -305,7 +302,7 @@
               # Prowlarr is in the namespace, so homepage (on host) reaches it via
               # the bridge IP. Everything else is a host service.
               widgetHost =
-                if (options ? vpn) && name == "prowlarr" then
+                if name == "prowlarr" then
                   config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress
                 else
                   "127.0.0.1";
@@ -328,7 +325,7 @@
         # All systemd.services in this module are merged here so the dotted form
         # (foo.x = ...) and the dynamically-keyed mapAttrs' form can co-exist.
         systemd.services = lib.mkMerge [
-          (lib.mkIf (options ? vpn) {
+          {
             # Tie podman-byparr's lifecycle to wg.service.
             podman-byparr = {
               after = [ "wg.service" ];
@@ -343,42 +340,40 @@
               enable = true;
               vpnNamespace = config.vpn.namespace;
             };
-          })
+          }
 
           # Per-app key extractors for exportarr. requiredBy = hard dep,
           # RemainAfterExit defaults false → re-runs on each exporter start so a
           # re-keyed config.xml gets picked up.
-          (lib.mkIf monitoringEnabled (
-            lib.mapAttrs' (
-              appName: app:
-              lib.nameValuePair "exportarr-${appName}-key" {
-                description = "Extract API key for ${appName} exportarr";
-                requiredBy = [ "prometheus-exportarr-${appName}-exporter.service" ];
-                before = [ "prometheus-exportarr-${appName}-exporter.service" ];
-                # lidarr runs as a podman container (nightly branch for plugins),
-                # so the unit name is `podman-lidarr.service`, not `lidarr.service`.
-                after = [ (if appName == "lidarr" then "podman-lidarr.service" else "${appName}.service") ];
-                serviceConfig.Type = "oneshot";
-                script = ''
-                  install -d -m 0755 /run/exportarr
-                  for _ in $(seq 1 30); do
-                    [ -s "${app.configPath}" ] && break
-                    sleep 1
-                  done
-                  if [ ! -s "${app.configPath}" ]; then
-                    echo "${appName} config.xml not present at ${app.configPath}" >&2
-                    exit 1
-                  fi
-                  umask 077
-                  ${pkgs.gnugrep}/bin/grep -oP '(?<=<ApiKey>)[^<]+' "${app.configPath}" \
-                    > /run/exportarr/${appName}-key
-                '';
-              }
-            ) arrExporters
-          ))
+          (lib.mapAttrs' (
+            appName: app:
+            lib.nameValuePair "exportarr-${appName}-key" {
+              description = "Extract API key for ${appName} exportarr";
+              requiredBy = [ "prometheus-exportarr-${appName}-exporter.service" ];
+              before = [ "prometheus-exportarr-${appName}-exporter.service" ];
+              # lidarr runs as a podman container (nightly branch for plugins),
+              # so the unit name is `podman-lidarr.service`, not `lidarr.service`.
+              after = [ (if appName == "lidarr" then "podman-lidarr.service" else "${appName}.service") ];
+              serviceConfig.Type = "oneshot";
+              script = ''
+                install -d -m 0755 /run/exportarr
+                for _ in $(seq 1 30); do
+                  [ -s "${app.configPath}" ] && break
+                  sleep 1
+                done
+                if [ ! -s "${app.configPath}" ]; then
+                  echo "${appName} config.xml not present at ${app.configPath}" >&2
+                  exit 1
+                fi
+                umask 077
+                ${pkgs.gnugrep}/bin/grep -oP '(?<=<ApiKey>)[^<]+' "${app.configPath}" \
+                  > /run/exportarr/${appName}-key
+              '';
+            }
+          ) arrExporters)
         ];
 
-        vpnNamespaces = lib.mkIf (options ? vpn) {
+        vpnNamespaces = {
           ${config.vpn.namespace}.portMappings = [
             {
               from = 9696;
@@ -394,25 +389,21 @@
         # then loads it via systemd LoadCredential (apiKeyFile option). This avoids
         # a secret-per-app in agenix — the *arr apps already manage their keys.
 
-        services.prometheus.exporters = lib.mkIf monitoringEnabled (
-          lib.mapAttrs' (
-            appName: app:
-            lib.nameValuePair "exportarr-${appName}" {
-              enable = true;
-              listenAddress = "0.0.0.0";
-              inherit (app) port url;
-              apiKeyFile = "/run/exportarr/${appName}-key";
-            }
-          ) arrExporters
-        );
+        services.prometheus.exporters = lib.mapAttrs' (
+          appName: app:
+          lib.nameValuePair "exportarr-${appName}" {
+            enable = true;
+            listenAddress = "0.0.0.0";
+            inherit (app) port url;
+            apiKeyFile = "/run/exportarr/${appName}-key";
+          }
+        ) arrExporters;
 
-        monitoring.exporters = lib.mkIf monitoringEnabled (
-          lib.mapAttrs' (
-            appName: app: lib.nameValuePair "exportarr-${appName}" { inherit (app) port; }
-          ) arrExporters
-        );
+        monitoring.exporters = lib.mapAttrs' (
+          appName: app: lib.nameValuePair "exportarr-${appName}" { inherit (app) port; }
+        ) arrExporters;
 
-        monitoring.dashboards = lib.mkIf monitoringEnabled {
+        monitoring.dashboards = {
           # onedr0p/exportarr's bundled "all-in-one" dashboard for Prowlarr +
           # Radarr/Sonarr/Lidarr/Readarr (Sabnzbd panels stay empty since we
           # don't run it). Pinned by commit so future upstream changes don't

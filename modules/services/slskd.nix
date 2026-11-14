@@ -4,22 +4,20 @@
     {
       lib,
       config,
-      options,
       ...
     }:
     let
       cfg = config.slskd;
-      vpnEnabled = options ? vpn;
       # Per-service opt-out: VPN may be enabled globally but slskd specifically
       # runs on the host (e.g. trading privacy for inbound peer reachability,
       # since Mullvad doesn't port-forward).
-      useNamespace = vpnEnabled && cfg.useVpn;
+      useNamespace = cfg.useVpn;
       namespaceAddr =
         if useNamespace then config.vpnNamespaces.${config.vpn.namespace}.namespaceAddress else "127.0.0.1";
     in
     {
-      key = "self.modules.nixos.slskd";
       imports = [
+        self.modules.nixos.vpn
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
       ];
