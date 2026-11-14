@@ -28,6 +28,7 @@ in
         };
         targets = {
           helix.enable = false;
+          rofi.enable = false;
         };
       };
     };
