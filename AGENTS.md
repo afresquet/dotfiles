@@ -76,12 +76,13 @@ live. Directories are only organisation: moving a file changes nothing.
 ```
 flake.nix               inputs; outputs = mkFlake (import-tree ./modules)
 modules/
-  flake/                the frame: systems, formatter, packages + overlays,
-                        apps, the darwinConfigurations output
+  flake/                the frame: systems, flake.modules (keyed), formatter,
+                        packages + overlays, apps, darwinConfigurations
   meta.nix              flake-level values any file can read (tailnet,
                         wallpaper, SSH public keys)
-  roles/                aspects that are sets of other aspects: nixos.base,
-                        nixos.desktop, homeManager.{base,desktop,linux-desktop}
+  roles/                aspects that are sets of other aspects:
+                        nixos.{base,desktop,server}, darwin.base,
+                        homeManager.{base,desktop,linux-desktop}
   hosts/<host>.nix      one machine: its system and home configurations
   hosts/_<host>/        its non-module files (hardware config, Home
                         Assistant packages, the Pi's runbook)
@@ -127,23 +128,26 @@ which publishes a module for each platform it touches through flake-parts'
   `modules/hosts/<host>.nix` (they are written inside
   `with self.modules.<class>; [ ... ]`, so just its name), or to a role in
   `modules/roles/` when every host of that role should have it.
-- **Dependencies**: an aspect that can't work without another imports it
-  (`tilth` imports `skills`, whose option it sets; `hyprland` imports the
-  terminal and browser its keybinds launch; Pi services import `caddy` and
-  `dashboard` to contribute to them). flake-parts sets no `key` on the modules
-  it publishes, so an aspect imported from more than one place carries
-  `key = "self.modules.<class>.<name>";`, which makes the module system
-  evaluate it once. Without it a second import defines everything twice
-  (duplicate list entries, conflicting values).
-- **Integrations** (do X only when the host also has Y) test whether Y's
-  options exist, never Y's config: auto-upgrade reports through Telegram when
-  the agent-telegram aspect is there (`default = options ? agentTelegram;`),
-  Pi services contribute exporters when the monitoring aspect is there
-  (`lib.hasAttrByPath [ "monitoring" "serverHost" ] options`) and run in the
-  VPN namespace when the vpn aspect is there (`options ? vpn`). Options are
-  fixed by the imports alone, so these checks can decide what a module
-  defines; reading `config.services.foo.enable` from a module that defines
-  the same attrset is infinite recursion.
+- **Import as often as you like.** `modules/flake/flake-parts.nix` declares
+  `flake.modules` itself (flake-parts' own `flakeModules.modules`, at the
+  pinned revision, leaves the module `key` as a TODO) and publishes every
+  aspect with `key = "flake.modules.<class>.<name>"`, so the module system
+  evaluates an aspect once however many roles, aspects and hosts import it.
+  Aspect files never set a `key`.
+- **Dependencies**: an aspect imports what it needs or is always used with.
+  `tilth` imports `skills`, whose option it sets; `hyprland` imports the
+  terminal, browser, lock screen, OSD, notification centre and clipboard
+  history its keybinds drive; `waybar` imports `swaync`, `swaync` imports
+  `wlogout`; `bash` and `zsh` import `nushell`, which they hand off to; Pi
+  services import `caddy` and `dashboard` to contribute to them; qbittorrent,
+  slskd, arr and explo import `vpn` (they only ever run confined), explo
+  imports `slskd` and arr imports `qbittorrent`.
+- **Optional integrations** are their own small aspect that imports both
+  sides and wires them together, and a host includes it. No aspect checks
+  whether another is present (no `options ? x`, no
+  `config.services.x.enable` guards): `auto-upgrade-telegram` imports
+  `auto-upgrade` and `agent-telegram` and turns on the upgrade messages; the
+  desktops have auto-upgrade without a bot and don't import it.
 - **Values an aspect's platforms share** go in the file's `let` (the
   tailscale options module, the issue agent's webhook port, the Helix settings
   that also build the `hx` package).
@@ -175,12 +179,15 @@ which publishes a module for each platform it touches through flake-parts'
 |--------|---------|---------|
 | `nixos.base` | allowed-unfree, primary-user, auto-upgrade, avahi, bluetooth, ssh, tailscale; the overlays | every NixOS host |
 | `nixos.desktop` | `base`, GUI programs, gaming, audio, SDDM, Hyprland, ... | desktop, laptop |
+| `nixos.server` | `base`, pihole, caddy, dashboard, monitoring | the Pi (its apps are listed in its host file) |
+| `darwin.base` | Determinate Nix and its shared settings, the overlays, stateVersion and platform | both Macs |
 | `homeManager.base` | terminal tooling, shells, dotfiles-sync | every home, the Pi included |
 | `homeManager.desktop` | `base`, Stylix, alacritty, kitty, insomnia | every graphical home, Macs included |
 | `homeManager.linux-desktop` | `desktop`, Hyprland and its programs, auto-upgrade | desktop, laptop |
 
-Defined but imported by nothing today: fish, eza, gitui, mako,
-apprenticevr, kanata, ollama, lutris, bottles, nautilus.
+`darwin.base` holds only what both Macs actually run: Tailscale,
+auto-upgrade, the Telegram bot and agenix secrets are the Mac mini's, listed
+in its host file; the work MacBook is updated by hand.
 
 ### Hosts
 
@@ -229,14 +236,16 @@ other's internals:
 | `monitoring.dashboards.<name>` | `services/monitoring/_nixos-options.nix` | Grafana dashboard provisioning |
 
 A contributor imports the aspect that declares the option
-(`self.modules.nixos.caddy`, `self.modules.nixos.dashboard`; both carry a
-`key`) or, for monitoring, the options file by path
-(`./monitoring/_nixos-options.nix`), never the monitoring aspect itself: that
-one runs the exporters and imports caddy and dashboard. Gate monitoring
-contributions on `lib.hasAttrByPath [ "monitoring" "serverHost" ] options`
-(the monitoring aspect declares `serverHost`). The Mac mini builds its
-Prometheus and Grafana provisioning from the Pi's evaluated options, so a new
-exporter or dashboard is a one-file change on the Pi side.
+(`self.modules.nixos.caddy`, `self.modules.nixos.dashboard`) or, for
+monitoring, the options file by path (`./monitoring/_nixos-options.nix`),
+never the monitoring aspect itself: that one runs the node exporter, Alloy
+and the firewall holes, and imports caddy and dashboard. A service's metrics
+are part of the service: it always runs its exporter and declares its
+`monitoring.exporters` / `monitoring.dashboards` entries, unconditionally,
+like its vhost; the monitoring aspect (in the `server` role) and the Mac
+mini consume them. The Mac mini builds its Prometheus and Grafana
+provisioning from the Pi's evaluated options, so a new exporter or dashboard
+is a one-file change on the Pi side.
 
 ### Workspaces
 

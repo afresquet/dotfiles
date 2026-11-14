@@ -22,8 +22,11 @@ and `flake.nix` only lists inputs.
   agent) publishing a module per platform it touches as
   `flake.modules.{nixos,darwin,homeManager}.<name>`. There are no enable
   options: a machine has an aspect because its configuration imports it.
+  Aspects import what they depend on; optional pairings are small
+  integration aspects of their own (`auto-upgrade-telegram`).
 - `modules/roles/` holds aspects that group others: `nixos.base`,
-  `nixos.desktop`, `homeManager.base` (every home, the Pi included),
+  `nixos.desktop`, `nixos.server` (the Pi's infrastructure), `darwin.base`
+  (both Macs), `homeManager.base` (every home, the Pi included),
   `homeManager.desktop` (every graphical home) and
   `homeManager.linux-desktop` (Hyprland).
 - `modules/hosts/<host>.nix` builds a machine's system and home
