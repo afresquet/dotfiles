@@ -85,14 +85,21 @@
       };
 
       config = {
-        monitoring._activationDirs = [
-          cfg.lokiDataDir
-          "${cfg.lokiDataDir}/chunks"
-          "${cfg.lokiDataDir}/rules"
-          "${cfg.lokiDataDir}/compactor"
-        ];
+        monitoring.daemons.loki = {
+          uid = 482;
+          dirs = [
+            cfg.lokiDataDir
+            "${cfg.lokiDataDir}/chunks"
+            "${cfg.lokiDataDir}/rules"
+            "${cfg.lokiDataDir}/compactor"
+          ];
+          logs = [
+            "/var/log/loki.log"
+            "/var/log/loki.err"
+          ];
+        };
 
-        monitoring._datasources.loki = pkgs.writeText "loki-datasource.yaml" ''
+        monitoring.datasources.loki = pkgs.writeText "loki-datasource.yaml" ''
           apiVersion: 1
           deleteDatasources:
             - { name: Loki, orgId: 1 }
@@ -106,6 +113,8 @@
 
         launchd.daemons.loki.serviceConfig = {
           Label = "com.grafana.loki";
+          UserName = "loki";
+          GroupName = "loki";
           # See wait4path rationale on the prometheus daemon.
           ProgramArguments =
             let

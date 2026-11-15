@@ -108,9 +108,16 @@
       };
 
       config = {
-        monitoring._activationDirs = [ cfg.prometheusDataDir ];
+        monitoring.daemons.prometheus = {
+          uid = 480;
+          dirs = [ cfg.prometheusDataDir ];
+          logs = [
+            "/var/log/prometheus.log"
+            "/var/log/prometheus.err"
+          ];
+        };
 
-        monitoring._datasources.prometheus = pkgs.writeText "prometheus-datasource.yaml" ''
+        monitoring.datasources.prometheus = pkgs.writeText "prometheus-datasource.yaml" ''
           apiVersion: 1
           # Drop any pre-existing entry first; if it was provisioned before we
           # pinned a UID, Grafana refuses to update it ("data source not found"
@@ -128,6 +135,8 @@
 
         launchd.daemons.prometheus.serviceConfig = {
           Label = "com.prometheus.prometheus";
+          UserName = "prometheus";
+          GroupName = "prometheus";
           # /bin/sh + wait4path wrapper: Determinate Nix mounts /nix from its
           # own APFS volume via a separate launchd job, so at boot xpcproxy
           # can hit ENOENT on the /nix/store binary, exit 78 instantly, and

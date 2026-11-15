@@ -148,7 +148,7 @@
         # yaml and data dirs through these, so each daemon's wiring stays in its
         # own file.
 
-        _datasources = lib.mkOption {
+        datasources = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
           default = { };
           internal = true;
@@ -158,13 +158,37 @@
           '';
         };
 
-        _activationDirs = lib.mkOption {
-          type = lib.types.listOf lib.types.str;
-          default = [ ];
+        daemons = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                uid = lib.mkOption {
+                  type = lib.types.int;
+                  description = ''
+                    uid and gid of the daemon's user and group. Below 500 so macOS
+                    keeps it off the login window, like its own daemon accounts.
+                  '';
+                };
+                dirs = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [ ];
+                  description = "Directories created at activation and owned by the daemon.";
+                };
+                logs = lib.mkOption {
+                  type = lib.types.listOf lib.types.str;
+                  default = [ ];
+                  description = "The daemon's StandardOutPath/StandardErrorPath, owned by it.";
+                };
+              };
+            }
+          );
+          default = { };
           internal = true;
           description = ''
-            Paths each daemon file needs `mkdir -p`'d at activation; one
-            `install -d` block below creates them all.
+            One hidden system user and group per daemon, keyed by the name its
+            launchd UserName/GroupName uses. They listen on the tailnet, so a hole
+            in one of them shouldn't come with root and the Nix signing key the
+            Pis trust.
           '';
         };
       };
@@ -176,7 +200,10 @@
 
         # HA's long-lived access token; Prometheus reads it via bearer_token_file
         # in the home-assistant scrape job (see prometheus.nix).
-        age.secrets.home-assistant-llat.file = ../../../secrets/home-assistant-llat.age;
+        age.secrets.home-assistant-llat = {
+          file = ../../../secrets/home-assistant-llat.age;
+          owner = "prometheus";
+        };
 
         # Grafana admin password; read by `export-grafana-dashboard` to round-trip
         # UI edits via the Grafana HTTP API.
@@ -187,11 +214,41 @@
         # mac-mini host config because it's only useful where Grafana runs.
         environment.systemPackages = [ pkgs.export-grafana-dashboard ];
 
-        # Single postActivation block aggregates each daemon's data dirs.
+        users = {
+          knownUsers = lib.attrNames cfg.daemons;
+          knownGroups = lib.attrNames cfg.daemons;
+          users = lib.mapAttrs (name: d: {
+            inherit (d) uid;
+            gid = d.uid;
+            description = name;
+            home = "/var/empty";
+            shell = "/usr/bin/false";
+            isHidden = true;
+          }) cfg.daemons;
+          groups = lib.mapAttrs (name: d: {
+            gid = d.uid;
+            description = name;
+          }) cfg.daemons;
+        };
+
         # Hooked into the wired-in `postActivation` slot because nix-darwin
-        # doesn't reliably run custom slots.
+        # doesn't reliably run custom slots; it runs after the users slot, so the
+        # owners exist. Data written back when the daemons ran as root is handed
+        # over once, when a directory isn't the daemon's yet.
         system.activationScripts.postActivation.text = lib.mkAfter (
-          lib.concatMapStringsSep "\n" (d: "install -d -m 0755 ${d}") cfg._activationDirs
+          lib.concatStrings (
+            lib.mapAttrsToList (
+              name: d:
+              lib.concatMapStrings (dir: ''
+                install -d -m 0755 -o ${name} -g ${name} ${dir}
+                [ "$(stat -f %u ${dir})" = ${toString d.uid} ] || chown -R ${name}:${name} ${dir}
+              '') d.dirs
+              + lib.concatMapStrings (log: ''
+                touch ${log}
+                chown ${name}:${name} ${log}
+              '') d.logs
+            ) cfg.daemons
+          )
         );
       };
     };

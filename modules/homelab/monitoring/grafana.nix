@@ -105,7 +105,7 @@
         lib.mapAttrsToList (key: path: {
           name = "datasources/${key}.yaml";
           inherit path;
-        }) cfg._datasources
+        }) cfg.datasources
         ++ [
           {
             name = "dashboards/dashboards.yaml";
@@ -151,14 +151,24 @@
       };
 
       config = {
-        monitoring._activationDirs = [
-          "${cfg.grafanaDataDir}/data"
-          "${cfg.grafanaDataDir}/logs"
-          "${cfg.grafanaDataDir}/plugins"
-        ];
+        monitoring.daemons.grafana = {
+          uid = 481;
+          dirs = [
+            cfg.grafanaDataDir
+            "${cfg.grafanaDataDir}/data"
+            "${cfg.grafanaDataDir}/logs"
+            "${cfg.grafanaDataDir}/plugins"
+          ];
+          logs = [
+            "/var/log/grafana.log"
+            "/var/log/grafana.err"
+          ];
+        };
 
         launchd.daemons.grafana.serviceConfig = {
           Label = "com.grafana.grafana";
+          UserName = "grafana";
+          GroupName = "grafana";
           # See wait4path rationale on the prometheus daemon.
           ProgramArguments =
             let
