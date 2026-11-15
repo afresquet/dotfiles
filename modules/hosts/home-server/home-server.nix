@@ -75,7 +75,8 @@ in
             # (Jellyfin 10.11 on stable vs 12.x here). Take them from the unstable
             # `nixpkgs` input instead. Not safe to drop until stable catches up: these
             # apps migrate their databases forward, and going back to stable's older
-            # versions would downgrade them.
+            # versions would downgrade them. pihole-exporter is here for 1.3's fix
+            # of scrapes that stall after one times out (stable has 1.2).
             (
               final: _:
               let
@@ -86,6 +87,7 @@ in
                   bazarr
                   grafana-alloy
                   jellyfin
+                  prometheus-pihole-exporter
                   prowlarr
                   qbittorrent-nox
                   radarr

@@ -69,6 +69,24 @@
         monitoring.exporters.wireguard.port = exporterPort;
 
         monitoring.dashboards.wireguard.json = wireguardDashboardJson;
+
+        # The confined services fail closed, so a dead tunnel never leaks: it
+        # just stalls downloads silently. These make it loud.
+        monitoring.alerts = {
+          # WireGuard re-handshakes every 2 minutes while traffic flows; peers
+          # stop accepting packets 3 minutes after the last one.
+          vpn-handshake = {
+            title = "VPN tunnel down";
+            expr = "wireguard_latest_handshake_delay_seconds > 300";
+            description = "No WireGuard handshake with Mullvad for over 5 minutes: qBittorrent, Prowlarr and slskd are offline. Check `journalctl -u wg` on the Pi.";
+          };
+          # The exporter lives in the namespace and stops with it.
+          vpn-namespace = {
+            title = "VPN namespace down";
+            expr = ''up{job="wireguard"} == 0'';
+            description = "The wireguard exporter is unreachable: wg.service is probably stopped, which stops every confined service with it (or the whole Pi is down). Check `systemctl status wg` on the Pi.";
+          };
+        };
       };
     };
 }

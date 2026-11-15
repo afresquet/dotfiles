@@ -23,6 +23,7 @@ in
             screensharing
             tailscale
             monitoring
+            monitoring-telegram
             auto-upgrade-telegram
             github-agent
           ];

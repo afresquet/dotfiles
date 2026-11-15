@@ -112,6 +112,43 @@
             `revision`, or from any direct `url`, or from a local `json` path.
           '';
         };
+
+        alerts = lib.mkOption {
+          type = lib.types.attrsOf (
+            lib.types.submodule {
+              options = {
+                title = lib.mkOption {
+                  type = lib.types.str;
+                  description = "What the alert says when it fires.";
+                };
+                expr = lib.mkOption {
+                  type = lib.types.str;
+                  example = ''up{job="wireguard"} == 0'';
+                  description = ''
+                    PromQL that returns series only while something is wrong:
+                    each series it returns is a firing alert, an empty result
+                    is fine.
+                  '';
+                };
+                for = lib.mkOption {
+                  type = lib.types.str;
+                  default = "5m";
+                  description = "How long `expr` must keep returning a series before the alert fires.";
+                };
+                description = lib.mkOption {
+                  type = lib.types.str;
+                  default = "";
+                  description = "What it means and what to look at, sent with the alert.";
+                };
+              };
+            }
+          );
+          default = { };
+          description = ''
+            Alert rules the upstream Grafana should provision. Service modules
+            contribute their own, next to their exporter.
+          '';
+        };
       };
     };
 }

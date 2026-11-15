@@ -99,13 +99,77 @@
         }) piDashboards
       );
 
-      # Combine each daemon file's contributed datasource yaml + the dashboards
-      # provider config into one provisioning tree Grafana can scan.
+      # The Pi's alerts, as one rule group. Each query is turned into a series
+      # of 1s with the same labels (`* 0 + 1`), so the threshold just checks a
+      # series exists, whatever value the expression returns (`up == 0` is 0),
+      # and each series alerts separately. No data is the healthy state.
+      alertRules = pkgs.writeText "alert-rules.yaml" (
+        builtins.toJSON {
+          apiVersion = 1;
+          groups = [
+            {
+              orgId = 1;
+              name = "home-server";
+              folder = "Home Server";
+              interval = "1m";
+              rules = lib.mapAttrsToList (uid: a: {
+                inherit uid;
+                inherit (a) title for;
+                condition = "B";
+                data = [
+                  {
+                    refId = "A";
+                    relativeTimeRange = {
+                      from = 600;
+                      to = 0;
+                    };
+                    datasourceUid = "prometheus";
+                    model = {
+                      refId = "A";
+                      expr = "(${a.expr}) * 0 + 1";
+                      instant = true;
+                    };
+                  }
+                  {
+                    refId = "B";
+                    datasourceUid = "__expr__";
+                    model = {
+                      refId = "B";
+                      type = "threshold";
+                      expression = "A";
+                      conditions = [
+                        {
+                          evaluator.type = "gt";
+                          evaluator.params = [ 0 ];
+                        }
+                      ];
+                    };
+                  }
+                ];
+                noDataState = "OK";
+                execErrState = "Error";
+                annotations = {
+                  summary = a.title;
+                  inherit (a) description;
+                };
+              }) (piConfig.monitoring.alerts or { });
+            }
+          ];
+        }
+      );
+
+      # Combine each daemon file's contributed datasource yaml, the alerting
+      # files and the dashboards provider config into one provisioning tree
+      # Grafana can scan.
       grafanaProvisioning = pkgs.linkFarm "grafana-provisioning" (
         lib.mapAttrsToList (key: path: {
           name = "datasources/${key}.yaml";
           inherit path;
         }) cfg.datasources
+        ++ lib.mapAttrsToList (key: path: {
+          name = "alerting/${key}.yaml";
+          inherit path;
+        }) (cfg.grafanaAlerting // { rules = alertRules; })
         ++ [
           {
             name = "dashboards/dashboards.yaml";
@@ -145,9 +209,32 @@
       '';
     in
     {
-      options.monitoring.grafanaDataDir = lib.mkOption {
-        type = lib.types.str;
-        default = "/var/lib/grafana";
+      options.monitoring = {
+        grafanaDataDir = lib.mkOption {
+          type = lib.types.str;
+          default = "/var/lib/grafana";
+        };
+
+        grafanaAlerting = lib.mkOption {
+          type = lib.types.attrsOf lib.types.path;
+          default = { };
+          internal = true;
+          description = ''
+            Extra alerting provisioning files (contact points, notification
+            policies), keyed by base filename (`alerting/<key>.yaml`).
+          '';
+        };
+
+        grafanaEnvironmentFiles = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
+          default = [ ];
+          internal = true;
+          description = ''
+            `KEY=value` files loaded into Grafana's environment at start, for
+            provisioning files to reference as `''${KEY}`. Grafana waits for
+            each to exist, since agenix decrypts them at boot.
+          '';
+        };
       };
 
       config = {
@@ -177,10 +264,18 @@
             [
               "/bin/sh"
               "-c"
-              ''
-                /bin/wait4path "$0"
-                exec "$0" "$@"
-              ''
+              (
+                ''
+                  /bin/wait4path "$0"
+                ''
+                + lib.concatMapStrings (f: ''
+                  /bin/wait4path ${f}
+                  set -a; . ${f}; set +a
+                '') cfg.grafanaEnvironmentFiles
+                + ''
+                  exec "$0" "$@"
+                ''
+              )
               exe
               "server"
               "--config=${grafanaConfig}"
