@@ -1,4 +1,12 @@
-{ inputs, self, ... }:
+{
+  inputs,
+  self,
+  config,
+  ...
+}:
+let
+  inherit (config) meta;
+in
 {
   flake.modules.nixos.auto-upgrade =
     {
@@ -33,7 +41,7 @@
       options.autoUpgrade = {
         flake = lib.mkOption {
           type = lib.types.str;
-          default = "github:afresquet/dotfiles";
+          default = meta.repo;
           description = ''
             Flake to rebuild from. GitHub's main rather than the local checkout:
             the flake-update workflow only commits a flake.lock once every host
@@ -136,7 +144,7 @@
       options.autoUpgrade = {
         flake = lib.mkOption {
           type = lib.types.str;
-          default = "github:afresquet/dotfiles";
+          default = meta.repo;
           description = ''
             Flake to rebuild from. GitHub's main rather than the local checkout:
             the flake-update workflow only commits a flake.lock once every host
@@ -299,7 +307,7 @@
 
         flake = lib.mkOption {
           type = lib.types.str;
-          default = "github:afresquet/dotfiles";
+          default = meta.repo;
           description = ''
             Flake to switch from. GitHub's main rather than the local checkout:
             the flake-update workflow only commits a flake.lock once every

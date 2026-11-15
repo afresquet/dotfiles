@@ -239,7 +239,8 @@ unstable).
   `config.meta.<name>` from the flake-parts `config` the file receives. Bind
   it in the file's `let` (`inherit (config) meta;`), because a module's own
   `config` argument shadows it. Today: `meta.tailnet` (MagicDNS suffix),
-  `meta.wallpaper`, `meta.keys`.
+  `meta.repo` (the GitHub flake nh and auto-upgrade use), `meta.wallpaper`,
+  `meta.keys`.
 - **Between configurations**: through `self`. The Mac mini's monitoring
   reads `self.nixosConfigurations.Home-Server.config` as `piConfig`; NixOS
   hosts' home configs read their system's `allowedUnfree`.
