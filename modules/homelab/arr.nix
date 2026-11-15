@@ -275,6 +275,20 @@
         # All systemd.services in this module are merged here so the dotted form
         # (foo.x = ...) and the dynamically-keyed mapAttrs' form can co-exist.
         systemd.services = lib.mkMerge [
+          # The library is shared through the media group, but the nixpkgs
+          # modules pin umask 0022 (hence mkForce): Sonarr and Radarr created
+          # show and movie folders 0755, so Bazarr couldn't write subtitles
+          # into them (Errno 13). Group-writable instead, like Lidarr's UMASK.
+          (lib.genAttrs
+            [
+              "sonarr"
+              "radarr"
+              "bazarr"
+            ]
+            (_: {
+              serviceConfig.UMask = lib.mkForce "0002";
+            })
+          )
           {
             # Confine prowlarr (the only native service that touches public
             # indexer sites) to the VPN namespace.
