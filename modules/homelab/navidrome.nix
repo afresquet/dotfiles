@@ -7,6 +7,7 @@
     in
     {
       imports = [
+        self.modules.nixos.media-group
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
       ];
@@ -30,7 +31,6 @@
       };
 
       config = {
-        users.groups.media = { };
         users.users.navidrome.extraGroups = [ "media" ];
 
         services.navidrome = {

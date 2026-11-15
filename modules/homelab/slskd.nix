@@ -14,6 +14,7 @@
     {
       imports = [
         self.modules.nixos.vpn
+        self.modules.nixos.media-group
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
       ];
@@ -99,14 +100,27 @@
       };
 
       config = {
-        users.groups.media = { };
+        # The image runs as root unless given --user, and a Soulseek client
+        # talks to strangers all day. Its own account instead, with media as
+        # its group so what it downloads is the library's to move. Static
+        # because the container needs the number at evaluation time.
+        users.users.slskd = {
+          isSystemUser = true;
+          uid = 401;
+          group = "media";
+          home = cfg.dataDir;
+          description = "slskd";
+        };
 
         systemd.tmpfiles.rules = [
-          "d ${cfg.dataDir}      0755 root root  -"
+          "d ${cfg.dataDir}      0755 slskd media -"
+          # Takes over what it wrote back when it ran as root.
+          "Z ${cfg.dataDir}      -    slskd media -"
           # Setgid + media group so anything Explo/Lidarr later hardlinks out of
           # here keeps a sensible group. Same shape as /mnt/hdd/downloads/torrents.
-          "d ${cfg.downloadsDir} 2775 root media -"
-          "d ${cfg.incompleteDir} 2775 root media -"
+          # What's already inside is group-writable (umask 0002 below).
+          "d ${cfg.downloadsDir} 2775 slskd media -"
+          "d ${cfg.incompleteDir} 2775 slskd media -"
         ];
 
         virtualisation.podman = {
@@ -157,6 +171,9 @@
               (if useNamespace then "--network=ns:/var/run/netns/${config.vpn.namespace}" else "--network=host")
               "--dns=1.1.1.1"
               "--cgroups=split"
+              # The entrypoint's --user mode: no usermod or chown, it just sets
+              # SLSKD_UMASK and execs slskd as this uid and gid.
+              "--user=${toString config.users.users.slskd.uid}:${toString config.users.groups.media.gid}"
             ];
           };
         };

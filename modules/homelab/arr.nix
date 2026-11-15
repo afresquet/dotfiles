@@ -67,6 +67,8 @@
       imports = [
         self.modules.nixos.qbittorrent
         self.modules.nixos.vpn
+        self.modules.nixos.media-group
+        self.modules.nixos.podman-userns
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
         self.modules.nixos.monitoring-options
@@ -81,13 +83,6 @@
       };
 
       config = {
-        # Pin the gid so the linuxserver/lidarr:nightly container can join this
-        # group via podman's `--group-add=<numeric>` flag (the image has no entry
-        # for "media" in /etc/group, so the name form wouldn't resolve inside).
-        # 984 is the gid the dynamic assignment landed on with this module
-        # active — pinning here just freezes the existing value, no chown needed.
-        users.groups.media.gid = 984;
-
         systemd.tmpfiles.rules = [
           "d ${cfg.dataRoot}/downloads             2775 root media -"
           "d ${cfg.dataRoot}/downloads/torrents    2775 root media -"
@@ -209,6 +204,10 @@
                   "--network=ns:/var/run/netns/${config.vpn.namespace}"
                   "--dns=1.1.1.1"
                   "--cgroups=split"
+                  # The image runs as uid 1000, which is the primary user on the
+                  # host. Byparr drives a browser against hostile sites and keeps
+                  # no state, so give it a throwaway uid range instead.
+                  "--userns=auto"
                 ];
               };
             }

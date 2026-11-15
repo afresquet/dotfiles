@@ -70,6 +70,22 @@ in
       config = {
         age.secrets.pihole-webpassword.file = ../../secrets/pihole-webpassword.age;
 
+        # The image's own default uid is 1000, the primary user on the host
+        # (rootful podman, no user namespace), which would let a compromised
+        # DNS server act as that user. Its own account instead; static because
+        # the container needs the number at evaluation time. 400 is below the
+        # dynamic system range and unused by nixpkgs' ids.nix.
+        users = {
+          users.pihole = {
+            isSystemUser = true;
+            group = "pihole";
+            uid = 400;
+            home = cfg.dataDir;
+            description = "Pi-hole";
+          };
+          groups.pihole.gid = 400;
+        };
+
         # Free port 53 so the container can bind it.
         services.resolved.enable = false;
 
@@ -80,10 +96,11 @@ in
 
         systemd.tmpfiles.rules = [
           "d ${cfg.dataDir} 0755 root root -"
-          "d ${cfg.dataDir}/etc-pihole 0755 1000 1000 -"
-          # Pi-hole v6 runs as UID/GID 1000 by default and needs to update
-          # gravity.db. Also repair files created by older root-running images.
-          "Z ${cfg.dataDir}/etc-pihole - 1000 1000 -"
+          "d ${cfg.dataDir}/etc-pihole 0755 pihole pihole -"
+          # FTL runs as PIHOLE_UID/PIHOLE_GID and needs to update gravity.db.
+          # Also takes over files left by the image's default uid 1000 (the
+          # primary user) and by older root-running images.
+          "Z ${cfg.dataDir}/etc-pihole - pihole pihole -"
           "d ${cfg.dataDir}/etc-dnsmasq.d 0755 root root -"
           # Force-copy the tailnet forwarder snippet into the dnsmasq.d bind mount
           # on every activation. The container reads it on startup; the
@@ -256,8 +273,8 @@ in
             ];
             environment = {
               TZ = config.time.timeZone;
-              PIHOLE_UID = "1000";
-              PIHOLE_GID = "1000";
+              PIHOLE_UID = toString config.users.users.pihole.uid;
+              PIHOLE_GID = toString config.users.groups.pihole.gid;
               FTLCONF_dns_upstreams = lib.concatStringsSep ";" cfg.upstreamDns;
               FTLCONF_dns_listeningMode = "all";
               # Pi-hole 6 ignores /etc/dnsmasq.d/*.conf unless this is on. Without

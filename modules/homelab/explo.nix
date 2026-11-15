@@ -14,6 +14,7 @@
       imports = [
         self.modules.nixos.slskd
         self.modules.nixos.vpn
+        self.modules.nixos.media-group
         inputs.agenix.nixosModules.default
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
@@ -57,14 +58,26 @@
       config = {
         age.secrets.explo-env.file = ../../secrets/explo-env.age;
 
-        users.groups.media = { };
+        # The image runs everything as root unless PUID/PGID are set. Its own
+        # account instead, with media as its group so navidrome can read what it
+        # downloads. Static because the container needs the number at
+        # evaluation time.
+        users.users.explo = {
+          isSystemUser = true;
+          uid = 402;
+          group = "media";
+          home = cfg.dataDir;
+          description = "Explo";
+        };
 
         systemd.tmpfiles.rules = [
-          "d ${cfg.dataDir}        0755 root root  -"
-          "d ${cfg.dataDir}/config 0755 root root  -"
-          # 2775 root:media + setgid so files Explo writes inherit the media group
-          # → navidrome can read them via its media-group membership.
-          "d ${cfg.musicDir}       2775 root media -"
+          "d ${cfg.dataDir}        0755 explo media -"
+          "d ${cfg.dataDir}/config 0755 explo media -"
+          # Takes over what it wrote back when it ran as root.
+          "Z ${cfg.dataDir}        -    explo media -"
+          # Setgid so files Explo writes inherit the media group → navidrome can
+          # read them via its media-group membership.
+          "d ${cfg.musicDir}       2775 explo media -"
         ];
 
         virtualisation.podman = {
@@ -78,11 +91,10 @@
             inherit (cfg) image;
             autoStart = true;
             volumes = [
-              # Container-private state: :U lets podman chown to the container's
-              # UID on first start (safe — only Explo touches this tree).
-              "${cfg.dataDir}/config:/opt/explo/config:U"
-              # Shared with navidrome — NO :U. Explo writes as its container UID;
-              # the setgid+media-group on the parent dir keeps the group right.
+              # Container-private state, owned by explo through tmpfiles above.
+              "${cfg.dataDir}/config:/opt/explo/config"
+              # Shared with navidrome. Explo writes as PUID; the setgid+media
+              # group on the dir keeps the group right.
               "${cfg.musicDir}:/data"
             ]
             # MIGRATE_DOWNLOADS=true moves files from slskd's download dir into
@@ -93,6 +105,11 @@
             environmentFiles = [ config.age.secrets.explo-env.path ];
             environment = {
               TZ = config.time.timeZone;
+              # start.sh remaps its explo user to these and runs the web UI and
+              # explo through su-exec. Only crond and the yt-dlp self-update
+              # stay root inside the container.
+              PUID = toString config.users.users.explo.uid;
+              PGID = toString config.users.groups.media.gid;
               WEB_UI = "true";
               # Navidrome speaks the Subsonic API.
               EXPLO_SYSTEM = "subsonic";
