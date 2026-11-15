@@ -28,11 +28,12 @@ in
           local = "${config.home.homeDirectory}/dotfiles";
         in
         {
-          noss = "${nh} os switch ${repo}";
-          nost = "${nh} os test ${repo}";
-          nosb = "${nh} os boot ${repo}";
-          ndws = "${nh} darwin switch ${repo}";
-          nhms = "${nh} home switch ${repo}";
+          # nix caches the GitHub tarball; --refresh makes it fetch the latest commit.
+          noss = "${nh} os switch ${repo} -- --refresh";
+          nost = "${nh} os test ${repo} -- --refresh";
+          nosb = "${nh} os boot ${repo} -- --refresh";
+          ndws = "${nh} darwin switch ${repo} -- --refresh";
+          nhms = "${nh} home switch ${repo} -- --refresh";
           # The same against the local checkout, to try changes before pushing them.
           nossl = "${nh} os switch ${local}";
           nostl = "${nh} os test ${local}";
