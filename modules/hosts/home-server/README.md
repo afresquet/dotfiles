@@ -448,48 +448,6 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
   → Jellyfin picks up via real-time monitoring
 ```
 
-## 15. Issue agent
-
-Opens PRs for GitHub issues labelled `agent` (the CI workflows label theirs)
-and sends them over Telegram; you review and merge on GitHub. It acts as a
-GitHub App, so its PRs and commits show as `<app>[bot]`, not you. It runs as
-the `issue-agent` user service, started by the app's webhook (delivered
-through a Tailscale Funnel), with an hourly check as fallback. It only
-evaluates, never builds: CI builds the PR.
-
-1. **GitHub App.** Settings → Developer settings → GitHub Apps → New.
-   Repository permissions *Contents*, *Issues*, *Pull requests* read and
-   write, *Actions* read; installable only on this account. Generate a
-   private key, then install the app on the dotfiles repo only. Put the App
-   ID in `issueAgent.appId` (`home.nix`) and the `.pem` contents in
-   `agenix -e github-agent.age` (run in `secrets/`, like the others below).
-2. **Secrets.** `agenix -e github-webhook.age` with a random webhook secret
-   on one line (e.g. from `openssl rand -hex 32`), and
-   `agenix -e telegram-github.age` with the GitHub notifications bot's
-   `TELEGRAM_BOT_TOKEN=` and `TELEGRAM_CHAT_ID=` lines (the values of the
-   repo's Actions secrets). `git add` all three.
-3. **Tailscale.** The policy must grant this node `funnel` (`nodeAttrs`;
-   it does for `autogroup:member`), and the tailnet needs HTTPS certificates
-   (DNS page → HTTPS Certificates). The `issue-agent-funnel` service then
-   exposes only `/github-webhook` on port 8443; `tailscale funnel status`
-   shows it.
-4. **Webhook.** In the app's settings: Webhook *Active*, URL
-   `https://<MagicDNS name>:8443/github-webhook` (the name is in
-   `tailscale status --json | jq -r .Self.DNSName`, without the trailing
-   dot), the secret from step 2. Under Permissions & events, subscribe to
-   *Issues*, *Issue comment*, *Pull request review* and *Pull request review
-   comment*. The app's Advanced tab lists deliveries and their responses
-   (202 = agent started, 204 = ignored event, 401 = bad signature).
-5. Rebuild (system and home). Test with `systemctl --user start issue-agent`
-   on the Pi, or by labelling an issue `agent`.
-
-Watch a run live (or replay one) with `issue-agent-watch [issue]`: its
-thinking, messages and tool calls. `journalctl --user -u issue-agent` has the
-wrapper's log; each issue's context, transcript and PR text are in
-`~/.local/state/issue-agent/out/<n>/`. It reruns on an issue when what was
-said changes: a new comment on the issue (from CI or from you), or a
-comment, review or inline comment on its PR. That's how you steer it.
-
 ## VPN namespace (Mullvad WireGuard via `vpn-confinement`)
 
 qBittorrent, Prowlarr, and Byparr run inside a Linux network namespace named

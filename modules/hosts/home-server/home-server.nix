@@ -32,7 +32,6 @@ in
             arr
             navidrome
             git-server
-            issue-agent
             slskd
             explo
             jellyfin
@@ -50,11 +49,6 @@ in
                 config.users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys;
           };
           agentTelegram.secretFile = ../../../secrets/agent-telegram-home-server.age;
-          issueAgent = {
-            secretFile = ../../../secrets/github-agent.age;
-            webhookSecretFile = ../../../secrets/github-webhook.age;
-            telegramSecretFile = ../../../secrets/telegram-github.age;
-          };
           monitoring.serverHost = "alvaros-mac-mini.${tailnet}";
 
           home-assistant-container = {
@@ -299,7 +293,6 @@ in
           base
           wl-clipboard
           auto-upgrade-telegram
-          issue-agent
         ];
 
         home.username = "pi";
@@ -310,8 +303,6 @@ in
         home.stateVersion = "25.05";
 
         programs.helix.settings.editor.clipboard-provider = "termcode";
-
-        issueAgent.appId = 5747695;
       }
     ];
   };

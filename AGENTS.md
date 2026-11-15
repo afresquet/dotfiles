@@ -102,7 +102,7 @@ modules/
   terminal/             terminal emulators, shells, prompt, multiplexer
   cli/                  command-line tools
   dev/                  development: git, editors, containers, VMs
-  ai/                   coding agents, their skills, the Telegram and issue
+  ai/                   coding agents, their skills, the Telegram and GitHub
                         agents
   apps/                 GUI applications
   gaming/               games, launchers, streaming
@@ -114,7 +114,7 @@ secrets/                agenix: keys.nix (public keys), agenix-rules.nix, *.age
 
 ## Aspects
 
-An aspect is one concern (Tailscale, the issue agent, Hyprland) in one file,
+An aspect is one concern (Tailscale, the GitHub agent, Hyprland) in one file,
 which publishes a module for each platform it touches through flake-parts'
 `flake.modules.<class>.<name>`, class `nixos`, `darwin` or `homeManager`:
 
@@ -170,7 +170,7 @@ which publishes a module for each platform it touches through flake-parts'
   defines `flake.modules.<class>.<name>` adds to the same aspect (see
   monitoring).
 - **Values an aspect's platforms share** go in the file's `let` (the
-  tailscale options module, the issue agent's webhook port, the Helix settings
+  tailscale options module, the GitHub agent's webhook path, the Helix settings
   that also build the `hx` package).
 - **Platform**: in home-manager, test `pkgs.stdenv.hostPlatform.isLinux` /
   `isDarwin` inside `config` (`lib.mkIf`), never to choose `imports`.

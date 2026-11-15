@@ -151,7 +151,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # The candidate lock otherwise only exists in this run. On a branch,
-      # a fix (yours or the issue agent's, whose branch starts from it) is
+      # a fix (yours or the GitHub agent's, whose branch starts from it) is
       # made and tested against the lock that actually failed, and merging
       # it lands the update and the fix together.
       - name: Push the candidate lock
@@ -175,7 +175,7 @@ jobs:
             --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
           candidate=""
           if [ -n "$CANDIDATE" ]; then
-            # The marker tells the issue agent to start from the branch.
+            # The marker tells the GitHub agent to start from the branch.
             candidate=$(printf '\n%s\n\n<!-- agent-base: flake-update -->\n' \
               "The updated flake.lock is on the \`flake-update\` branch ($CANDIDATE); fix on top of it.")
           fi

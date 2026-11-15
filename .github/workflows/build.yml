@@ -5,7 +5,7 @@ name: Build
 # - when a push changes flake.lock on main (a manual input update; the lock
 #   is already on main by then, so a failure is reported as a "Lock build
 #   failed" issue and Telegram message rather than blocked);
-# - on every push to an issue agent branch whose flake.lock differs from
+# - on every push to a GitHub agent branch whose flake.lock differs from
 #   main's (its fix for a failed flake update, made on top of the candidate
 #   lock), so the PR shows whether the update now builds;
 # - when flake-update calls it with its candidate lock, which it commits

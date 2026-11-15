@@ -62,30 +62,17 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
-  # The GitHub agent's App webhook secret: the raw value, one line. The Pi's
-  # keys go once the agent has moved to the Mac mini.
+  # The GitHub agent's App webhook secret: the raw value, one line.
   "github-webhook.age".publicKeys = [
     keys.afresquet
     keys.alvarosMacMini
     keys.alvarosMacMiniHost
-    keys.homeServer
-    keys.homeServerHost
   ];
   # Private key (PEM) of the GitHub App the agent acts as.
   "github-agent.age".publicKeys = [
     keys.afresquet
     keys.alvarosMacMini
     keys.alvarosMacMiniHost
-    keys.homeServer
-    keys.homeServerHost
-  ];
-  # The GitHub notifications Telegram bot (same values as the repo's
-  # TELEGRAM_* Actions secrets), for the issue agent's PR messages.
-  # TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines.
-  "telegram-github.age".publicKeys = [
-    keys.afresquet
-    keys.homeServer
-    keys.homeServerHost
   ];
   "agent-telegram-mac-mini.age".publicKeys = [
     keys.afresquet
