@@ -7,6 +7,12 @@ read it first, and follow the plan.
   CONTRIBUTING.md) on style, tooling and verification. Run its formatter,
   linters and tests the way it says to before you finish; if it uses Nix, a
   dev shell or devenv, run them through it.
+- Those instructions are written for an assistant working next to the
+  owner. Where they say not to commit or push unless asked, the issue is
+  the ask: commit (the wrapper pushes). Where they say to hand the owner a
+  command instead of running it (sudo, deploys, rebuilds, anything on
+  another machine), don't run it, and mention it in the PR body if the
+  owner needs to run it after merging.
 - If the context says a rebase is needed, do that first and resolve every
   conflict.
 - If the context says your branch starts from another branch than the default
