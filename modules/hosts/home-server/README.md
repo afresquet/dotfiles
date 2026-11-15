@@ -149,7 +149,6 @@ TVs / phones on the LAN).
    | Movies       | Movies       | `/mnt/hdd/media/movies`   |
    | TV           | Shows        | `/mnt/hdd/media/tv`       |
    | Music        | Music        | `/mnt/hdd/media/music`    |
-   | Books        | Books        | `/mnt/hdd/media/books`    |
 
 3. For each library: **Advanced → ☑ Enable Real-time Monitoring** so new files
    from Sonarr/Radarr/etc. show up within seconds rather than waiting for the
@@ -162,15 +161,7 @@ URL: `http://prowlarr.home-server/`
 1. First-run: create user/password.
 2. **Indexers → +** → add the trackers you want (1337x, EZTV, YTS, etc.).
    Click **Test** before saving.
-3. For Cloudflare-protected indexers (1337x, etc.):
-   - **Settings → Indexers → Indexer Proxies → +** → FlareSolverr
-   - Name: `flaresolverr`, Host: `http://127.0.0.1:8191`, Tags: add `cf`
-   - Edit each protected indexer → add the `cf` tag → save.
-   - Note: despite being labeled "FlareSolverr" in Prowlarr's UI, the actual
-     backend is **Byparr** (Camoufox-based, far better at current Cloudflare
-     protections than FlareSolverr). It runs as a podman container inside the
-     wg namespace and exposes the same API on `127.0.0.1:8191`.
-4. **Settings → Apps → +** → add each *arr Prowlarr should sync indexers to.
+3. **Settings → Apps → +** → add each *arr Prowlarr should sync indexers to.
    *Prowlarr lives in the wg namespace and the *arr apps run on the host*, so
    Prowlarr must reach them via the namespace's host-side bridge IP
    `192.168.15.5`:
@@ -180,13 +171,12 @@ URL: `http://prowlarr.home-server/`
    | Sonarr  | `http://192.168.15.5:8989`    | Sonarr → Settings → General → Security |
    | Radarr  | `http://192.168.15.5:7878`    | same path in Radarr |
    | Lidarr  | `http://192.168.15.5:8686`    | same path in Lidarr |
-   | Readarr | `http://192.168.15.5:8787`    | same path in Readarr |
 
    For all of them, **Prowlarr Server** = `http://192.168.15.1:9696` — that's
    the URL the *arrs on the host use to call back into Prowlarr (host →
    namespace via the bridge's namespace-side IP).
 
-## 9. Sonarr / Radarr / Lidarr / Readarr
+## 9. Sonarr / Radarr / Lidarr
 
 Each has its own UI:
 
@@ -195,7 +185,6 @@ Each has its own UI:
 | Sonarr  | `http://sonarr.home-server/`   | `/mnt/hdd/media/tv`      |
 | Radarr  | `http://radarr.home-server/`   | `/mnt/hdd/media/movies`  |
 | Lidarr  | `http://lidarr.home-server/`   | `/mnt/hdd/media/music`   |
-| Readarr | `http://readarr.home-server/`  | `/mnt/hdd/media/books`   |
 
 For **each** app:
 
@@ -210,7 +199,7 @@ For **each** app:
      namespace; the host reaches it via the namespace-side bridge IP)
    - Port `8080`
    - Username / Password: the qBittorrent admin credentials from agenix
-   - Category: `sonarr` / `radarr` / `lidarr` / `readarr` respectively (the app
+   - Category: `sonarr` / `radarr` / `lidarr` respectively (the app
      auto-creates the category in qBittorrent)
    - **☑ Remove Completed Downloads** (advanced) — let *arr clean up paused
      torrents via the qBittorrent API after import, rather than qBittorrent
@@ -222,7 +211,7 @@ For **each** app:
 ### Recovery: lost a Sonarr/Radarr password
 
 ```sh
-sudo systemctl stop sonarr.service   # or radarr, lidarr, readarr
+sudo systemctl stop sonarr.service   # or radarr, lidarr
 sudo sed -i 's|<AuthenticationMethod>.*</AuthenticationMethod>|<AuthenticationMethod>None</AuthenticationMethod>|' \
   /var/lib/sonarr/.config/NzbDrone/config.xml
 sudo systemctl start sonarr.service
@@ -433,7 +422,7 @@ URL: `http://jellyseerr.home-server/`
 1. First-run: **Sign in with Jellyfin** → enter
    - Jellyfin URL: `http://127.0.0.1:8096`
    - Username + password: your Jellyfin admin (not a separate Jellyseerr account)
-2. **Sync Libraries**: pick all four (Movies, TV, Music, Books).
+2. **Sync Libraries**: pick all three (Movies, TV, Music).
 3. **Settings → Services → Sonarr → +**:
    - Hostname `127.0.0.1`, port `8989`, paste Sonarr's API key
    - Default Quality Profile and Root Folder (`/mnt/hdd/media/tv`)
@@ -450,7 +439,7 @@ Jellyseerr → Sonarr/Radarr → Prowlarr → indexer → qBittorrent
 
 ## VPN namespace (Mullvad WireGuard via `vpn-confinement`)
 
-qBittorrent, Prowlarr, and Byparr run inside a Linux network namespace named
+qBittorrent, Prowlarr and slskd run inside a Linux network namespace named
 `wg` whose only egress is a Mullvad WireGuard tunnel. Tailscale, caddy,
 Pi-hole, Home Assistant, Jellyfin, and the *arr orchestrators all run in the
 default (host) namespace and are unaffected.
@@ -470,9 +459,9 @@ default and `wg` namespaces, with these well-known addresses:
 
 | From → To                                              | Use                       |
 |--------------------------------------------------------|---------------------------|
-| Host service → namespaced service (Prowlarr, qBittorrent, Byparr) | `192.168.15.1:<port>` |
+| Host service → namespaced service (Prowlarr, qBittorrent, slskd) | `192.168.15.1:<port>` |
 | Namespaced service → host service (the *arr apps)      | `192.168.15.5:<port>`     |
-| Within the same namespace (e.g. Prowlarr → Byparr)     | `127.0.0.1:<port>`        |
+| Within the same namespace (e.g. Prowlarr → qBittorrent) | `127.0.0.1:<port>`        |
 | Within the host (e.g. Bazarr → Sonarr)                 | `127.0.0.1:<port>`        |
 
 Whenever a service refuses connections with "Connection refused (localhost:X)",
@@ -486,8 +475,7 @@ The namespace ignores Pi-hole and the host's resolv.conf. It uses what's in
 the `[Interface]` `DNS = ...` field of the Mullvad WG config. **That MUST be a
 non-filtering resolver — `1.1.1.1` is what we use.** Mullvad's default
 `10.64.0.1` actively sinkholes torrent-indexer hostnames (returns `127.0.0.1`),
-which causes silent failures like `ERR_CONNECTION_REFUSED` deep inside
-FlareSolverr/Byparr.
+which causes silent failures like `ERR_CONNECTION_REFUSED` from Prowlarr's indexers.
 
 ### nscd is disabled host-wide for this reason
 
@@ -520,18 +508,6 @@ All three are required; setting only `InterfaceName` causes qBittorrent to
 silently bind to nothing. The `InterfaceAddress` is the Mullvad-assigned IP
 from your WG config's `Address = ...` line — see qBittorrent section above
 for what to do if you ever rotate WG keys.
-
-### Cloudflare bypass (Byparr container)
-
-FlareSolverr in nixpkgs can't reliably solve current Cloudflare challenges
-(1337x, TPB, etc. fail with timeouts). Byparr (Camoufox-based, FlareSolverr API
-compatible) is run as a podman container directly attached to the `wg`
-namespace via `--network=ns:/var/run/netns/wg`. Prowlarr's "FlareSolverr"
-indexer proxy entry points at `http://127.0.0.1:8191` (namespace-internal) and
-the container responds — Prowlarr neither knows nor cares it's Byparr.
-
-The container's lifecycle is bound to `wg.service` so it tears down/restarts
-with the namespace.
 
 ### Firewall openings
 

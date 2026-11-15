@@ -91,7 +91,6 @@ in
                   prowlarr
                   qbittorrent-nox
                   radarr
-                  readarr
                   seerr
                   sonarr
                   ;
