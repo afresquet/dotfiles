@@ -34,6 +34,8 @@ CFG = json.loads(Path(sys.argv[1]).read_text())
 API = "https://api.github.com"
 LABEL = CFG["label"]
 NEEDS_INFO = CFG["needsInfoLabel"]
+# An issue's plan waits for this label before the agent implements it.
+PLAN_APPROVED = CFG["planApprovedLabel"]
 BRANCH_PREFIX = "agent/issue-"
 # Comments from these can steer the agent; anyone else's are never shown to it.
 TRUSTED_ASSOCIATIONS = {"OWNER", "MEMBER", "COLLABORATOR"}
@@ -486,6 +488,7 @@ def work(repo_full, installation, token, issue, force, rebase=False):
     thread.hashed.append(f"{issue['title']}\0{issue.get('body') or ''}")
     thread.texts.append(issue.get("body") or "")
 
+    agent_pr = None
     if is_pr:
         pr = get(f"/repos/{repo_full}/pulls/{number}", token)
         if not pr["head"].get("repo") or pr["head"]["repo"]["full_name"] != repo_full:
@@ -512,7 +515,16 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             base = markers[-1]
 
     key = thread.key
-    unchanged = not force and state.get("key") == key
+    # A new issue's plan waits for the owner's approval; feedback on the
+    # agent's PR and labelled PRs don't. A plan approved as posted runs
+    # without asking the coordinator again (even if the label came while
+    # the plan was being made, which the queue doesn't force); a changed
+    # thread is re-planned.
+    gated = not is_pr and not agent_pr
+    approved = PLAN_APPROVED in labels_of(issue)
+    saved = state.pop("plan", None)
+    resumed = gated and approved and saved is not None and saved["key"] == key
+    unchanged = not force and not resumed and state.get("key") == key
     if unchanged and not rebase:
         return
     rebase_only = unchanged
@@ -543,6 +555,8 @@ def work(repo_full, installation, token, issue, force, rebase=False):
     try:
         if rebase_only:
             decision = {"decision": "implement", "comment": f"Rebase onto origin/{base}, which changed and conflicts now. Change nothing else."}
+        elif resumed:
+            decision = saved["decision"]
         else:
             decision = run_claude(
                 "coordinator",
@@ -554,9 +568,14 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             set_needs_info(repo_full, number, token, decision["decision"] == "ask")
             return
         set_needs_info(repo_full, number, token, False)
+        if gated and not approved:
+            comment(repo_full, number, token, f"{thread.mention}**Plan**\n\n{decision['comment']}\n\nAdd the `{PLAN_APPROVED}` label to go ahead.{MARKER}")
+            state["plan"] = {"key": key, "decision": decision}
+            state_file.write_text(json.dumps(state))
+            return
         # Per-comment plans aren't posted: the implementer answers those
-        # threads once it's done.
-        if decision["comment"].strip() and not rebase_only:
+        # threads once it's done. A resumed plan already was.
+        if decision["comment"].strip() and not (rebase_only or resumed):
             comment(repo_full, feedback_on, token, "**Plan**\n\n" + decision["comment"] + MARKER)
 
         # Every run starts from the base's tip. A conflict is the
@@ -842,10 +861,12 @@ def route(event, p):
             return 202
         return 204
     number = item["number"]
-    relabelled = action == "labeled" and (p.get("label") or {}).get("name") == LABEL
+    added = (p.get("label") or {}).get("name") if action == "labeled" else None
+    relabelled = added == LABEL
     if action in ("closed", "unlabeled") or relabelled or LABEL in labels_of(item):
-        # Closing or unlabelling cleans up; labelling (again) forces a run.
-        QUEUE.put(repo, installation, number, force=relabelled)
+        # Closing or unlabelling cleans up; labelling (again) or approving
+        # the plan forces a run.
+        QUEUE.put(repo, installation, number, force=relabelled or added == PLAN_APPROVED)
         return 202
     return 204
 
