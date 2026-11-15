@@ -268,8 +268,10 @@
                 ''
                   /bin/wait4path "$0"
                 ''
+                # Polled, not wait4path: that only re-checks on a mount, so a
+                # file agenix writes after Grafana starts never wakes it.
                 + lib.concatMapStrings (f: ''
-                  /bin/wait4path ${f}
+                  while [ ! -r ${f} ]; do sleep 1; done
                   set -a; . ${f}; set +a
                 '') cfg.grafanaEnvironmentFiles
                 + ''
