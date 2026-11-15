@@ -1,41 +1,32 @@
-{ self, ... }:
+{ config, ... }:
+let
+  inherit (config.meta) repo;
+in
 {
-  flake.modules.nixos.nh =
-    { config, ... }:
-    {
-      imports = [ self.modules.nixos.primary-user ];
-
-      programs.nh = {
-        enable = true;
-        flake = "${config.users.users.${config.system.primaryUser}.home}/dotfiles";
-        clean = {
-          enable = true;
-          extraArgs = "--keep-since 4d --keep 3 --no-gcroots";
-        };
-      };
+  flake.modules.nixos.nh.programs.nh = {
+    enable = true;
+    flake = repo;
+    clean = {
+      enable = true;
+      extraArgs = "--keep-since 4d --keep 3 --no-gcroots";
     };
+  };
 
   flake.modules.homeManager.nh =
-    {
-      lib,
-      config,
-      pkgs,
-      ...
-    }:
+    { lib, pkgs, ... }:
     {
       home.packages = [ pkgs.nh ];
 
       home.shellAliases =
         let
           nh = lib.getExe pkgs.nh;
-          flake = "${config.home.homeDirectory}/dotfiles";
         in
         {
-          noss = "${nh} os switch ${flake}";
-          nost = "${nh} os test ${flake}";
-          nosb = "${nh} os boot ${flake}";
-          ndws = "${nh} darwin switch ${flake}";
-          nhms = "${nh} home switch ${flake}";
+          noss = "${nh} os switch ${repo}";
+          nost = "${nh} os test ${repo}";
+          nosb = "${nh} os boot ${repo}";
+          ndws = "${nh} darwin switch ${repo}";
+          nhms = "${nh} home switch ${repo}";
           nca = "${nh} clean all --no-gcroots";
         };
     };

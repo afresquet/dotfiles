@@ -18,6 +18,12 @@ in
       '';
     };
 
+    repo = mkOption {
+      type = types.str;
+      default = "github:afresquet/dotfiles";
+      description = "Flake reference of this repository on GitHub.";
+    };
+
     wallpaper = mkOption {
       type = types.path;
       default = ../assets/wallpaper.png;
