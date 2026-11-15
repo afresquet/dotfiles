@@ -13,13 +13,19 @@ in
   };
 
   flake.modules.homeManager.nh =
-    { lib, pkgs, ... }:
+    {
+      lib,
+      config,
+      pkgs,
+      ...
+    }:
     {
       home.packages = [ pkgs.nh ];
 
       home.shellAliases =
         let
           nh = lib.getExe pkgs.nh;
+          local = "${config.home.homeDirectory}/dotfiles";
         in
         {
           noss = "${nh} os switch ${repo}";
@@ -27,6 +33,12 @@ in
           nosb = "${nh} os boot ${repo}";
           ndws = "${nh} darwin switch ${repo}";
           nhms = "${nh} home switch ${repo}";
+          # The same against the local checkout, to try changes before pushing them.
+          nossl = "${nh} os switch ${local}";
+          nostl = "${nh} os test ${local}";
+          nosbl = "${nh} os boot ${local}";
+          ndwsl = "${nh} darwin switch ${local}";
+          nhmsl = "${nh} home switch ${local}";
           nca = "${nh} clean all --no-gcroots";
         };
     };
