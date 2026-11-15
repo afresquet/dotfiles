@@ -151,7 +151,7 @@
       };
 
       config = {
-        monitoring.daemons.grafana = {
+        daemonUsers.grafana = {
           uid = 481;
           dirs = [
             cfg.grafanaDataDir

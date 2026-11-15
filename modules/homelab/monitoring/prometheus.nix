@@ -108,7 +108,7 @@
       };
 
       config = {
-        monitoring.daemons.prometheus = {
+        daemonUsers.prometheus = {
           uid = 480;
           dirs = [ cfg.prometheusDataDir ];
           logs = [

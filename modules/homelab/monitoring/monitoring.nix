@@ -104,18 +104,11 @@
     };
 
   flake.modules.darwin.monitoring =
-    {
-      lib,
-      config,
-      pkgs,
-      ...
-    }:
-    let
-      cfg = config.monitoring;
-    in
+    { lib, pkgs, ... }:
     {
       imports = [
         inputs.agenix.darwinModules.default
+        self.modules.darwin.daemon-users
       ];
 
       options.monitoring = {
@@ -143,10 +136,9 @@
           default = "15s";
         };
 
-        # ─── Internal aggregators ───
         # prometheus.nix, grafana.nix and loki.nix contribute their datasource
-        # yaml and data dirs through these, so each daemon's wiring stays in its
-        # own file.
+        # yaml through this (and their users through daemonUsers), so each
+        # daemon's wiring stays in its own file.
 
         datasources = lib.mkOption {
           type = lib.types.attrsOf lib.types.path;
@@ -155,40 +147,6 @@
           description = ''
             Grafana datasource provisioning files contributed by the daemon files,
             keyed by base filename (the resulting path is `datasources/<key>.yaml`).
-          '';
-        };
-
-        daemons = lib.mkOption {
-          type = lib.types.attrsOf (
-            lib.types.submodule {
-              options = {
-                uid = lib.mkOption {
-                  type = lib.types.int;
-                  description = ''
-                    uid and gid of the daemon's user and group. Below 500 so macOS
-                    keeps it off the login window, like its own daemon accounts.
-                  '';
-                };
-                dirs = lib.mkOption {
-                  type = lib.types.listOf lib.types.str;
-                  default = [ ];
-                  description = "Directories created at activation and owned by the daemon.";
-                };
-                logs = lib.mkOption {
-                  type = lib.types.listOf lib.types.str;
-                  default = [ ];
-                  description = "The daemon's StandardOutPath/StandardErrorPath, owned by it.";
-                };
-              };
-            }
-          );
-          default = { };
-          internal = true;
-          description = ''
-            One hidden system user and group per daemon, keyed by the name its
-            launchd UserName/GroupName uses. They listen on the tailnet, so a hole
-            in one of them shouldn't come with root and the Nix signing key the
-            Pis trust.
           '';
         };
       };
@@ -213,43 +171,6 @@
         # Lives here (with the rest of the Grafana wiring) rather than in the
         # mac-mini host config because it's only useful where Grafana runs.
         environment.systemPackages = [ pkgs.export-grafana-dashboard ];
-
-        users = {
-          knownUsers = lib.attrNames cfg.daemons;
-          knownGroups = lib.attrNames cfg.daemons;
-          users = lib.mapAttrs (name: d: {
-            inherit (d) uid;
-            gid = d.uid;
-            description = name;
-            home = "/var/empty";
-            shell = "/usr/bin/false";
-            isHidden = true;
-          }) cfg.daemons;
-          groups = lib.mapAttrs (name: d: {
-            gid = d.uid;
-            description = name;
-          }) cfg.daemons;
-        };
-
-        # Hooked into the wired-in `postActivation` slot because nix-darwin
-        # doesn't reliably run custom slots; it runs after the users slot, so the
-        # owners exist. Data written back when the daemons ran as root is handed
-        # over once, when a directory isn't the daemon's yet.
-        system.activationScripts.postActivation.text = lib.mkAfter (
-          lib.concatStrings (
-            lib.mapAttrsToList (
-              name: d:
-              lib.concatMapStrings (dir: ''
-                install -d -m 0755 -o ${name} -g ${name} ${dir}
-                [ "$(stat -f %u ${dir})" = ${toString d.uid} ] || chown -R ${name}:${name} ${dir}
-              '') d.dirs
-              + lib.concatMapStrings (log: ''
-                touch ${log}
-                chown ${name}:${name} ${log}
-              '') d.logs
-            ) cfg.daemons
-          )
-        );
       };
     };
 }

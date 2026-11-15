@@ -85,7 +85,7 @@
       };
 
       config = {
-        monitoring.daemons.loki = {
+        daemonUsers.loki = {
           uid = 482;
           dirs = [
             cfg.lokiDataDir
