@@ -8,6 +8,10 @@ name: Build
 # - on every push to a GitHub agent branch whose flake.lock differs from
 #   main's (its fix for a failed flake update, made on top of the candidate
 #   lock), so the PR shows whether the update now builds;
+# - on a pull request carrying the `build` label: when it's opened, pushed
+#   to or reopened with the label, or when the label is added (adding any
+#   other label doesn't rebuild). These builds aren't pushed to Cachix, so
+#   unmerged code never reaches the cache the hosts pull from;
 # - when flake-update calls it with its candidate lock, which it commits
 #   only if this passes.
 
@@ -16,6 +20,8 @@ on:
     # Not filtered on paths: an agent branch's later commits don't touch
     # flake.lock but still need building. The gate job decides.
     branches: [main, "agent/**"]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
   workflow_call:
     inputs:
       lock:
@@ -41,8 +47,19 @@ jobs:
         id: gate
         env:
           BEFORE: ${{ github.event.before }}
+          ACTION: ${{ github.event.action }}
+          ADDED_LABEL: ${{ github.event.label.name }}
+          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'build') }}
         run: |
-          if [ "${{ github.event_name }}" != push ]; then
+          if [ "${{ github.event_name }}" = pull_request ]; then
+            if [ "$ACTION" = labeled ]; then
+              # Only the label that was just added counts, so adding another
+              # label to a PR that already has `build` doesn't rebuild it.
+              run=$([ "$ADDED_LABEL" = build ] && echo true || echo false)
+            else
+              run=$HAS_LABEL
+            fi
+          elif [ "${{ github.event_name }}" != push ]; then
             run=true # called by flake-update
           elif [ "${{ github.ref }}" = refs/heads/main ]; then
             # This push changed the lock.
@@ -108,9 +125,12 @@ jobs:
       # Hosts pick these up through their auto-upgrade, so the closure is
       # downloaded rather than rebuilt. Skipped until the CACHIX_CACHE
       # variable and CACHIX_AUTH_TOKEN secret are set. Pushing a closure
-      # leaves out anything already on cache.nixos.org.
+      # leaves out anything already on cache.nixos.org. Never from a pull
+      # request: its code isn't merged.
       - name: Push to Cachix
-        if: matrix.push && vars.CACHIX_CACHE != ''
+        if: >-
+          matrix.push && vars.CACHIX_CACHE != ''
+          && github.event_name != 'pull_request'
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
         run: nix run nixpkgs#cachix -- push '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
