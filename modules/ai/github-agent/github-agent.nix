@@ -2,7 +2,8 @@
 # `agent` in every repo it's installed on. Its webhook reaches this Mac through
 # Tailscale Funnel; the dispatcher (github_agent.py) runs as the `agent` user,
 # keeps the repos it works on under its own home, asks on the thread when the
-# request isn't clear and opens a PR once it is. README.md is the runbook.
+# request isn't clear, posts its plan on an issue and opens a PR once the
+# issue is labelled `agent:plan-approved`. README.md is the runbook.
 { inputs, self, ... }:
 let
   user = "agent";
@@ -162,6 +163,7 @@ in
             implementerArgs
             ;
           needsInfoLabel = "${cfg.label}:needs-info";
+          planApprovedLabel = "${cfg.label}:plan-approved";
           keyFile = secrets.github-agent.path;
           webhookSecretFile = secrets.github-webhook.path;
           claudeTokenFile = secrets.claude-agent-token.path;
@@ -255,7 +257,9 @@ in
           default = "agent";
           description = ''
             Issues and PRs with this label are worked on. The agent adds
-            `<label>:needs-info` while it waits for an answer.
+            `<label>:needs-info` while it waits for an answer, and implements
+            an issue's plan only once the issue has `<label>:plan-approved`
+            (follow-ups on its PR and labelled PRs don't wait for it).
           '';
         };
 
