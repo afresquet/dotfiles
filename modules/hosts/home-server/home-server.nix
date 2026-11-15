@@ -147,6 +147,12 @@ in
             # out of low-power states. The assertion below fires on a kernel bump.
             "nvme_core.default_ps_max_latency_us=0"
             "pcie_aspm=off"
+            # The USB hard drive (Toshiba Canvio, 0480:0900) resets its link
+            # every few hours on UAS, with UDMA CRC errors and the odd failed
+            # read; another port didn't help. `u` makes it use usb-storage
+            # instead: a bit slower, plenty for streaming. Check with
+            # `ls /sys/bus/usb/drivers/usb-storage/` (should list 2-1:1.0).
+            "usb-storage.quirks=0480:0900:u"
           ];
           assertions = [
             {
