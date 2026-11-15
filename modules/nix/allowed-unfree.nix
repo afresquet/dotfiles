@@ -30,5 +30,6 @@ let
 in
 {
   flake.modules.nixos.allowed-unfree = allowedUnfree;
+  flake.modules.darwin.allowed-unfree = allowedUnfree;
   flake.modules.homeManager.allowed-unfree = allowedUnfree;
 }

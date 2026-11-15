@@ -62,15 +62,20 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
-  # The issue agent's GitHub App webhook secret: the raw value, one line.
+  # The GitHub agent's App webhook secret: the raw value, one line. The Pi's
+  # keys go once the agent has moved to the Mac mini.
   "github-webhook.age".publicKeys = [
     keys.afresquet
+    keys.alvarosMacMini
+    keys.alvarosMacMiniHost
     keys.homeServer
     keys.homeServerHost
   ];
-  # Private key (PEM) of the GitHub App the issue agent acts as.
+  # Private key (PEM) of the GitHub App the agent acts as.
   "github-agent.age".publicKeys = [
     keys.afresquet
+    keys.alvarosMacMini
+    keys.alvarosMacMiniHost
     keys.homeServer
     keys.homeServerHost
   ];
@@ -83,6 +88,13 @@ in
     keys.homeServerHost
   ];
   "agent-telegram-mac-mini.age".publicKeys = [
+    keys.afresquet
+    keys.alvarosMacMini
+    keys.alvarosMacMiniHost
+  ];
+  # Long-lived Claude token for the GitHub agent's `agent` user (output of
+  # `claude setup-token`), the raw value on one line.
+  "claude-agent-token.age".publicKeys = [
     keys.afresquet
     keys.alvarosMacMini
     keys.alvarosMacMiniHost
