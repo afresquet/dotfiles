@@ -293,7 +293,8 @@ in
 
         concurrency = lib.mkOption {
           type = lib.types.ints.positive;
-          # The Linux builder VM already takes 12 of the 16 GiB.
+          # Each run is a Claude session plus Nix evaluations; the host decides
+          # how many fit next to whatever else it runs.
           default = 1;
           description = "Issues and PRs worked on at once.";
         };

@@ -39,7 +39,10 @@ in
           ];
 
           agentTelegram.secretFile = ../../../secrets/agent-telegram-mac-mini.age;
-          githubAgent.appId = 5747695;
+          githubAgent = {
+            appId = 5747695;
+            concurrency = 4;
+          };
 
           # Server-mode: this Mini is headless, runs Prometheus/Grafana 24/7, and
           # should come back from anything (sleep, freeze, power loss) without the
