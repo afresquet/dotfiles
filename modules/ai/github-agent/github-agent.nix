@@ -76,6 +76,9 @@ in
                 allowUnixSockets = [
                   "/nix/var/nix/daemon-socket/socket"
                   "/private/var/run/nix-daemon.socket"
+                  # sccache's per-user server, which Rust dev shells point
+                  # RUSTC_WRAPPER at (SCCACHE_SERVER_UDS).
+                  "${home}/.cache/sccache/server.sock"
                 ];
               };
               filesystem = {

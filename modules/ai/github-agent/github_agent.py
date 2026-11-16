@@ -277,9 +277,17 @@ def run_claude(phase, prompt, cwd, out, schema, extra_args):
     """One Claude Code session in print mode. Every event goes to
     <out>/<phase>.jsonl (github-agent-watch follows it); returns the
     structured output it ended with, or raises."""
+    cache = f"{CFG['home']}/.cache"
     env = {
         "HOME": CFG["home"],
         "PATH": CFG["path"],
+        # The sandbox only lets them write the repos and ~/.cache; these
+        # default to elsewhere in $HOME.
+        "XDG_CACHE_HOME": cache,
+        "CARGO_HOME": f"{cache}/cargo",
+        "GOPATH": f"{cache}/go",
+        "GOCACHE": f"{cache}/go-build",
+        "npm_config_cache": f"{cache}/npm",
         # Lets a repo's dev shell skip what can't work here, like installing
         # git hooks into the clone the sandbox keeps read-only.
         "GITHUB_AGENT": "1",
