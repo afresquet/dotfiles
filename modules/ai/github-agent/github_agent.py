@@ -468,11 +468,11 @@ def work(repo_full, installation, token, issue, force, rebase=False):
     is_pr = "pull_request" in issue
     kind = "pr" if is_pr else "issue"
     path = repo.worktree(kind, number)
+    state_dir = Path(CFG["stateDir"]) / repo_full / str(number)
     if issue["state"] != "open" or LABEL not in labels_of(issue):
-        cleanup(repo, path)
+        cleanup(repo, path, state_dir)
         return
 
-    state_dir = Path(CFG["stateDir"]) / repo_full / str(number)
     state_dir.mkdir(parents=True, exist_ok=True)
     state_file = state_dir / "state.json"
     state = json.loads(state_file.read_text()) if state_file.exists() else {}
@@ -714,10 +714,13 @@ def merge(repo_full, installation, number, approved_sha, approved_at, reviewer):
                 pass  # already gone (the repo deletes merged branches)
 
 
-def cleanup(repo, path):
+def cleanup(repo, path, state_dir):
+    """Done with an item: drop its worktree and its run logs. Labelling it
+    again starts over."""
     if repo.bare.exists():
         with repo.lock:
             repo.remove(path)
+    shutil.rmtree(state_dir, ignore_errors=True)
 
 
 # ─── Queue ───
@@ -796,18 +799,23 @@ def refresh(repo_full, installation, branch):
 def reconcile():
     """Hourly, and at startup: queue every open labelled item in every repo
     the App can see (unchanged ones are skipped by their key), refresh the
-    clones, and drop worktrees whose item is gone. Catches deliveries that
-    never arrived."""
+    clones, and drop worktrees and run logs whose item is gone, and the
+    clones and logs of repos the App no longer sees (deleted, or removed from
+    the installation). Catches deliveries that never arrived."""
+    seen = set()
+    complete = True  # every repo listed: only then is a missing one gone
     for inst in get_all("/app/installations", app_jwt()):
         try:
             token = TOKENS.get(inst["id"])
             for meta in get_all("/installation/repositories", token, key="repositories"):
                 full = meta["full_name"]
+                seen.add(full)
                 if meta["archived"]:
                     continue
                 items = get_all(f"/repos/{full}/issues?state=open&labels={urllib.parse.quote(LABEL)}", token)
                 for item in items:
                     QUEUE.put(full, inst["id"], item["number"])
+                prune_state(full, {i["number"] for i in items})
                 repo = Repo(full)
                 if not repo.bare.exists():
                     continue
@@ -818,7 +826,48 @@ def reconcile():
                         if re.fullmatch(r"(issue|pr)-\d+", path.name) and path.name not in keep:
                             repo.remove(path)
         except Exception:
+            complete = False
             log(f"reconcile installation {inst['id']}: {traceback.format_exc()}")
+    if complete:
+        prune_repos(seen)
+
+
+def prune_state(full, keep):
+    """Drop the run logs of items no longer open and labelled, skipping one
+    that is running (its job cleans up after itself)."""
+    root = Path(CFG["stateDir"]) / full
+    if not root.is_dir():
+        return
+    for path in root.iterdir():
+        if not path.name.isdigit() or int(path.name) in keep:
+            continue
+        lock = item_lock(full, int(path.name))
+        if lock.acquire(blocking=False):
+            try:
+                shutil.rmtree(path, ignore_errors=True)
+            finally:
+                lock.release()
+
+
+def prune_repos(seen):
+    """Delete the clone and run logs of every repo not in `seen`."""
+    for base in (Path(CFG["reposDir"]), Path(CFG["stateDir"])):
+        if not base.is_dir():
+            continue
+        for owner in base.iterdir():
+            if not owner.is_dir():
+                continue
+            for path in owner.iterdir():
+                full = f"{owner.name}/{path.name}"
+                # Recently touched: a repo installed after the listing above
+                # may be cloning or working right now.
+                if full in seen or time.time() - path.stat().st_mtime < 86400:
+                    continue
+                log(f"{full}: no longer installed, deleting {path}")
+                with Repo(full).lock:
+                    shutil.rmtree(path, ignore_errors=True)
+            if not any(owner.iterdir()):
+                owner.rmdir()
 
 
 def reconcile_loop():
