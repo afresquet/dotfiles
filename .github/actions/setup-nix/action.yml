@@ -9,7 +9,7 @@ inputs:
 runs:
   using: composite
   steps:
-    # afresquet-dotfiles: our own Pi builds from earlier runs. Reruns on the
+    # afresquet-dotfiles: our own builds from earlier runs. Reruns on the
     # same lock and anything from pinned inputs download instead of rebuild.
     - uses: DeterminateSystems/nix-installer-action@v23
       with:

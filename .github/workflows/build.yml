@@ -1,28 +1,27 @@
 name: Build
 
-# Builds every NixOS, nix-darwin and home-manager configuration on its native
-# platform and pushes the Pi's closures to Cachix. Runs:
-# - when a push changes flake.lock or a pin `nix run .#update-pins` writes
-#   on main (a manual update; it is already on main by then, so a failure
-#   is reported as a "Lock build failed" issue and Telegram message rather
-#   than blocked);
-# - on every push to a GitHub agent branch whose flake.lock or pins differ
-#   from main's (its fix for a failed flake update, made on top of the
-#   candidate), so the PR shows whether the update now builds;
-# - on a pull request carrying the `build` label: when it's opened, pushed
-#   to or reopened with the label, or when the label is added (adding any
-#   other label doesn't rebuild). These builds aren't pushed to Cachix, so
-#   unmerged code never reaches the cache the hosts pull from;
-# - when flake-update calls it with its candidate update, which it commits
-#   only if this passes.
+# Builds, each on its native platform, the NixOS, nix-darwin and
+# home-manager configurations whose derivation this change alters
+# (scripts/build-matrix.sh --changed-since), and nothing when none does.
+# Runs:
+# - on every push to main, against the commit before it; it is already on
+#   main by then, so a failure is reported as a "Lock build failed" issue
+#   and Telegram message rather than blocked;
+# - on every pull request, against the base branch. Only the matrix is
+#   evaluated: the builds wait on the `build` environment, whose required
+#   reviewer starts them with "Review deployments" on the PR. Not a
+#   required check, so it never blocks merging;
+# - when flake-update calls it with its candidate update (against main
+#   without it), which it commits only if this passes.
+# Builds from main and flake-update are pushed to Cachix, which every host
+# substitutes from (modules/nix/cachix.nix), minus what the host's other
+# substituters already serve; a pull request's never are, so unmerged code
+# doesn't reach the cache.
 
 on:
   push:
-    # Not filtered on paths: an agent branch's later commits don't touch
-    # the lock or pins but still need building. The gate job decides.
-    branches: [main, "agent/**"]
+    branches: [main]
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
   workflow_call:
     inputs:
       patch:
@@ -30,57 +29,26 @@ on:
         type: string
         default: ""
 
+# A new push to a pull request supersedes the builds still waiting for
+# approval on the previous one.
+concurrency:
+  group: build-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
 jobs:
-  gate:
+  matrix:
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 30
     outputs:
-      run: ${{ steps.gate.outputs.run }}
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      any: ${{ steps.matrix.outputs.any }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-
-      - name: Does this need building?
-        id: gate
-        env:
-          BEFORE: ${{ github.event.before }}
-          ACTION: ${{ github.event.action }}
-          ADDED_LABEL: ${{ github.event.label.name }}
-          HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'build') }}
-        run: |
-          pinned=(flake.lock overlays/claude-code/manifest.json modules/homelab/hacs.json modules/homelab/monitoring/dashboards/grafana-com.json)
-          if [ "${{ github.event_name }}" = pull_request ]; then
-            if [ "$ACTION" = labeled ]; then
-              # Only the label that was just added counts, so adding another
-              # label to a PR that already has `build` doesn't rebuild it.
-              run=$([ "$ADDED_LABEL" = build ] && echo true || echo false)
-            else
-              run=$HAS_LABEL
-            fi
-          elif [ "${{ github.event_name }}" != push ]; then
-            run=true # called by flake-update
-          elif [ "${{ github.ref }}" = refs/heads/main ]; then
-            # This push changed the lock or a pin.
-            run=$(git diff --quiet "$BEFORE" HEAD -- "${pinned[@]}" && echo false || echo true)
-          else
-            # An agent branch carrying a different lock or pins than main.
-            run=$(git diff --quiet origin/main HEAD -- "${pinned[@]}" && echo false || echo true)
-          fi
-          echo "run=$run" | tee -a "$GITHUB_OUTPUT"
-
-  matrix:
-    needs: gate
-    if: needs.gate.outputs.run == 'true'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-nix
         with:
@@ -88,15 +56,27 @@ jobs:
 
       - name: Build matrix
         id: matrix
+        env:
+          BEFORE: ${{ github.event.before }}
         run: |
-          matrix=$(.github/scripts/build-matrix.sh)
+          case "${{ github.event_name }}" in
+            push) base=$BEFORE ;;
+            # The PR's merge commit, whose first parent is the base branch.
+            pull_request) base=HEAD^1 ;;
+            # Called by flake-update: main, without the candidate patch.
+            *) base=HEAD ;;
+          esac
+          matrix=$(.github/scripts/build-matrix.sh --changed-since "$base")
           echo "$matrix" | jq .
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "any=$(jq '.include != []' <<<"$matrix")" >> "$GITHUB_OUTPUT"
 
   build:
     needs: matrix
+    if: needs.matrix.outputs.any == 'true'
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
+    environment: ${{ github.event_name == 'pull_request' && 'build' || '' }}
     timeout-minutes: 300
     strategy:
       fail-fast: false
@@ -124,26 +104,28 @@ jobs:
           echo "$out"
           echo "out=$out" >> "$GITHUB_OUTPUT"
 
-      # Hosts pick these up through their auto-upgrade, so the closure is
-      # downloaded rather than rebuilt. Skipped until the CACHIX_CACHE
-      # variable and CACHIX_AUTH_TOKEN secret are set. Only the paths no
-      # other substituter in setup-nix serves are pushed (see
-      # cachix-push.sh). Never from a pull request: its code isn't merged.
+      # Hosts pick these up through their auto-upgrade or a rebuild, so the
+      # closure is downloaded rather than rebuilt. Skipped until the
+      # CACHIX_CACHE variable and CACHIX_AUTH_TOKEN secret are set. Only the
+      # paths none of the target machine's own substituters serves are
+      # pushed (see cachix-push.sh). Never from a pull request: its code
+      # isn't merged.
       - name: Push to Cachix
-        if: >-
-          matrix.push && vars.CACHIX_CACHE != ''
-          && github.event_name != 'pull_request'
+        if: vars.CACHIX_CACHE != '' && github.event_name != 'pull_request'
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: .github/scripts/cachix-push.sh '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
+          SUBSTITUTERS: ${{ join(matrix.substituters, ' ') }}
+        run: |
+          read -ra substituters <<<"$SUBSTITUTERS"
+          .github/scripts/cachix-push.sh '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}' "${substituters[@]}"
 
   # Only for pushes to main: when called, flake-update reports on the whole
-  # run, and an agent branch's result shows on its PR.
+  # run, and a pull request's result shows on the PR.
   report:
-    needs: [gate, matrix, build]
+    needs: [matrix, build]
     if: >-
       always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-      && needs.gate.outputs.run == 'true'
+      && (needs.matrix.result != 'success' || needs.matrix.outputs.any == 'true')
     runs-on: ubuntu-24.04
     permissions:
       actions: read # list which jobs failed
@@ -167,6 +149,6 @@ jobs:
           fi
           failed=$(gh run view "${{ github.run_id }}" --json jobs \
             --jq '.jobs[] | select(.conclusion == "failure") | "- \(.name)"')
-          issue=$(printf 'Run: %s\n\nflake.lock on main (%s) failed to build:\n%s\n' \
+          issue=$(printf 'Run: %s\n\nmain (%s) failed to build:\n%s\n' \
             "$RUN_URL" "${{ github.sha }}" "$failed" | .github/scripts/notify.sh issue "$title")
-          .github/scripts/notify.sh telegram "$(printf '❌ flake.lock on %s main failed to build\nRun: %s\nIssue: %s' "$GH_REPO" "$RUN_URL" "$issue")"
+          .github/scripts/notify.sh telegram "$(printf '❌ %s main failed to build\nRun: %s\nIssue: %s' "$GH_REPO" "$RUN_URL" "$issue")"

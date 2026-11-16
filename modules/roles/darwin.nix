@@ -1,10 +1,14 @@
-# What both Macs share: Determinate Nix and the flake's overlays. The rest of
-# a Mac (Tailscale, auto-upgrade, agenix secrets) is the Mac mini's alone; the
-# work MacBook only gets its home config, updated by hand.
+# What both Macs share: Determinate Nix, this flake's binary cache and its
+# overlays. The rest of a Mac (Tailscale, auto-upgrade, agenix secrets) is the
+# Mac mini's alone; the work MacBook only gets its home config, updated by
+# hand.
 { inputs, self, ... }:
 {
   flake.modules.darwin.base = {
-    imports = [ inputs.determinate.darwinModules.default ];
+    imports = [
+      inputs.determinate.darwinModules.default
+      self.modules.darwin.cachix
+    ];
 
     nixpkgs.overlays = [
       self.overlays.additions
