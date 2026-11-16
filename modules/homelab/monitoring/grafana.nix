@@ -41,28 +41,27 @@
         ) | del(.__inputs)
       '';
 
+      # grafana.com revisions, kept current by `nix run .#update-pins`.
+      grafanaCom = lib.importJSON ./dashboards/grafana-com.json;
+
       mkDashboard =
         {
-          id ? null,
-          revision ? null,
-          url ? null,
-          hash ? null,
-          json ? null,
+          id,
+          json,
           name,
-          extraFilter ? ".",
+          extraFilter,
         }:
         let
+          pin =
+            grafanaCom.${toString id}
+            or (throw "dashboard ${name}: grafana.com dashboard ${toString id} isn't pinned, run `nix run .#update-pins`");
           raw =
             if json != null then
               json
             else
               pkgs.fetchurl {
-                url =
-                  if url != null then
-                    url
-                  else
-                    "https://grafana.com/api/dashboards/${toString id}/revisions/${toString revision}/download";
-                inherit hash;
+                url = "https://grafana.com/api/dashboards/${toString id}/revisions/${toString pin.revision}/download";
+                inherit (pin) hash;
               };
         in
         pkgs.runCommand "grafana-dashboard-${name}.json"
@@ -86,14 +85,7 @@
         lib.mapAttrsToList (name: d: {
           name = "${name}.json";
           path = mkDashboard {
-            inherit (d)
-              id
-              revision
-              url
-              hash
-              json
-              extraFilter
-              ;
+            inherit (d) id json extraFilter;
             inherit name;
           };
         }) piDashboards

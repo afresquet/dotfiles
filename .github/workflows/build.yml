@@ -2,30 +2,31 @@ name: Build
 
 # Builds every NixOS, nix-darwin and home-manager configuration on its native
 # platform and pushes the Pi's closures to Cachix. Runs:
-# - when a push changes flake.lock on main (a manual input update; the lock
-#   is already on main by then, so a failure is reported as a "Lock build
-#   failed" issue and Telegram message rather than blocked);
-# - on every push to a GitHub agent branch whose flake.lock differs from
-#   main's (its fix for a failed flake update, made on top of the candidate
-#   lock), so the PR shows whether the update now builds;
+# - when a push changes flake.lock or a pin `nix run .#update-pins` writes
+#   on main (a manual update; it is already on main by then, so a failure
+#   is reported as a "Lock build failed" issue and Telegram message rather
+#   than blocked);
+# - on every push to a GitHub agent branch whose flake.lock or pins differ
+#   from main's (its fix for a failed flake update, made on top of the
+#   candidate), so the PR shows whether the update now builds;
 # - on a pull request carrying the `build` label: when it's opened, pushed
 #   to or reopened with the label, or when the label is added (adding any
 #   other label doesn't rebuild). These builds aren't pushed to Cachix, so
 #   unmerged code never reaches the cache the hosts pull from;
-# - when flake-update calls it with its candidate lock, which it commits
+# - when flake-update calls it with its candidate update, which it commits
 #   only if this passes.
 
 on:
   push:
     # Not filtered on paths: an agent branch's later commits don't touch
-    # flake.lock but still need building. The gate job decides.
+    # the lock or pins but still need building. The gate job decides.
     branches: [main, "agent/**"]
   pull_request:
     types: [opened, synchronize, reopened, labeled]
   workflow_call:
     inputs:
-      lock:
-        description: flake.lock contents to build instead of the committed one.
+      patch:
+        description: Candidate update to build, as a git diff (see setup-nix).
         type: string
         default: ""
 
@@ -51,6 +52,7 @@ jobs:
           ADDED_LABEL: ${{ github.event.label.name }}
           HAS_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'build') }}
         run: |
+          pinned=(flake.lock overlays/claude-code/manifest.json modules/homelab/hacs.json modules/homelab/monitoring/dashboards/grafana-com.json)
           if [ "${{ github.event_name }}" = pull_request ]; then
             if [ "$ACTION" = labeled ]; then
               # Only the label that was just added counts, so adding another
@@ -62,11 +64,11 @@ jobs:
           elif [ "${{ github.event_name }}" != push ]; then
             run=true # called by flake-update
           elif [ "${{ github.ref }}" = refs/heads/main ]; then
-            # This push changed the lock.
-            run=$(git diff --quiet "$BEFORE" HEAD -- flake.lock && echo false || echo true)
+            # This push changed the lock or a pin.
+            run=$(git diff --quiet "$BEFORE" HEAD -- "${pinned[@]}" && echo false || echo true)
           else
-            # An agent branch carrying a different lock than main.
-            run=$(git diff --quiet origin/main HEAD -- flake.lock && echo false || echo true)
+            # An agent branch carrying a different lock or pins than main.
+            run=$(git diff --quiet origin/main HEAD -- "${pinned[@]}" && echo false || echo true)
           fi
           echo "run=$run" | tee -a "$GITHUB_OUTPUT"
 
@@ -82,7 +84,7 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          lock: ${{ inputs.lock }}
+          patch: ${{ inputs.patch }}
 
       - name: Build matrix
         id: matrix
@@ -113,7 +115,7 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          lock: ${{ inputs.lock }}
+          patch: ${{ inputs.patch }}
 
       - name: Build
         id: build

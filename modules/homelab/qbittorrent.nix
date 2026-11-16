@@ -212,10 +212,8 @@
           # Nixpkgs `prometheus-qbittorrent-exporter` ships martabal's fork
           # (binary `qbit-exp`), not caseyscarborough's — different metric set,
           # so the grafana.com dashboards (14708, 15116) have broken panels.
-          # The matching dashboard lives in the fork's repo, pinned to the
-          # exporter version we run.
-          url = "https://raw.githubusercontent.com/martabal/qbittorrent-exporter/v1.13.0/grafana/dashboard.json";
-          hash = "sha256-GFH+qQv7A9KGb0HW2NuBvv3YA4lEiEL0BcAftd/7vnc=";
+          # The matching dashboard ships in the fork's source.
+          json = "${pkgs.prometheus-qbittorrent-exporter.src}/grafana/dashboard.json";
         };
 
         vpnNamespaces.${config.vpn.namespace} = {

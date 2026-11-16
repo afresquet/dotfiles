@@ -21,7 +21,11 @@ without breaking them.
   overlays and assertions are tied to exact package versions on purpose.
   `.github/workflows/flake-update.yml` updates the lock weekly (or on
   demand) and commits it only once `check.yml` and `build.yml` pass on it;
-  failures open a "Flake update failed" issue. `check.yml` runs on every
+  failures open a "Flake update failed" issue. It first runs
+  `nix run .#update-pins`, which rewrites the versions that have no lockable
+  source (`overlays/claude-code/manifest.json`, `modules/homelab/hacs.json`,
+  `modules/homelab/monitoring/dashboards/grafana-com.json`); don't run it
+  either unless asked. `check.yml` runs on every
   push and tracks evaluation warnings in an "Evaluation warnings" issue;
   `build.yml` also runs when a push changes `flake.lock` on main.
 - Formatting and lint are enforced. Run `nix fmt` after editing Nix files;
@@ -268,7 +272,14 @@ are part of the service: it always runs its exporter and declares its
 like its vhost; the monitoring aspect (in the `server` role) and the Mac
 mini consume them. The Mac mini builds its Prometheus and Grafana
 provisioning from the Pi's evaluated options, so a new exporter or dashboard
-is a one-file change on the Pi side.
+is a one-file change on the Pi side. A dashboard is either a `json` path (a
+file under `monitoring/dashboards/`, or one in the exporter package's `src`
+so it matches the version that runs) or a grafana.com `id`; a new `id` needs
+`nix run .#update-pins` (ask the user) to pin its revision.
+
+Containers import `self.modules.nixos.podman`, which runs them under podman
+and auto-updates every one from its registry tag, so images must be fully
+qualified (`docker.io/...`).
 
 The monitoring aspect itself is spread over `modules/homelab/monitoring/`:
 several files define `flake.modules.nixos.monitoring` or

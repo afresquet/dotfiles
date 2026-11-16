@@ -1,12 +1,12 @@
 name: Flake update
 
-# Weekly (or on demand) `nix flake update`, gated on the Check and Build
-# workflows passing on the new lock: flake.lock is committed to main only
-# when it checks and every configuration builds. Any failure pushes the
-# candidate lock to the `flake-update` branch, opens (or comments on) a
+# Weekly (or on demand) `nix run .#update-pins` and `nix flake update`,
+# gated on the Check and Build workflows passing on the result: flake.lock
+# and the pins are committed to main only when they check and every
+# configuration builds. Any failure pushes the candidate to the `flake-update` branch, opens (or comments on) a
 # "Flake update failed" issue pointing at it and, if the TELEGRAM_* secrets
 # are set, messages Telegram. Committing with the default token doesn't
-# trigger other workflows, so the lock isn't checked or built twice.
+# trigger other workflows, so the update isn't checked or built twice.
 
 on:
   schedule:
@@ -29,28 +29,29 @@ jobs:
     timeout-minutes: 15
     outputs:
       changed: ${{ steps.update.outputs.changed }}
-      lock: ${{ steps.update.outputs.lock }}
+      patch: ${{ steps.update.outputs.patch }}
     steps:
       - uses: actions/checkout@v7
 
       - uses: ./.github/actions/setup-nix
 
-      - name: Update flake.lock
+      - name: Update pins and flake.lock
         id: update
         run: |
+          nix run .#update-pins
           nix flake update
-          if git diff --quiet flake.lock; then
+          if git diff --quiet; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          git diff --stat flake.lock
+          git diff --stat
           echo "changed=true" >> "$GITHUB_OUTPUT"
-          # Hand the exact bytes to the check and build jobs; flake.lock has
-          # no line that could collide with the delimiter.
+          # Hand the change to the check and build jobs as a diff; none of
+          # these files has a line that could collide with the delimiter.
           {
-            echo "lock<<FLAKE_LOCK_EOF"
-            cat flake.lock
-            echo "FLAKE_LOCK_EOF"
+            echo "patch<<FLAKE_UPDATE_EOF"
+            git diff --binary
+            echo "FLAKE_UPDATE_EOF"
           } >> "$GITHUB_OUTPUT"
 
   # A called workflow's token can only have what the caller grants, even for
@@ -64,7 +65,7 @@ jobs:
       issues: write
     uses: ./.github/workflows/check.yml
     with:
-      lock: ${{ needs.update.outputs.lock }}
+      patch: ${{ needs.update.outputs.patch }}
     secrets: inherit
 
   build:
@@ -76,7 +77,7 @@ jobs:
       issues: write
     uses: ./.github/workflows/build.yml
     with:
-      lock: ${{ needs.update.outputs.lock }}
+      patch: ${{ needs.update.outputs.patch }}
     secrets: inherit
 
   commit:
@@ -94,38 +95,39 @@ jobs:
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
     steps:
       # Commit on top of the current main rather than the SHA that was tested:
-      # only flake.lock changes, and the run can take hours.
+      # only flake.lock and the pins change, and the run can take hours.
       - uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
 
-      - name: Commit flake.lock
+      - name: Commit the update
         id: commit
         env:
-          LOCK: ${{ needs.update.outputs.lock }}
+          PATCH: ${{ needs.update.outputs.patch }}
           BASE: ${{ github.sha }}
         run: |
-          # If flake.lock changed on main during the run (a manual update),
+          mapfile -t files < <(printf '%s\n' "$PATCH" | git apply --numstat | cut -f3)
+          # If any of these changed on main during the run (a manual update),
           # that one wins; don't clobber it with what we tested.
-          if ! git diff --quiet "$BASE" HEAD -- flake.lock; then
-            echo "::warning::flake.lock changed on main since $BASE, skipping commit"
+          if ! git diff --quiet "$BASE" HEAD -- "${files[@]}"; then
+            echo "::warning::${files[*]} changed on main since $BASE, skipping commit"
             exit 0
           fi
-          printf '%s\n' "$LOCK" > flake.lock
+          printf '%s\n' "$PATCH" | git apply
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "flake update" -- flake.lock
+          git commit -m "flake update" -- "${files[@]}"
           git push origin HEAD:main
           echo "committed=true" >> "$GITHUB_OUTPUT"
 
       - name: Close failure issue
         run: |
           .github/scripts/notify.sh close "Flake update failed" "Fixed: $RUN_URL"
-          # The failed candidate is superseded by this lock.
+          # The failed candidate is superseded by this update.
           git push origin --delete flake-update 2>/dev/null || true
 
-      # The push above doesn't trigger Check, so report the new lock's
+      # The push above doesn't trigger Check, so report the update's
       # warnings for main here.
       - name: Report warnings
         if: steps.commit.outputs.committed == 'true'
@@ -150,20 +152,20 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # The candidate lock otherwise only exists in this run. On a branch,
-      # a fix (yours or the GitHub agent's, whose branch starts from it) is
-      # made and tested against the lock that actually failed, and merging
+      # The candidate otherwise only exists in this run. On a branch, a fix
+      # (yours or the GitHub agent's, whose branch starts from it) is made
+      # and tested against the update that actually failed, and merging
       # it lands the update and the fix together.
-      - name: Push the candidate lock
+      - name: Push the candidate
         id: candidate
         if: needs.update.outputs.changed == 'true'
         env:
-          LOCK: ${{ needs.update.outputs.lock }}
+          PATCH: ${{ needs.update.outputs.patch }}
         run: |
-          printf '%s\n' "$LOCK" > flake.lock
+          printf '%s\n' "$PATCH" | git apply
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "flake update" -- flake.lock
+          git commit -am "flake update"
           git push --force origin HEAD:refs/heads/flake-update
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
@@ -177,7 +179,7 @@ jobs:
           if [ -n "$CANDIDATE" ]; then
             # The marker tells the GitHub agent to start from the branch.
             candidate=$(printf '\n%s\n\n<!-- agent-base: flake-update -->\n' \
-              "The updated flake.lock is on the \`flake-update\` branch ($CANDIDATE); fix on top of it.")
+              "The updated flake.lock and pins are on the \`flake-update\` branch ($CANDIDATE); fix on top of it.")
           fi
           issue=$(printf 'Run: %s\n\nFailed jobs:\n%s\n%s\n' "$RUN_URL" "$failed" "$candidate" |
             .github/scripts/notify.sh issue "Flake update failed")

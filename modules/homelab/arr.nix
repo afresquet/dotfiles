@@ -59,6 +59,7 @@
     in
     {
       imports = [
+        self.modules.nixos.podman
         self.modules.nixos.qbittorrent
         self.modules.nixos.vpn
         self.modules.nixos.media-group
@@ -118,60 +119,57 @@
         services.bazarr.enable = true;
         services.seerr.enable = true;
 
-        virtualisation.oci-containers = {
-          backend = "podman";
-          containers.lidarr = {
-            image = "lscr.io/linuxserver/lidarr:nightly";
-            autoStart = true;
-            volumes = [
-              # Reuse the nixpkgs-lidarr data dir verbatim — linuxserver image
-              # expects config.xml/lidarr.db directly under /config, which is
-              # exactly the layout `services.lidarr` already produced.
-              "/var/lib/lidarr/.config/Lidarr:/config"
-              # Bind-mount the HDD at the same path the host sees so the
-              # absolute paths stored in lidarr.db (e.g. /mnt/hdd/media/music)
-              # still resolve from inside the container.
-              "/mnt/hdd:/mnt/hdd"
-              # Tubifarry's slskd download client reports paths as slskd sees
-              # them — `/downloads/<album>/<file>` — which is the path slskd's
-              # own container uses internally. Mount the same host dir at the
-              # same path inside Lidarr so those paths resolve directly, with
-              # no Lidarr Remote Path Mapping needed in the UI.
-              "/mnt/hdd/downloads/soulseek:/downloads"
-            ];
-            environment = {
-              TZ = config.time.timeZone;
-              # Run as the existing nixpkgs lidarr user so /var/lib/lidarr's
-              # files (owned 306:306) stay readable/writable without chown.
-              # PGID is set to the *media* group (984), not lidarr (306):
-              # linuxserver's s6 entrypoint uses `s6-setuidgid` to drop to the
-              # PUID/PGID user, which *replaces* supplementary groups with the
-              # primary group only — `--group-add=984` was silently stripped,
-              # leaving lidarr unable to write to /mnt/hdd/downloads/soulseek.
-              # Making media the primary group gives lidarr group-write on
-              # everything in /mnt/hdd; /var/lib/lidarr files are owned 306:306
-              # but lidarr writes there as the owner anyway, so the gid shift
-              # doesn't break config access.
-              PUID = "306";
-              PGID = toString config.users.groups.media.gid;
-              # 0002 = 2775 dirs / 0664 files — so other media-group consumers
-              # (Navidrome, etc.) can read what Lidarr writes into media/music.
-              UMASK = "0002";
-            };
-            extraOptions = [
-              # Host network so Prowlarr (in the VPN namespace) can still push
-              # via 192.168.15.5:8686 over the wg-br interface, and so caddy /
-              # musicseerr / exportarr reach 127.0.0.1:8686 unchanged.
-              "--network=host"
-              "--cgroups=split"
-              # s6 (linuxserver's init) doesn't forward SIGTERM to Lidarr,
-              # so `systemctl restart` hangs ~90s until podman SIGKILLs the
-              # container. SIGINT propagates cleanly through s6 and .NET
-              # treats it as a graceful shutdown.
-              "--stop-signal=SIGINT"
-              "--stop-timeout=15"
-            ];
+        virtualisation.oci-containers.containers.lidarr = {
+          image = "lscr.io/linuxserver/lidarr:nightly";
+          autoStart = true;
+          volumes = [
+            # Reuse the nixpkgs-lidarr data dir verbatim — linuxserver image
+            # expects config.xml/lidarr.db directly under /config, which is
+            # exactly the layout `services.lidarr` already produced.
+            "/var/lib/lidarr/.config/Lidarr:/config"
+            # Bind-mount the HDD at the same path the host sees so the
+            # absolute paths stored in lidarr.db (e.g. /mnt/hdd/media/music)
+            # still resolve from inside the container.
+            "/mnt/hdd:/mnt/hdd"
+            # Tubifarry's slskd download client reports paths as slskd sees
+            # them — `/downloads/<album>/<file>` — which is the path slskd's
+            # own container uses internally. Mount the same host dir at the
+            # same path inside Lidarr so those paths resolve directly, with
+            # no Lidarr Remote Path Mapping needed in the UI.
+            "/mnt/hdd/downloads/soulseek:/downloads"
+          ];
+          environment = {
+            TZ = config.time.timeZone;
+            # Run as the existing nixpkgs lidarr user so /var/lib/lidarr's
+            # files (owned 306:306) stay readable/writable without chown.
+            # PGID is set to the *media* group (984), not lidarr (306):
+            # linuxserver's s6 entrypoint uses `s6-setuidgid` to drop to the
+            # PUID/PGID user, which *replaces* supplementary groups with the
+            # primary group only — `--group-add=984` was silently stripped,
+            # leaving lidarr unable to write to /mnt/hdd/downloads/soulseek.
+            # Making media the primary group gives lidarr group-write on
+            # everything in /mnt/hdd; /var/lib/lidarr files are owned 306:306
+            # but lidarr writes there as the owner anyway, so the gid shift
+            # doesn't break config access.
+            PUID = "306";
+            PGID = toString config.users.groups.media.gid;
+            # 0002 = 2775 dirs / 0664 files — so other media-group consumers
+            # (Navidrome, etc.) can read what Lidarr writes into media/music.
+            UMASK = "0002";
           };
+          extraOptions = [
+            # Host network so Prowlarr (in the VPN namespace) can still push
+            # via 192.168.15.5:8686 over the wg-br interface, and so caddy /
+            # musicseerr / exportarr reach 127.0.0.1:8686 unchanged.
+            "--network=host"
+            "--cgroups=split"
+            # s6 (linuxserver's init) doesn't forward SIGTERM to Lidarr,
+            # so `systemctl restart` hangs ~90s until podman SIGKILLs the
+            # container. SIGINT propagates cleanly through s6 and .NET
+            # treats it as a graceful shutdown.
+            "--stop-signal=SIGINT"
+            "--stop-timeout=15"
+          ];
         };
 
         users.users = lib.mkMerge [
@@ -359,16 +357,10 @@
           appName: app: lib.nameValuePair "exportarr-${appName}" { inherit (app) port; }
         ) arrExporters;
 
-        monitoring.dashboards = {
-          # onedr0p/exportarr's bundled "all-in-one" dashboard for Prowlarr +
-          # Radarr/Sonarr/Lidarr (Readarr and Sabnzbd panels stay empty: we
-          # don't run them). Pinned by commit so future upstream changes don't
-          # silently break the hash.
-          exportarr = {
-            url = "https://raw.githubusercontent.com/onedr0p/exportarr/86a455425ab5299a36b85c14d881c51b05aa2629/examples/grafana/dashboard2.json";
-            hash = "sha256-sF5fUFPu6rdF/4HUY7efqayira8s3vStSxcXCs3x+Wk=";
-          };
-        };
+        # onedr0p/exportarr's bundled "all-in-one" dashboard for Prowlarr +
+        # Radarr/Sonarr/Lidarr (Readarr and Sabnzbd panels stay empty: we don't
+        # run them), from the source of the exporter we run.
+        monitoring.dashboards.exportarr.json = "${config.services.prometheus.exporters.exportarr-radarr.package.src}/examples/grafana/dashboard2.json";
       };
     };
 }

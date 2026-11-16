@@ -57,39 +57,22 @@
           type = lib.types.attrsOf (
             lib.types.submodule {
               options = {
-                url = lib.mkOption {
-                  type = lib.types.nullOr lib.types.str;
-                  default = null;
-                  description = ''
-                    Direct download URL for the dashboard JSON. If null, the URL
-                    is built from `id` + `revision` against grafana.com. Use this
-                    when the dashboard isn't on grafana.com (e.g. shipped from a
-                    project's own repo).
-                  '';
-                };
                 json = lib.mkOption {
                   type = lib.types.nullOr lib.types.path;
                   default = null;
                   description = ''
-                    Local path to a dashboard JSON (e.g. shipped under
-                    `monitoring/dashboards/`). Bypasses the url/id/revision/hash
-                    flow entirely.
+                    Path to a dashboard JSON: a file under `monitoring/dashboards/`, or one
+                    shipped in a package's source.
                   '';
                 };
                 id = lib.mkOption {
                   type = lib.types.nullOr lib.types.int;
                   default = null;
-                  description = "grafana.com dashboard ID. Ignored if `url` or `json` is set.";
-                };
-                revision = lib.mkOption {
-                  type = lib.types.nullOr lib.types.int;
-                  default = null;
-                  description = "grafana.com revision number. Ignored if `url` or `json` is set.";
-                };
-                hash = lib.mkOption {
-                  type = lib.types.nullOr lib.types.str;
-                  default = null;
-                  description = "SRI hash of the downloaded dashboard JSON. Required for `url`/`id`+`revision`.";
+                  description = ''
+                    grafana.com dashboard ID, fetched at the revision pinned in
+                    `monitoring/dashboards/grafana-com.json` (`nix run .#update-pins`).
+                    Ignored if `json` is set.
+                  '';
                 };
                 extraFilter = lib.mkOption {
                   type = lib.types.str;
@@ -108,8 +91,7 @@
           default = { };
           description = ''
             Grafana dashboards the upstream Grafana should provision. Service
-            modules contribute their own. Sourced from grafana.com via `id` +
-            `revision`, or from any direct `url`, or from a local `json` path.
+            modules contribute their own, from grafana.com by `id` or from a `json` path.
           '';
         };
 

@@ -13,6 +13,7 @@
     in
     {
       imports = [
+        self.modules.nixos.podman
         self.modules.nixos.vpn
         self.modules.nixos.media-group
         self.modules.nixos.caddy
@@ -94,7 +95,7 @@
 
         image = lib.mkOption {
           type = lib.types.str;
-          default = "slskd/slskd:latest";
+          default = "docker.io/slskd/slskd:latest";
           description = "Container image to run.";
         };
       };
@@ -122,60 +123,51 @@
           "d ${cfg.downloadsDir} 2775 slskd media -"
           "d ${cfg.incompleteDir} 2775 slskd media -"
         ];
-
-        virtualisation.podman = {
-          enable = true;
-          autoPrune.enable = true;
-        };
-
-        virtualisation.oci-containers = {
-          backend = "podman";
-          containers.slskd = {
-            inherit (cfg) image;
-            autoStart = true;
-            volumes = [
-              "${cfg.dataDir}:/app"
-              "${cfg.downloadsDir}:/downloads"
-              "${cfg.incompleteDir}:/incomplete"
-            ]
-            ++ lib.optional (cfg.sharedMusicDir != null) "${cfg.sharedMusicDir}:/music:ro";
-            environment = {
-              TZ = config.time.timeZone;
-              # The slskd image's /entrypoint.sh does `umask "$SLSKD_UMASK"` before
-              # exec'ing slskd (default 0022 in the Dockerfile). A container-level
-              # podman --umask flag only sets umask on tini, then gets clobbered
-              # here. 0002 keeps group write so Lidarr (in media group) can
-              # move/delete completed files into /mnt/hdd/media/music.
-              SLSKD_UMASK = "0002";
-              # Lets the web UI persist slskd.yml edits — without this slskd is
-              # read-only at runtime and config has to be hand-edited on disk.
-              SLSKD_REMOTE_CONFIGURATION = "true";
-              # Point slskd at the HDD-backed dirs (overrides slskd.yml). Without
-              # these, completed and partial downloads land under /app on the
-              # NVMe and can blow up the root partition on a big haul.
-              SLSKD_DOWNLOADS_DIR = "/downloads";
-              SLSKD_INCOMPLETE_DIR = "/incomplete";
-            }
-            // lib.optionalAttrs (cfg.sharedMusicDir != null) {
-              # Advertise /music as a share. The bind mount is :ro so slskd can't
-              # write here even if it tried — the share is purely outbound serving.
-              SLSKD_SHARED_DIR = "/music";
-            };
-            extraOptions = [
-              # When on VPN: pin to the wg namespace so Soulseek peer traffic
-              # exits via Mullvad (same privacy story as qBittorrent). Caddy on
-              # the host reaches the UI via the namespace's host-side bridge IP.
-              # When off VPN: host network so the peer port is reachable directly
-              # on the LAN interface (router port-forward required for inbound
-              # peers from the open internet).
-              (if useNamespace then "--network=ns:/var/run/netns/${config.vpn.namespace}" else "--network=host")
-              "--dns=1.1.1.1"
-              "--cgroups=split"
-              # The entrypoint's --user mode: no usermod or chown, it just sets
-              # SLSKD_UMASK and execs slskd as this uid and gid.
-              "--user=${toString config.users.users.slskd.uid}:${toString config.users.groups.media.gid}"
-            ];
+        virtualisation.oci-containers.containers.slskd = {
+          inherit (cfg) image;
+          autoStart = true;
+          volumes = [
+            "${cfg.dataDir}:/app"
+            "${cfg.downloadsDir}:/downloads"
+            "${cfg.incompleteDir}:/incomplete"
+          ]
+          ++ lib.optional (cfg.sharedMusicDir != null) "${cfg.sharedMusicDir}:/music:ro";
+          environment = {
+            TZ = config.time.timeZone;
+            # The slskd image's /entrypoint.sh does `umask "$SLSKD_UMASK"` before
+            # exec'ing slskd (default 0022 in the Dockerfile). A container-level
+            # podman --umask flag only sets umask on tini, then gets clobbered
+            # here. 0002 keeps group write so Lidarr (in media group) can
+            # move/delete completed files into /mnt/hdd/media/music.
+            SLSKD_UMASK = "0002";
+            # Lets the web UI persist slskd.yml edits — without this slskd is
+            # read-only at runtime and config has to be hand-edited on disk.
+            SLSKD_REMOTE_CONFIGURATION = "true";
+            # Point slskd at the HDD-backed dirs (overrides slskd.yml). Without
+            # these, completed and partial downloads land under /app on the
+            # NVMe and can blow up the root partition on a big haul.
+            SLSKD_DOWNLOADS_DIR = "/downloads";
+            SLSKD_INCOMPLETE_DIR = "/incomplete";
+          }
+          // lib.optionalAttrs (cfg.sharedMusicDir != null) {
+            # Advertise /music as a share. The bind mount is :ro so slskd can't
+            # write here even if it tried — the share is purely outbound serving.
+            SLSKD_SHARED_DIR = "/music";
           };
+          extraOptions = [
+            # When on VPN: pin to the wg namespace so Soulseek peer traffic
+            # exits via Mullvad (same privacy story as qBittorrent). Caddy on
+            # the host reaches the UI via the namespace's host-side bridge IP.
+            # When off VPN: host network so the peer port is reachable directly
+            # on the LAN interface (router port-forward required for inbound
+            # peers from the open internet).
+            (if useNamespace then "--network=ns:/var/run/netns/${config.vpn.namespace}" else "--network=host")
+            "--dns=1.1.1.1"
+            "--cgroups=split"
+            # The entrypoint's --user mode: no usermod or chown, it just sets
+            # SLSKD_UMASK and execs slskd as this uid and gid.
+            "--user=${toString config.users.users.slskd.uid}:${toString config.users.groups.media.gid}"
+          ];
         };
 
         # Tie podman-slskd's lifecycle to wg.service so we don't try to start

@@ -9,11 +9,16 @@
     }:
     let
       cfg = config.home-assistant-container;
-      hacsSrc = pkgs.fetchzip {
-        url = "https://github.com/hacs/integration/releases/download/${cfg.hacs.version}/hacs.zip";
-        hash = cfg.hacs.hash;
-        stripRoot = false;
-      };
+      # Kept current by `nix run .#update-pins`.
+      hacs = lib.importJSON ./hacs.json;
+      hacsSrc = pkgs.runCommand "hacs-${hacs.version}" { nativeBuildInputs = [ pkgs.unzip ]; } ''
+        unzip -q ${
+          pkgs.fetchurl {
+            url = "https://github.com/hacs/integration/releases/download/${hacs.version}/hacs.zip";
+            inherit (hacs) hash;
+          }
+        } -d $out
+      '';
 
       # Body of HA's `prometheus:` integration. Drops as the include target so
       # we own the metric filter declaratively without touching configuration.yaml.
@@ -48,6 +53,7 @@
     in
     {
       imports = [
+        self.modules.nixos.podman
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
         self.modules.nixos.monitoring-options
@@ -77,21 +83,7 @@
           '';
         };
 
-        hacs = {
-          enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
-
-          version = lib.mkOption {
-            type = lib.types.str;
-            default = "2.0.5";
-            description = "HACS release tag to install.";
-          };
-
-          hash = lib.mkOption {
-            type = lib.types.str;
-            default = "sha256-iMomioxH7Iydy+bzJDbZxt6BX31UkCvqhXrxYFQV8Gw=";
-            description = "SRI hash of the HACS release zip (unpacked).";
-          };
-        };
+        hacs.enable = lib.mkEnableOption "HACS (Home Assistant Community Store)";
       };
 
       config = {
@@ -118,12 +110,6 @@
             to = 21073;
           }
         ];
-
-        virtualisation.podman = {
-          enable = true;
-          autoPrune.enable = true;
-        };
-
         reverseProxy.services.home-assistant = {
           host = "home-assistant.home-server";
           upstream = "127.0.0.1:8123";
@@ -142,26 +128,23 @@
           };
         };
 
-        virtualisation.oci-containers = {
-          backend = "podman";
-          containers.home-assistant = {
-            inherit (cfg) image;
-            autoStart = true;
-            volumes = [
-              "${cfg.dataDir}:/config"
-              "/etc/localtime:/etc/localtime:ro"
-              "/run/dbus:/run/dbus"
-            ];
-            environment.TZ = config.time.timeZone;
-            extraOptions = [
-              "--network=host"
-              "--cap-add=NET_ADMIN"
-              "--cap-add=NET_RAW"
-              # Place the container payload inside the podman-home-assistant.service
-              # cgroup so cAdvisor's per-unit metrics reflect actual usage.
-              "--cgroups=split"
-            ];
-          };
+        virtualisation.oci-containers.containers.home-assistant = {
+          inherit (cfg) image;
+          autoStart = true;
+          volumes = [
+            "${cfg.dataDir}:/config"
+            "/etc/localtime:/etc/localtime:ro"
+            "/run/dbus:/run/dbus"
+          ];
+          environment.TZ = config.time.timeZone;
+          extraOptions = [
+            "--network=host"
+            "--cap-add=NET_ADMIN"
+            "--cap-add=NET_RAW"
+            # Place the container payload inside the podman-home-assistant.service
+            # cgroup so cAdvisor's per-unit metrics reflect actual usage.
+            "--cgroups=split"
+          ];
         };
 
         # Sync HACS into the persistent config dir before the container starts.

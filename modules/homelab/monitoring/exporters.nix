@@ -115,21 +115,9 @@
       };
 
       monitoring.dashboards = {
-        node-exporter-full = {
-          id = 1860;
-          revision = 45;
-          hash = "sha256-GExrdAnzBtp1Ul13cvcZRbEM6iOtFrXXjEaY6g6lGYY=";
-        };
-        cadvisor = {
-          id = 14282;
-          revision = 1;
-          hash = "sha256-dqhaC4r4rXHCJpASt5y3EZXW00g5fhkQM+MgNcgX1c0=";
-        };
-        blackbox = {
-          id = 13659;
-          revision = 1;
-          hash = "sha256-nnBFWFDAqKUqTOYxOrkRPlVla4ioQZ6rqEqakdzUj1Q=";
-        };
+        node-exporter-full.id = 1860;
+        cadvisor.id = 14282;
+        blackbox.id = 13659;
       };
     };
 }

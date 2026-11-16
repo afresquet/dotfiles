@@ -4,7 +4,7 @@ name: Check
 # every configuration, without building. Evaluation warnings are annotated on
 # the run; on main they also keep the "Evaluation warnings" issue in sync
 # (scripts/report-warnings.sh). flake-update calls this on its candidate
-# lock and reports that lock's warnings itself once it commits it.
+# update and reports its warnings itself once it commits it.
 
 on:
   push:
@@ -12,8 +12,8 @@ on:
       - "**.md"
   workflow_call:
     inputs:
-      lock:
-        description: flake.lock contents to check instead of the committed one.
+      patch:
+        description: Candidate update to check, as a git diff (see setup-nix).
         type: string
         default: ""
     outputs:
@@ -38,7 +38,7 @@ jobs:
 
       - uses: ./.github/actions/setup-nix
         with:
-          lock: ${{ inputs.lock }}
+          patch: ${{ inputs.patch }}
 
       - name: Flake check
         run: nix flake check

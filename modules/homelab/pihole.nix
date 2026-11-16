@@ -38,6 +38,7 @@ in
     in
     {
       imports = [
+        self.modules.nixos.podman
         inputs.agenix.nixosModules.default
         self.modules.nixos.caddy
         self.modules.nixos.dashboard
@@ -167,12 +168,6 @@ in
             printf 'FTLCONF_dns_hosts=%s\n' "$entries" > /run/pihole/dns-hosts.env
           '';
         };
-
-        virtualisation.podman = {
-          enable = true;
-          autoPrune.enable = true;
-        };
-
         reverseProxy.services.pihole = {
           host = "pihole.home-server";
           upstream = "127.0.0.1:${toString cfg.adminPort}";
@@ -234,8 +229,6 @@ in
         monitoring.exporters.pihole.port = 9617;
         monitoring.dashboards.pihole = {
           id = 10176;
-          revision = 3;
-          hash = "sha256-MB4J1WAqLlV2eMFG67sYUbhJk3g1LnfjU+iEWejgyKE=";
           # Dashboard 10176 was built against an older exporter that returned
           # percentages; eko/pihole-exporter on v6 returns raw daily counts, so
           # panels rendered as "17251 %". Switch the unit to "short" for any
@@ -257,46 +250,43 @@ in
           '';
         };
 
-        virtualisation.oci-containers = {
-          backend = "podman";
-          containers.pihole = {
-            image = "pihole/pihole:latest";
-            autoStart = true;
-            ports = [
-              "53:53/tcp"
-              "53:53/udp"
-              "127.0.0.1:${toString cfg.adminPort}:80/tcp"
-            ];
-            volumes = [
-              "${cfg.dataDir}/etc-pihole:/etc/pihole"
-              "${cfg.dataDir}/etc-dnsmasq.d:/etc/dnsmasq.d"
-            ];
-            environment = {
-              TZ = config.time.timeZone;
-              PIHOLE_UID = toString config.users.users.pihole.uid;
-              PIHOLE_GID = toString config.users.groups.pihole.gid;
-              FTLCONF_dns_upstreams = lib.concatStringsSep ";" cfg.upstreamDns;
-              FTLCONF_dns_listeningMode = "all";
-              # Pi-hole 6 ignores /etc/dnsmasq.d/*.conf unless this is on. Without
-              # it our 99-tailnet-magicdns.conf forwarder is silently unread, and
-              # *.<tailnet>.ts.net queries from the host return nothing → Caddy
-              # can't resolve its hostname upstreams.
-              FTLCONF_misc_etc_dnsmasq_d = "true";
-            }
-            // lib.optionalAttrs (shouldServeProxyDns && hasStaticDnsTarget) {
-              FTLCONF_dns_hosts = dnsHostEntries proxy.dnsTarget;
-            };
-            environmentFiles = [
-              config.age.secrets.pihole-webpassword.path
-            ]
-            ++ lib.optional (shouldServeProxyDns && !hasStaticDnsTarget) "/run/pihole/dns-hosts.env";
-            extraOptions = [
-              "--cap-add=NET_ADMIN"
-              # Place the container payload inside the podman-pihole.service cgroup
-              # so cAdvisor's per-unit metrics reflect actual container resources.
-              "--cgroups=split"
-            ];
+        virtualisation.oci-containers.containers.pihole = {
+          image = "docker.io/pihole/pihole:latest";
+          autoStart = true;
+          ports = [
+            "53:53/tcp"
+            "53:53/udp"
+            "127.0.0.1:${toString cfg.adminPort}:80/tcp"
+          ];
+          volumes = [
+            "${cfg.dataDir}/etc-pihole:/etc/pihole"
+            "${cfg.dataDir}/etc-dnsmasq.d:/etc/dnsmasq.d"
+          ];
+          environment = {
+            TZ = config.time.timeZone;
+            PIHOLE_UID = toString config.users.users.pihole.uid;
+            PIHOLE_GID = toString config.users.groups.pihole.gid;
+            FTLCONF_dns_upstreams = lib.concatStringsSep ";" cfg.upstreamDns;
+            FTLCONF_dns_listeningMode = "all";
+            # Pi-hole 6 ignores /etc/dnsmasq.d/*.conf unless this is on. Without
+            # it our 99-tailnet-magicdns.conf forwarder is silently unread, and
+            # *.<tailnet>.ts.net queries from the host return nothing → Caddy
+            # can't resolve its hostname upstreams.
+            FTLCONF_misc_etc_dnsmasq_d = "true";
+          }
+          // lib.optionalAttrs (shouldServeProxyDns && hasStaticDnsTarget) {
+            FTLCONF_dns_hosts = dnsHostEntries proxy.dnsTarget;
           };
+          environmentFiles = [
+            config.age.secrets.pihole-webpassword.path
+          ]
+          ++ lib.optional (shouldServeProxyDns && !hasStaticDnsTarget) "/run/pihole/dns-hosts.env";
+          extraOptions = [
+            "--cap-add=NET_ADMIN"
+            # Place the container payload inside the podman-pihole.service cgroup
+            # so cAdvisor's per-unit metrics reflect actual container resources.
+            "--cgroups=split"
+          ];
         };
       };
     };

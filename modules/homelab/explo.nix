@@ -12,6 +12,7 @@
     in
     {
       imports = [
+        self.modules.nixos.podman
         self.modules.nixos.slskd
         self.modules.nixos.vpn
         self.modules.nixos.media-group
@@ -79,57 +80,48 @@
           # read them via its media-group membership.
           "d ${cfg.musicDir}       2775 explo media -"
         ];
-
-        virtualisation.podman = {
-          enable = true;
-          autoPrune.enable = true;
-        };
-
-        virtualisation.oci-containers = {
-          backend = "podman";
-          containers.explo = {
-            inherit (cfg) image;
-            autoStart = true;
-            volumes = [
-              # Container-private state, owned by explo through tmpfiles above.
-              "${cfg.dataDir}/config:/opt/explo/config"
-              # Shared with navidrome. Explo writes as PUID; the setgid+media
-              # group on the dir keeps the group right.
-              "${cfg.musicDir}:/data"
-            ]
-            # MIGRATE_DOWNLOADS=true moves files from slskd's download dir into
-            # /data; needs the slskd dir mounted into Explo so the rename(2) is
-            # cross-mount-aware. The path inside Explo (/slskd/) matches the
-            # default SLSKD_DIR Explo reads from.
-            ++ [ "${config.slskd.downloadsDir}:/slskd" ];
-            environmentFiles = [ config.age.secrets.explo-env.path ];
-            environment = {
-              TZ = config.time.timeZone;
-              # start.sh remaps its explo user to these and runs the web UI and
-              # explo through su-exec. Only crond and the yt-dlp self-update
-              # stay root inside the container.
-              PUID = toString config.users.users.explo.uid;
-              PGID = toString config.users.groups.media.gid;
-              WEB_UI = "true";
-              # Navidrome speaks the Subsonic API.
-              EXPLO_SYSTEM = "subsonic";
-              SYSTEM_URL = "http://127.0.0.1:4533";
-            }
-            // {
-              DOWNLOAD_SERVICES = "slskd";
-              SLSKD_URL = slskdUrl;
-              MIGRATE_DOWNLOADS = "true";
-            };
-            extraOptions = [
-              # Host network so SYSTEM_URL=http://127.0.0.1:4533 reaches Navidrome.
-              # Port 7288 is firewalled externally (only 80 is allowed on
-              # tailscale0); caddy proxies via host loopback.
-              "--network=host"
-              # Place the container payload inside the podman-explo.service cgroup
-              # so cAdvisor's per-unit metrics reflect actual usage.
-              "--cgroups=split"
-            ];
+        virtualisation.oci-containers.containers.explo = {
+          inherit (cfg) image;
+          autoStart = true;
+          volumes = [
+            # Container-private state, owned by explo through tmpfiles above.
+            "${cfg.dataDir}/config:/opt/explo/config"
+            # Shared with navidrome. Explo writes as PUID; the setgid+media
+            # group on the dir keeps the group right.
+            "${cfg.musicDir}:/data"
+          ]
+          # MIGRATE_DOWNLOADS=true moves files from slskd's download dir into
+          # /data; needs the slskd dir mounted into Explo so the rename(2) is
+          # cross-mount-aware. The path inside Explo (/slskd/) matches the
+          # default SLSKD_DIR Explo reads from.
+          ++ [ "${config.slskd.downloadsDir}:/slskd" ];
+          environmentFiles = [ config.age.secrets.explo-env.path ];
+          environment = {
+            TZ = config.time.timeZone;
+            # start.sh remaps its explo user to these and runs the web UI and
+            # explo through su-exec. Only crond and the yt-dlp self-update
+            # stay root inside the container.
+            PUID = toString config.users.users.explo.uid;
+            PGID = toString config.users.groups.media.gid;
+            WEB_UI = "true";
+            # Navidrome speaks the Subsonic API.
+            EXPLO_SYSTEM = "subsonic";
+            SYSTEM_URL = "http://127.0.0.1:4533";
+          }
+          // {
+            DOWNLOAD_SERVICES = "slskd";
+            SLSKD_URL = slskdUrl;
+            MIGRATE_DOWNLOADS = "true";
           };
+          extraOptions = [
+            # Host network so SYSTEM_URL=http://127.0.0.1:4533 reaches Navidrome.
+            # Port 7288 is firewalled externally (only 80 is allowed on
+            # tailscale0); caddy proxies via host loopback.
+            "--network=host"
+            # Place the container payload inside the podman-explo.service cgroup
+            # so cAdvisor's per-unit metrics reflect actual usage.
+            "--cgroups=split"
+          ];
         };
 
         reverseProxy.services.explo = {
