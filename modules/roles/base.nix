@@ -8,6 +8,7 @@
       allowed-unfree
       primary-user
       auto-upgrade
+      cachix
       avahi
       bluetooth
       ssh

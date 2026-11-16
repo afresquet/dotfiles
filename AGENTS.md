@@ -27,7 +27,9 @@ without breaking them.
   `modules/homelab/monitoring/dashboards/grafana-com.json`); don't run it
   either unless asked. `check.yml` runs on every
   push and tracks evaluation warnings in an "Evaluation warnings" issue;
-  `build.yml` also runs when a push changes `flake.lock` on main.
+  `build.yml` builds the configurations whose derivation a push to main
+  changes (pushing them to Cachix); on a PR it waits for approval of the
+  `build` environment.
 - Formatting and lint are enforced. Run `nix fmt` after editing Nix files;
   `nix flake check` must pass before you report done.
 
@@ -202,10 +204,10 @@ which publishes a module for each platform it touches through flake-parts'
 
 | Aspect | Imports | Used by |
 |--------|---------|---------|
-| `nixos.base` | allowed-unfree, primary-user, auto-upgrade, avahi, bluetooth, ssh, tailscale; the overlays | every NixOS host |
+| `nixos.base` | allowed-unfree, primary-user, auto-upgrade, cachix, avahi, bluetooth, ssh, tailscale; the overlays | every NixOS host |
 | `nixos.desktop` | `base`, GUI programs, gaming, audio, SDDM, Hyprland, ... | desktop, laptop |
 | `nixos.server` | `base`, pihole, caddy, dashboard, monitoring | the Pi (its apps are listed in its host file) |
-| `darwin.base` | Determinate Nix and its shared settings, the overlays, stateVersion and platform | both Macs |
+| `darwin.base` | Determinate Nix and its shared settings, cachix, the overlays, stateVersion and platform | both Macs |
 | `homeManager.base` | terminal tooling, shells, dotfiles-sync | every home, the Pi included |
 | `homeManager.desktop` | `base`, Stylix, alacritty, kitty, insomnia | every graphical home, Macs included |
 | `homeManager.linux-desktop` | `desktop`, Hyprland and its programs, auto-upgrade | desktop, laptop |

@@ -267,14 +267,10 @@ in
               "https://cache.nixos.org"
               "https://nix-community.cachix.org"
               "https://nixos-raspberrypi.cachix.org"
-              # This flake's own closures, pushed by the flake-update workflow so
-              # the weekly auto-upgrade downloads instead of compiling.
-              "https://afresquet-dotfiles.cachix.org"
             ];
             trusted-public-keys = [
               "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
               "nixos-raspberrypi.cachix.org-1:4iMO9LXa8BqhU+Rpg6LQKiGa2lsNh/j2oiYLNOQ5sPI="
-              "afresquet-dotfiles.cachix.org-1:14Rw96q4DN7l6kkvY3ducxkBwDQrQv8BlHg4XIxkC50="
               # Packages built and signed on the Mac mini (its `secret-key-files`).
               "alvaros-mac-mini-1:giqVho0+L/l5+xMGZSyys7ntJxXAD+ga/zH/kELChBY="
             ];
