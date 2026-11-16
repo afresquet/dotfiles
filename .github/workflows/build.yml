@@ -14,8 +14,9 @@ name: Build
 # - when flake-update calls it with its candidate update (against main
 #   without it), which it commits only if this passes.
 # Builds from main and flake-update are pushed to Cachix, which every host
-# substitutes from (modules/nix/cachix.nix); a pull request's never are, so
-# unmerged code doesn't reach the cache.
+# substitutes from (modules/nix/cachix.nix), minus what the host's other
+# substituters already serve; a pull request's never are, so unmerged code
+# doesn't reach the cache.
 
 on:
   push:
@@ -106,13 +107,17 @@ jobs:
       # Hosts pick these up through their auto-upgrade or a rebuild, so the
       # closure is downloaded rather than rebuilt. Skipped until the
       # CACHIX_CACHE variable and CACHIX_AUTH_TOKEN secret are set. Only the
-      # paths no other substituter in setup-nix serves are pushed (see
-      # cachix-push.sh). Never from a pull request: its code isn't merged.
+      # paths none of the target machine's own substituters serves are
+      # pushed (see cachix-push.sh). Never from a pull request: its code
+      # isn't merged.
       - name: Push to Cachix
         if: vars.CACHIX_CACHE != '' && github.event_name != 'pull_request'
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: .github/scripts/cachix-push.sh '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
+          SUBSTITUTERS: ${{ join(matrix.substituters, ' ') }}
+        run: |
+          read -ra substituters <<<"$SUBSTITUTERS"
+          .github/scripts/cachix-push.sh '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}' "${substituters[@]}"
 
   # Only for pushes to main: when called, flake-update reports on the whole
   # run, and a pull request's result shows on the PR.
