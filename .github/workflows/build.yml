@@ -126,16 +126,16 @@ jobs:
 
       # Hosts pick these up through their auto-upgrade, so the closure is
       # downloaded rather than rebuilt. Skipped until the CACHIX_CACHE
-      # variable and CACHIX_AUTH_TOKEN secret are set. Pushing a closure
-      # leaves out anything already on cache.nixos.org. Never from a pull
-      # request: its code isn't merged.
+      # variable and CACHIX_AUTH_TOKEN secret are set. Only the paths no
+      # other substituter in setup-nix serves are pushed (see
+      # cachix-push.sh). Never from a pull request: its code isn't merged.
       - name: Push to Cachix
         if: >-
           matrix.push && vars.CACHIX_CACHE != ''
           && github.event_name != 'pull_request'
         env:
           CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
-        run: nix run nixpkgs#cachix -- push '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
+        run: .github/scripts/cachix-push.sh '${{ vars.CACHIX_CACHE }}' '${{ steps.build.outputs.out }}'
 
   # Only for pushes to main: when called, flake-update reports on the whole
   # run, and an agent branch's result shows on its PR.

@@ -1,0 +1,91 @@
+diff -ru a/src/Cachix/Client/Command/Push.hs b/src/Cachix/Client/Command/Push.hs
+--- a/src/Cachix/Client/Command/Push.hs
++++ b/src/Cachix/Client/Command/Push.hs
+@@ -19,7 +19,7 @@
+ import Cachix.Client.HumanSize (humanSize)
+ import Cachix.Client.OptionsParser as Options (PushOptions (..))
+ import Cachix.Client.Push as Push
+-import Cachix.Client.Retry (retryClientM)
++import Cachix.Client.Retry (retryAll, retryClientM)
+ import Cachix.Client.Secrets
+ import Cachix.Client.Servant
+ import Cachix.Types.BinaryCache (BinaryCacheName)
+@@ -61,15 +61,30 @@
+     (errors, validPaths) <- liftIO $ resolveStorePaths (pushParamsStore pushParams) (map toS inputStorePaths)
+     liftIO $ forM_ errors $ uncurry logStorePathWarning
+     pushedPaths <-
+-      pushClosure
+-        (mapConcurrentlyBounded (numJobs opts))
+-        pushParams
+-        validPaths
++      if omitDeps opts
++        then pushPaths (numJobs opts) pushParams validPaths
++        else
++          pushClosure
++            (mapConcurrentlyBounded (numJobs opts))
++            pushParams
++            validPaths
+     case (length inputStorePaths, length pushedPaths) of
+       (0, _) -> putErrText "Nothing to push."
+       (_, 0) -> putErrText "Nothing to push - all store paths are already on Cachix."
+       _ -> putErrText "\nAll done."
+ 
++-- | Like 'pushClosure', but only for the given paths, not their dependencies.
++pushPaths ::
++  Int ->
++  PushParams IO r ->
++  [StorePath] ->
++  IO [r]
++pushPaths jobs pushParams storePaths = do
++  (allPaths, missingPaths) <- queryNarInfoBulk pushParams storePaths
++  paths <- pushOnClosureAttempt pushParams allPaths missingPaths
++  flip (mapConcurrentlyBounded jobs) paths $ \storePath ->
++    retryAll $ uploadStorePath pushParams storePath
++
+ pushStrategy :: Store -> Maybe Token -> PushOptions -> Text -> BinaryCache.CompressionMethod -> StorePath -> PushStrategy IO ()
+ pushStrategy store authToken opts name compressionMethod storePath =
+   PushStrategy
+diff -ru a/src/Cachix/Client/OptionsParser.hs b/src/Cachix/Client/OptionsParser.hs
+--- a/src/Cachix/Client/OptionsParser.hs
++++ b/src/Cachix/Client/OptionsParser.hs
+@@ -130,7 +130,9 @@
+     -- | The number of store paths to process concurrently.
+     numJobs :: Int,
+     -- | Omit the derivation from the store path metadata.
+-    omitDeriver :: Bool
++    omitDeriver :: Bool,
++    -- | Push only the given store paths, not their closure.
++    omitDeps :: Bool
+   }
+   deriving (Show)
+ 
+@@ -172,7 +174,8 @@
+       chunkSize = defaultChunkSize,
+       numConcurrentChunks = defaultNumConcurrentChunks,
+       numJobs = defaultNumJobs,
+-      omitDeriver = defaultOmitDeriver
++      omitDeriver = defaultOmitDeriver,
++      omitDeps = False
+     }
+ 
+ data DaemonCommand
+@@ -355,6 +358,7 @@
+     <*> numConcurrentChunks
+     <*> numJobs
+     <*> omitDeriver
++    <*> omitDeps
+   where
+     compressionLevel =
+       option (auto >>= validateCompressionLevel) $
+@@ -429,6 +433,11 @@
+         long "omit-deriver"
+           <> help "Do not publish which derivations built the store paths."
+ 
++    omitDeps =
++      switch $
++        long "omit-deps"
++          <> help "Push only the given store paths, not their dependencies (push only)."
++
+ pushCommand :: Parser CachixCommand
+ pushCommand = toPushCommand <$> pushOptionsParser <*> cacheNameParser <*> pushArgumentsParser
+   where
