@@ -205,7 +205,11 @@ def git(*args, cwd, token=None, check=True):
             GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
             GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {basic}",
         )
-    r = subprocess.run([CFG["git"], *args], cwd=cwd, env=env, capture_output=True, text=True)
+    # The agents can write the clone (a dev shell installs its hooks into
+    # .bare/hooks), and what they put there must not run here, outside their
+    # sandbox, as the user that can read the App's key: no hooks, no fsmonitor.
+    safe = ["-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false"]
+    r = subprocess.run([CFG["git"], *safe, *args], cwd=cwd, env=env, capture_output=True, text=True)
     if check and r.returncode:
         raise RuntimeError(f"git {' '.join(args)}: {r.stderr.strip()}")
     return r
@@ -276,6 +280,9 @@ def run_claude(phase, prompt, cwd, out, schema, extra_args):
     env = {
         "HOME": CFG["home"],
         "PATH": CFG["path"],
+        # Lets a repo's dev shell skip what can't work here, like installing
+        # git hooks into the clone the sandbox keeps read-only.
+        "GITHUB_AGENT": "1",
         "LANG": "en_US.UTF-8",
         "SHELL": CFG["shell"],
         # Whitespace anywhere is dropped: a token copied from a terminal often
@@ -285,6 +292,7 @@ def run_claude(phase, prompt, cwd, out, schema, extra_args):
         "SSL_CERT_FILE": CFG["caFile"],
     }
     transcript = out / f"{phase}.jsonl"
+    extra_args = protect_clone(phase, extra_args, Path(cwd).parent / ".bare", out)
     cmd = [
         CFG["claude"], "-p",
         "--model", CFG["model"],
@@ -313,6 +321,20 @@ def run_claude(phase, prompt, cwd, out, schema, extra_args):
         sub = result and result.get("subtype")
         raise RuntimeError(f"{phase} exited {rc} ({sub}) without a result")
     return result["structured_output"]
+
+
+def protect_clone(phase, args, bare, out):
+    """Add the clone's config and hooks to the sandbox's denyWrite: Claude
+    Code protects .git/config and .git/hooks itself, but this clone is
+    `.bare`. The dispatcher's own git reads that config."""
+    args = list(args)
+    i = args.index("--settings") + 1
+    settings = json.loads(Path(args[i]).read_text())
+    fs = settings.setdefault("sandbox", {}).setdefault("filesystem", {})
+    fs["denyWrite"] = [*fs.get("denyWrite", []), str(bare / "config"), str(bare / "hooks")]
+    args[i] = str(out / f"{phase}-settings.json")
+    Path(args[i]).write_text(json.dumps(settings))
+    return args
 
 
 # Answers to inline review comments, posted in their threads.
@@ -619,8 +641,10 @@ def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedba
     repo_full, number = repo.full, issue["number"]
     # A fresh token: the agents may have run for most of the last one's hour.
     token = TOKENS.get(installation)
-    head = rev("HEAD", path)
-    ahead = int(git("rev-list", "--count", f"origin/{base}..HEAD", cwd=path).stdout.strip())
+    # From the clone, by branch name: the worktree's .git file is the
+    # implementer's to rewrite and could point git at a config of its own.
+    head = rev(f"refs/heads/{branch}", repo.bare)
+    ahead = int(git("rev-list", "--count", f"origin/{base}..refs/heads/{branch}", cwd=repo.bare).stdout.strip())
     replies = result.get("replies")
     if result["status"] != "done" or ahead == 0:
         # Blocked: the summary says what's needed; always say it.
@@ -629,7 +653,7 @@ def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedba
         return
     if head != remote:
         # The lease refuses to overwrite a push made in the meantime.
-        git("push", "--quiet", f"--force-with-lease=refs/heads/{branch}:{remote or ''}", "origin", f"HEAD:refs/heads/{branch}", cwd=path, token=token)
+        git("push", "--quiet", f"--force-with-lease=refs/heads/{branch}:{remote or ''}", "origin", f"refs/heads/{branch}:refs/heads/{branch}", cwd=repo.bare, token=token)
     if is_pr:
         feedback(repo_full, number, token, result["summary"], replies, thread)
         review(repo_full, number, token, thread)
