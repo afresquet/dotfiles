@@ -82,7 +82,8 @@ in
             discord.icon = "";
             steam.icon = "";
             obsidian.icon = "";
-            messaging.icon = "󰍡";
+            telegram.icon = "";
+            whatsapp.icon = "";
             _1password.icon = "";
             twitter.icon = "";
             music.icon = "󰝚";
@@ -134,9 +135,7 @@ in
                 steam = lib.getExe pkgs.steam;
                 obsidian = lib.getExe pkgs.obsidian;
                 telegram = lib.getExe pkgs.telegram-desktop;
-                # Create both messaging clients together so Hyprland tiles them
-                # side-by-side in the messaging workspace.
-                messaging = "sh -c '${webApp "WhatsApp"} & exec ${telegram}'";
+                whatsapp = webApp "WhatsApp";
                 _1password = lib.getExe pkgs._1password-gui;
                 twitter = webApp "X";
                 music = webApp "Apple Music";
@@ -166,13 +165,11 @@ in
                 bindDescriptions = {
                   "SUPER + B" = "Browser";
                   "SUPER + T" = "Terminal";
-                  "SUPER + D" = "Discord";
                   "SUPER + M" = "Music";
                   "SUPER + C" = "Herdr";
                   "SUPER + O" = "Open… (then a letter)";
                   "SUPER + SHIFT + B" = "Move window to browser";
                   "SUPER + SHIFT + T" = "Move window to terminal";
-                  "SUPER + SHIFT + D" = "Move window to Discord";
                   "SUPER + SHIFT + M" = "Move window to music";
                   "SUPER + SHIFT + C" = "Move window to Herdr";
                   "SUPER + Q" = "Close window";
@@ -267,6 +264,13 @@ in
                 # SHIFT + letter sends the active window there instead.
                 appsSubmap = [
                   {
+                    key = "D";
+
+                    name = "discord";
+                    desc = "Discord";
+                    program = discord;
+                  }
+                  {
                     key = "S";
 
                     name = "steam";
@@ -309,11 +313,18 @@ in
                     program = fileManager;
                   }
                   {
-                    key = "M";
+                    key = "T";
 
-                    name = "messaging";
-                    desc = "Messaging";
-                    program = messaging;
+                    name = "telegram";
+                    desc = "Telegram";
+                    program = telegram;
+                  }
+                  {
+                    key = "W";
+
+                    name = "whatsapp";
+                    desc = "WhatsApp";
+                    program = whatsapp;
                   }
                 ];
                 submapReset = ''hl.dispatch(hl.dsp.submap("reset"))'';
@@ -546,7 +557,6 @@ in
                     # Focus daily workspaces; the rest are in the "apps" submap
                     (mkBind "SUPER + B" (wsFocus "browser" browser))
                     (mkBind "SUPER + T" (wsFocus "terminal" terminal))
-                    (mkBind "SUPER + D" (wsFocus "discord" discord))
                     (mkBind "SUPER + M" (wsFocus "music" music))
                     (mkBind "SUPER + C" (wsFocus "herdr" herdr))
                     (mkBind "SUPER + O" ''hl.dsp.submap("open")'')
@@ -554,7 +564,6 @@ in
                     # Move active window to daily workspaces
                     (mkBind "SUPER + SHIFT + B" (wsMove "browser"))
                     (mkBind "SUPER + SHIFT + T" (wsMove "terminal"))
-                    (mkBind "SUPER + SHIFT + D" (wsMove "discord"))
                     (mkBind "SUPER + SHIFT + M" (wsMove "music"))
                     (mkBind "SUPER + SHIFT + C" (wsMove "herdr"))
 

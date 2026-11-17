@@ -128,7 +128,8 @@ in
                 ]
                 // onMonitor 1 [
                   "discord"
-                  "messaging"
+                  "telegram"
+                  "whatsapp"
                   "music"
                   "_1password"
                 ];
