@@ -20,6 +20,7 @@
         discord
         docker
         dropbox
+        librepods
         microcontrollers
         obsidian
         rpi-imager
@@ -134,6 +135,7 @@
         foot
         anki
         cliphist
+        librepods
         firefoxpwa
         ghostty
         obs-studio

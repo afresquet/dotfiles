@@ -664,6 +664,8 @@ in
                       locked = true;
                     })
                     (mkBindOpts "XF86AudioPlay" (execDsp "${media} play-pause") { locked = true; })
+                    # Bluetooth headsets (AirPods over AVRCP) send Pause separately from Play.
+                    (mkBindOpts "XF86AudioPause" (execDsp "${media} pause") { locked = true; })
                     (mkBindOpts "XF86AudioPrev" (execDsp "${media} previous") { locked = true; })
                     (mkBindOpts "XF86AudioNext" (execDsp "${media} next") { locked = true; })
                     (mkBindOpts "XF86AudioStop" (execDsp "${media} stop") { locked = true; })
