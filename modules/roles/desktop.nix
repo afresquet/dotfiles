@@ -135,6 +135,7 @@
         foot
         anki
         cliphist
+        pause-other-players
         librepods
         firefoxpwa
         ghostty
