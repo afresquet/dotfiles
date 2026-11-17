@@ -35,6 +35,7 @@ in
             slskd
             explo
             jellyfin
+            attic
             auto-upgrade-telegram
           ];
 

@@ -55,6 +55,12 @@ in
     keys.homeServer
     keys.homeServerHost
   ];
+  # Attic's JWT signing key: ATTIC_SERVER_TOKEN_RS256_SECRET_BASE64= line.
+  "attic-server.age".publicKeys = [
+    keys.afresquet
+    keys.homeServer
+    keys.homeServerHost
+  ];
   # Telegram bot for agent alerts and the Telegram-connected Claude session,
   # one bot per machine. TELEGRAM_BOT_TOKEN= and TELEGRAM_CHAT_ID= lines.
   "agent-telegram-home-server.age".publicKeys = [
