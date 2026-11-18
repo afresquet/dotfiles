@@ -9,6 +9,10 @@
     }:
     let
       cfg = config.waybar;
+      # The laptop's touchpad scrolls naturally, which makes Waybar's scroll
+      # actions run backwards there. Waybar skips `reverse-scrolling` for mouse
+      # wheels, so a mouse keeps the desktop's direction.
+      naturalScroll = lib.optionalAttrs cfg.laptop { reverse-scrolling = true; };
     in
     {
       imports = [
@@ -134,12 +138,14 @@
                   ];
                 };
               }
-              # Laptop: same 5% steps as the volume keys. Touchpads send many small
-              # scroll events, so each step also needs a bit more scrolling.
-              // lib.optionalAttrs cfg.laptop {
-                scroll-step = 5;
-                smooth-scrolling-threshold = 5;
-              };
+              # Touchpads send many small scroll deltas, so the laptop needs a
+              # threshold or a swipe jumps the volume. Waybar applies the step and
+              # threshold to every device, so keep the desktop's 1% step and set
+              # the threshold just under one wheel notch: a mouse still moves 1%
+              # per notch, and the touchpad needs about as much movement per 1% as
+              # it did per 5% with a 5% step.
+              // lib.optionalAttrs cfg.laptop { smooth-scrolling-threshold = 0.99; }
+              // naturalScroll;
             # Microphone: click to mute, right click for the mixer's input tab,
             # scroll to change its volume.
             "pulseaudio#mic" =
@@ -160,7 +166,8 @@
                 on-scroll-up = "${wpctl} set-volume @DEFAULT_AUDIO_SOURCE@ 5%+ --limit 1.0";
                 on-scroll-down = "${wpctl} set-volume @DEFAULT_AUDIO_SOURCE@ 5%-";
                 smooth-scrolling-threshold = 5;
-              };
+              }
+              // naturalScroll;
             # Click opens nmtui in a terminal, like bluetuith for Bluetooth.
             network =
               let
@@ -209,7 +216,8 @@
                 "󰃝"
                 "󰃠"
               ];
-            };
+            }
+            // naturalScroll;
             battery = {
               states = {
                 warning = 30;
@@ -304,7 +312,8 @@
                   "on-scroll-up" = "shift_up";
                   "on-scroll-down" = "shift_down";
                 };
-              };
+              }
+              // naturalScroll;
             # Bell for SwayNotificationCenter: badge when something is waiting,
             # crossed out in do-not-disturb. Click: open, right click: toggle DND.
             "custom/notification" =
