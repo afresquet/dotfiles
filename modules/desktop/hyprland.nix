@@ -147,6 +147,62 @@ in
                 emoji = ''${rofi} -modi "emoji:rofimoji" -show emoji'';
                 screenshot = lib.getExe pkgs.grimblast;
                 media = lib.getExe pkgs.playerctl;
+                # playerctl prefers playerctld, which forwards to its active player;
+                # shifting it moves the media keys to the next one. Playback moves
+                # along: if the old player was playing, it pauses and the new one
+                # plays. Both are addressed by name, and the pause has to land before
+                # the shift: playerctld moves a player to the front when its status
+                # changes, so a late "Paused" would undo the shift. The notification
+                # is transient (popup only, never kept in the control center),
+                # replaces itself on repeated presses, and has an icon because
+                # swaync's spacing comes from it.
+                cyclePlayer = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "cycle-player";
+                    runtimeInputs = [
+                      pkgs.playerctl
+                      pkgs.systemd
+                      pkgs.jq
+                      pkgs.libnotify
+                    ];
+                    text = ''
+                      notify() {
+                        notify-send --transient -a "Media keys" -t 2000 -i multimedia-player \
+                          -h string:x-canonical-private-synchronous:cycle-player "Media keys control" "$1"
+                      }
+
+                      mapfile -t players < <(
+                        busctl --user --json=short get-property org.mpris.MediaPlayer2.playerctld \
+                          /org/mpris/MediaPlayer2 com.github.altdesktop.playerctld PlayerNames 2>/dev/null |
+                          jq -r '.data[] | ltrimstr("org.mpris.MediaPlayer2.")'
+                      )
+                      if [ "''${#players[@]}" -lt 2 ]; then
+                        notify "No other player"
+                        exit 0
+                      fi
+                      current=''${players[0]}
+                      next=''${players[1]}
+
+                      resume=false
+                      if [ "$(playerctl --player="$current" status 2>/dev/null)" = Playing ]; then
+                        resume=true
+                        playerctl --player="$current" pause
+                        for _ in $(seq 20); do
+                          [ "$(playerctl --player="$current" status 2>/dev/null)" = Playing ] || break
+                          sleep 0.05
+                        done
+                        sleep 0.2
+                      fi
+
+                      playerctld shift
+                      if [ "$resume" = true ]; then
+                        playerctl --player="$next" play
+                      fi
+
+                      notify "$(playerctl --player="$next" metadata --format '{{playerName}}: {{title}}' 2>/dev/null || echo "$next")"
+                    '';
+                  }
+                );
 
                 # Volume, mic and brightness keys go through swayosd for the popup.
                 osd = lib.getExe' config.services.swayosd.package "swayosd-client";
@@ -188,6 +244,7 @@ in
                   "SUPER + SHIFT + slash" = "This cheat sheet";
                   "SUPER + SHIFT + W" = "Toggle Waybar";
                   "SUPER + N" = "Notification center";
+                  "SUPER + XF86AudioPlay" = "Next media player";
                   "SUPER + SHIFT + V" = "Clipboard history";
                   "SUPER + H" = "Focus left (or arrows)";
                   "SUPER + L" = "Focus right";
@@ -673,6 +730,7 @@ in
                       locked = true;
                     })
                     (mkBindOpts "XF86AudioPlay" (execDsp "${media} play-pause") { locked = true; })
+                    (mkBind "SUPER + XF86AudioPlay" (execDsp "${cyclePlayer}"))
                     # Bluetooth headsets (AirPods over AVRCP) send Pause separately from Play.
                     (mkBindOpts "XF86AudioPause" (execDsp "${media} pause") { locked = true; })
                     (mkBindOpts "XF86AudioPrev" (execDsp "${media} previous") { locked = true; })
