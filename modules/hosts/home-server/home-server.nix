@@ -50,6 +50,12 @@ in
                 config.users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys;
           };
           agentTelegram.secretFile = ../../../secrets/agent-telegram-home-server.age;
+          # The harvest project (fresquet-harvest-system), substituted by the Mac
+          # mini. Public: only the tailnet reaches Attic, so pulls need no token.
+          attic.caches.fhs = {
+            public = true;
+            retention = "30 days";
+          };
           monitoring.serverHost = "alvaros-mac-mini.${tailnet}";
 
           home-assistant-container = {

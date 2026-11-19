@@ -61,9 +61,12 @@ matrix=$(jq -cn \
     // error("no runner for \(.)");
   # By system configuration name, without trailing slashes or duplicates. A
   # home configuration whose host is not in the flake gets cache.nixos.org
-  # alone, so everything else in its closure is pushed.
+  # alone, so everything else in its closure is pushed. Only https ones:
+  # plain http caches are tailnet-only (homelab/attic.nix), unreachable from
+  # a runner and never serving the paths of this flake.
   def substituters($kind; $config):
-    ($nixosSubst + $darwinSubst | map_values(map(rtrimstr("/")) | unique)) as $subst
+    ($nixosSubst + $darwinSubst
+      | map_values(map(select(startswith("https://")) | rtrimstr("/")) | unique)) as $subst
     | if $kind == "home"
       then $subst[$config | split("@")[1]] // ["https://cache.nixos.org"]
       else $subst[$config] end;

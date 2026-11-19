@@ -26,6 +26,7 @@ in
             monitoring-telegram
             auto-upgrade-telegram
             github-agent
+            fhs-cache
           ];
 
           networking.hostName = "Alvaros-Mac-mini";
