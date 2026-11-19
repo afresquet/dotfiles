@@ -159,7 +159,7 @@ which publishes a module for each platform it touches through flake-parts'
   evaluates an aspect once however many roles, aspects and hosts import it.
   Aspect files never set a `key`.
 - **Dependencies**: an aspect imports what it needs or is always used with.
-  `tilth` imports `skills`, whose option it sets; `hyprland` imports the
+  `hyprland` imports the
   terminal, browser, lock screen, OSD, notification centre and clipboard
   history its keybinds drive; `waybar` imports `swaync`, `swaync` imports
   `wlogout`; `bash` and `zsh` import `nushell`, which they hand off to; Pi

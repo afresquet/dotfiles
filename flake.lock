@@ -1112,7 +1112,6 @@
         "nixpkgs": "nixpkgs_4",
         "stylix": "stylix",
         "systems": "systems_2",
-        "tilth": "tilth",
         "treefmt-nix": "treefmt-nix_2",
         "vpn-confinement": "vpn-confinement",
         "zen-browser": "zen-browser"
@@ -1180,22 +1179,6 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
-        "type": "github"
-      }
-    },
-    "tilth": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1794509585,
-        "narHash": "sha256-b+dmQSZPU424sllkFkz5vfhE9aBDCe6x5L25+e4Odr0=",
-        "owner": "jahala",
-        "repo": "tilth",
-        "rev": "c766a5b12f56b2bfd61e4d9ee848bc5a4efe8d7e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "jahala",
-        "repo": "tilth",
         "type": "github"
       }
     },

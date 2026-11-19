@@ -62,11 +62,6 @@
     };
     # Imports every .nix file under modules/ as a flake-parts module.
     import-tree.url = "github:vic/import-tree";
-    # AI agent skill sources (not flakes).
-    tilth = {
-      url = "github:jahala/tilth";
-      flake = false;
-    };
   };
 
   # Every .nix file under modules/ is a flake-parts module, except the

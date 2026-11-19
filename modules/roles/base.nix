@@ -59,7 +59,6 @@
         zsh
         silicon
         skills
-        tilth
         skim
         ssh
         starship
