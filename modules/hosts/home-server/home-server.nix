@@ -55,6 +55,7 @@ in
           attic.caches.fhs = {
             public = true;
             retention = "30 days";
+            maxSize = 5 * 1024 * 1024 * 1024;
           };
           monitoring.serverHost = "alvaros-mac-mini.${tailnet}";
 
