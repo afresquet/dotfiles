@@ -43,5 +43,19 @@
         };
         Install.WantedBy = [ "graphical-session.target" ];
       };
+
+      # Connected/disconnected popups aren't worth keeping in the control
+      # center. Qt sends them under the executable's name and the desktop
+      # file name, so match either.
+      services.swaync.settings.notification-visibility = {
+        librepods-app = {
+          state = "transient";
+          app-name = "librepods";
+        };
+        librepods-desktop = {
+          state = "transient";
+          desktop-entry = "librepods";
+        };
+      };
     };
 }
