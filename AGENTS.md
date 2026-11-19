@@ -159,13 +159,12 @@ which publishes a module for each platform it touches through flake-parts'
   evaluates an aspect once however many roles, aspects and hosts import it.
   Aspect files never set a `key`.
 - **Dependencies**: an aspect imports what it needs or is always used with.
-  `hyprland` imports the
-  terminal, browser, lock screen, OSD, notification centre and clipboard
-  history its keybinds drive; `waybar` imports `swaync`, `swaync` imports
-  `wlogout`; `bash` and `zsh` import `nushell`, which they hand off to; Pi
-  services import `caddy` and `dashboard` to contribute to them; qbittorrent,
-  slskd, arr and explo import `vpn` (they only ever run confined), explo
-  imports `slskd` and arr imports `qbittorrent`.
+  `hyprland` imports the terminal, browser, lock screen, OSD, notification
+  centre and clipboard history its keybinds drive; `waybar` imports `swaync`,
+  `swaync` imports `wlogout`; `bash` and `zsh` import `nushell`, which they
+  hand off to; Pi services import `caddy` and `dashboard` to contribute to
+  them; qbittorrent, slskd, arr and explo import `vpn` (they only ever run
+  confined), explo imports `slskd` and arr imports `qbittorrent`.
 - **Optional integrations** are their own small aspect that imports both
   sides and wires them together, and a host includes it. No aspect checks
   whether another is present (no `options ? x`, no
