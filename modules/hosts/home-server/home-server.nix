@@ -120,9 +120,12 @@ in
             owner = config.system.primaryUser;
           };
           environment.systemPackages = [
-            (pkgs.writeShellScriptBin "wake-desktop" ''
-              exec ${lib.getExe pkgs.wakeonlan} "$(<${config.age.secrets.desktop-mac.path})"
-            '')
+            (pkgs.writeShellApplication {
+              name = "wake-desktop";
+              text = ''
+                exec ${lib.getExe pkgs.wakeonlan} "$(<${config.age.secrets.desktop-mac.path})"
+              '';
+            })
           ];
 
           time.timeZone = "Europe/Madrid";

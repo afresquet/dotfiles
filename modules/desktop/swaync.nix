@@ -15,7 +15,14 @@
 
       # Quick toggles. Toggle buttons get the new state in SWAYNC_TOGGLE_STATE;
       # their update command echoes true or false when the panel opens.
-      sh = name: text: "${pkgs.writeShellScript "cc-${name}" text}";
+      sh =
+        name: text:
+        lib.getExe (
+          pkgs.writeShellApplication {
+            name = "cc-${name}";
+            inherit text;
+          }
+        );
       toggle = name: label: command: update: {
         inherit label;
         type = "toggle";
@@ -91,7 +98,7 @@
                   "if ${on}; then setsid ${hyprsunset} -t 4500 >/dev/null 2>&1 </dev/null & else pkill -x hyprsunset; fi"
                   "pgrep -x hyprsunset >/dev/null && echo true || echo false"
                 )
-                (button "screenshot" "󰹑" "sleep 0.4\nSLURP_RECTS= ${lib.getExe pkgs.grimblast} copysave area")
+                (button "screenshot" "󰹑" "sleep 0.4\nSLURP_RECTS='' ${lib.getExe pkgs.grimblast} copysave area")
                 (button "lock" "󰌾" "loginctl lock-session")
               ]
               ++ [ (button "power" "󰐥" (lib.getExe config.wlogout.launcher)) ];

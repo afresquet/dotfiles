@@ -12,21 +12,25 @@
 
       configFile = "${cfg.profileDir}/qBittorrent/config/qBittorrent.conf";
 
-      applyPasswordScript = pkgs.writeShellScript "qbittorrent-apply-password" ''
-        set -eu
-        read -r HASH < "${config.age.secrets.qbittorrent-webuipw.path}"
-        ${pkgs.gnused}/bin/sed -i "s|PBKDF2_PLACEHOLDER|$HASH|" "${configFile}"
-      '';
+      applyPasswordScript = pkgs.writeShellApplication {
+        name = "qbittorrent-apply-password";
+        text = ''
+          read -r HASH < "${config.age.secrets.qbittorrent-webuipw.path}"
+          ${lib.getExe pkgs.gnused} -i "s|PBKDF2_PLACEHOLDER|$HASH|" "${configFile}"
+        '';
+      };
 
       # Mullvad assigns a per-key IP via the WireGuard config. Hardcoding it in
       # serverConfig means it goes stale every time the WG key/server changes;
       # discover it from wg0 at startup instead. Runs inside the wg namespace
       # (qbittorrent.service is vpn-confined), so wg0 is the local interface.
-      applyInterfaceAddressScript = pkgs.writeShellScript "qbittorrent-apply-interface-address" ''
-        set -eu
-        IP=$(${pkgs.iproute2}/bin/ip -j -4 addr show wg0 | ${pkgs.jq}/bin/jq -r '.[0].addr_info[0].local')
-        ${pkgs.gnused}/bin/sed -i "s|WG_INTERFACE_ADDRESS_PLACEHOLDER|$IP|" "${configFile}"
-      '';
+      applyInterfaceAddressScript = pkgs.writeShellApplication {
+        name = "qbittorrent-apply-interface-address";
+        text = ''
+          IP=$(${lib.getExe' pkgs.iproute2 "ip"} -j -4 addr show wg0 | ${lib.getExe pkgs.jq} -r '.[0].addr_info[0].local')
+          ${lib.getExe pkgs.gnused} -i "s|WG_INTERFACE_ADDRESS_PLACEHOLDER|$IP|" "${configFile}"
+        '';
+      };
 
       # Bridge subnet derived from vpn-confinement's bridgeAddress (default
       # 192.168.15.5/24). Tracks any future override instead of hardcoding the
@@ -85,8 +89,8 @@
         systemd.services.qbittorrent = {
           serviceConfig = {
             ExecStartPre = lib.mkAfter [
-              "${applyPasswordScript}"
-              "${applyInterfaceAddressScript}"
+              (lib.getExe applyPasswordScript)
+              (lib.getExe applyInterfaceAddressScript)
             ];
             # 0002 → new files are 0664 (group-writable), needed so users in `media`
             # can create hardlinks to qBittorrent's downloads (kernel

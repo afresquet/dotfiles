@@ -14,13 +14,16 @@
       # wlogout sizes buttons from pixel margins, so center two rows of three
       # 200px squares (20px apart) on the focused monitor. The CSS keeps each
       # button exactly that size: no padding, border counted in.
-      launcher = pkgs.writeShellScriptBin "power-menu" ''
-        read -r w h < <(${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} monitors -j |
-          ${lib.getExe pkgs.jq} -r '.[] | select(.focused) | "\((.width / .scale) | floor) \((.height / .scale) | floor)"')
-        x=$(( (w - (3 * 200 + 2 * 20)) / 2 ))
-        y=$(( (h - (2 * 200 + 20)) / 2 ))
-        exec ${lib.getExe wlogout} -b 3 -c 20 -r 20 -L "$x" -R "$x" -T "$y" -B "$y" -n "$@"
-      '';
+      launcher = pkgs.writeShellApplication {
+        name = "power-menu";
+        text = ''
+          read -r w h < <(${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} monitors -j |
+            ${lib.getExe pkgs.jq} -r '.[] | select(.focused) | "\((.width / .scale) | floor) \((.height / .scale) | floor)"')
+          x=$(( (w - (3 * 200 + 2 * 20)) / 2 ))
+          y=$(( (h - (2 * 200 + 20)) / 2 ))
+          exec ${lib.getExe wlogout} -b 3 -c 20 -r 20 -L "$x" -R "$x" -T "$y" -B "$y" -n "$@"
+        '';
+      };
     in
     {
       options = {

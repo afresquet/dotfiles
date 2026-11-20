@@ -288,23 +288,28 @@ in
                 mkBind = keys: dispatch: mkBindOpts keys dispatch { };
 
                 # Lists the binds that have a description, from the live config.
-                cheatSheet = pkgs.writeShellScript "hypr-keybinds" ''
-                  ${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} binds -j \
-                    | ${lib.getExe pkgs.jq} -r '
-                      def mods: [
-                        (if . / 64 | floor % 2 == 1 then "SUPER" else empty end),
-                        (if . / 4 | floor % 2 == 1 then "CTRL" else empty end),
-                        (if . / 8 | floor % 2 == 1 then "ALT" else empty end),
-                        (if . % 2 == 1 then "SHIFT" else empty end)
-                      ];
-                      .[] | select(.has_description)
-                      | ((.modmask | mods) + [.key] | join(" + ")) as $keys
-                      | (if .submap == "" then $keys else "SUPER + O, \($keys)" end) as $keys
-                      | "\($keys)\t\(.description)"' \
-                    | ${lib.getExe' pkgs.util-linux "column"} -t -s $'\t' \
-                    | ${rofi} -dmenu -i -no-custom -no-show-icons -p 󰌌 \
-                        -theme-str 'window { width: 820px; } listview { lines: 14; }'
-                '';
+                cheatSheet = lib.getExe (
+                  pkgs.writeShellApplication {
+                    name = "hypr-keybinds";
+                    text = ''
+                      ${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} binds -j \
+                        | ${lib.getExe pkgs.jq} -r '
+                          def mods: [
+                            (if . / 64 | floor % 2 == 1 then "SUPER" else empty end),
+                            (if . / 4 | floor % 2 == 1 then "CTRL" else empty end),
+                            (if . / 8 | floor % 2 == 1 then "ALT" else empty end),
+                            (if . % 2 == 1 then "SHIFT" else empty end)
+                          ];
+                          .[] | select(.has_description)
+                          | ((.modmask | mods) + [.key] | join(" + ")) as $keys
+                          | (if .submap == "" then $keys else "SUPER + O, \($keys)" end) as $keys
+                          | "\($keys)\t\(.description)"' \
+                        | ${lib.getExe' pkgs.util-linux "column"} -t -s $'\t' \
+                        | ${rofi} -dmenu -i -no-custom -no-show-icons -p 󰌌 \
+                            -theme-str 'window { width: 820px; } listview { lines: 14; }'
+                    '';
+                  }
+                );
                 execDsp = cmd: "hl.dsp.exec_cmd(${builtins.toJSON cmd})";
                 # Hyprland 0.56 creates workspaces from `focus` as non-empty, so
                 # `on_created_empty` never fires. Launch the program here instead.
