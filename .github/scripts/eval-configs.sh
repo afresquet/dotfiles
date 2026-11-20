@@ -4,9 +4,9 @@
 # Evaluates (doesn't build) every configuration in a build-matrix.sh matrix.
 # Prints each distinct evaluation warning once, followed by the
 # configurations that emit it; prints nothing when there are none. Exits 1,
-# with the errors on stderr, if any configuration fails to evaluate: `nix
-# flake check` doesn't evaluate homeConfigurations, so this is what catches
-# those.
+# with the errors on stderr, if any configuration fails to evaluate. `nix
+# flake check` evaluates them all too (modules/flake/checks.nix), but can't
+# say which configuration a warning came from.
 #
 # Warnings span several lines when the message does (continuation lines are
 # indented), so a block runs from the "evaluation warning:" line through the

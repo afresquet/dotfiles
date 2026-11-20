@@ -41,23 +41,25 @@ nothing needs the target hardware.
 ```sh
 nix fmt
 nix flake check
-nix eval --raw .#nixosConfigurations.Alvaro-Desktop.config.system.build.toplevel.drvPath
-nix eval --raw .#nixosConfigurations.Alvaro-Laptop.config.system.build.toplevel.drvPath
-nix eval --raw .#nixosConfigurations.Home-Server.config.system.build.toplevel.drvPath
-nix eval --raw .#darwinConfigurations.Alvaros-Mac-mini.config.system.build.toplevel.drvPath
-nix eval --raw .#darwinConfigurations.mac-afresquet.config.system.build.toplevel.drvPath
-nix eval --raw '.#homeConfigurations."afresquet@Alvaro-Desktop".activationPackage.drvPath'
-nix eval --raw '.#homeConfigurations."afresquet@Alvaro-Laptop".activationPackage.drvPath'
-nix eval --raw '.#homeConfigurations."pi@Home-Server".activationPackage.drvPath'
-nix eval --raw '.#homeConfigurations."afresquet@Alvaros-Mac-mini".activationPackage.drvPath'
-nix eval --raw '.#homeConfigurations."alvaro.fresquet@mac-afresquet".activationPackage.drvPath'
 ```
 
-Evaluate every configuration a change can reach, not just the one you were
-thinking about: `homeManager.base` is shared by all five home configs
-including the headless Pi, and the Mac mini's system config evaluates the
-Pi's whole NixOS config through `piConfig`. To inspect a single option, use
-`nix eval --json .#<config>.config.<option.path>`.
+`nix flake check` runs the formatters and linters (nixfmt, statix, deadnix,
+shellcheck, shfmt, actionlint) and evaluates every configuration, NixOS,
+nix-darwin and home-manager alike, through one `eval-<kind>-<name>` check per
+configuration (`modules/flake/checks.nix`), so a change is checked against
+every machine it can reach: `homeManager.base` is shared by all five home
+configs including the headless Pi, and the Mac mini's system config evaluates
+the Pi's whole NixOS config through `piConfig`. It doesn't build them. Shell
+scripts written in Nix use `writeShellApplication`, whose build runs
+shellcheck; build one that you change
+(`nix build --no-link <its drvPath>^out`). To inspect a single option, use
+`nix eval --json .#<config>.config.<option.path>`, and a configuration's
+derivation with:
+
+```sh
+nix eval --raw .#nixosConfigurations.Home-Server.config.system.build.toplevel.drvPath
+nix eval --raw '.#homeConfigurations."pi@Home-Server".activationPackage.drvPath'
+```
 
 A change that shouldn't alter what a machine runs (moving files, splitting an
 aspect, changing who imports what) should leave its derivation paths
@@ -88,7 +90,7 @@ order list options merge in.
 flake.nix               inputs; outputs = mkFlake (import-tree ./modules)
 modules/
   flake/                the frame: systems, flake.modules (keyed), formatter,
-                        packages + overlays, apps, darwinConfigurations
+                        checks, packages + overlays, apps, darwinConfigurations
   meta.nix              flake-level values any file can read (tailnet,
                         wallpaper, SSH public keys)
   roles/                aspects that are sets of other aspects:
