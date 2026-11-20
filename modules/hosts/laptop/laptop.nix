@@ -58,6 +58,7 @@ in
             imports = with self.modules.homeManager; [
               linux-desktop
               herdr-desktop
+              herdr-waybar
             ];
 
             home.username = "afresquet";
