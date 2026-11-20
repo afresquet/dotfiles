@@ -14,7 +14,9 @@ it.
    checks its signature and queues the issue or PR.
 2. A job reads the whole thread (comments, reviews, inline comments, and the
    agent's own PR for an issue), keeping only comments from people with write
-   access and from `trustedBots`, and writes it to a context file.
+   access and from `trustedBots`, and writes it to a context file. For an
+   issue, it adds the issue's labels, milestone, parent, sub-issues and
+   blockers, and numbers its checklist. While a blocker is open, it waits.
 3. The **coordinator**, a read-only Claude Code session (`coordinator.md`),
    decides whether to `ask`, `implement` or `skip`.
 4. For an issue, the plan is posted, and the agent waits until you add
@@ -22,8 +24,13 @@ it.
    don't wait.
 5. The **implementer** (`implementer.md`) makes the change on the branch
    `agent/issue-<n>`, or on the PR's own branch, and commits it.
-6. The dispatcher pushes, opens or updates the PR, replies in inline review
-   threads, and requests your review.
+6. The dispatcher pushes, opens or updates the PR, keeps the issue's
+   checklist, and requests your review.
+
+It comments only when it needs you: a plan to approve, a question, a
+blocker or a failure. Everything else, a skip included, is silent, and the
+code answers review comments. In an inline thread it replies only to a
+question.
 
 Only the dispatcher holds GitHub credentials. The two agents can't reach
 GitHub.
@@ -37,7 +44,17 @@ GitHub.
 - **Approving a plan:** add `agent:plan-approved` to the issue. That label
   stays on, so later rounds on the issue implement without stopping.
 - **Feedback:** review its PR or comment on it, including inline comments.
-  It answers each inline comment in that comment's thread.
+  It answers an inline comment in its thread only if it asks a question.
+- **Checklist:** in an issue body with `## Work` steps (`- [ ] …`), it ticks
+  each step once a pushed commit of its branch completes it. It adds the
+  decisions it takes to `## Decisions` as `- [x] <decision>: <why>.`, and
+  strikes through the ones it replaces:
+  `- [ ] ~~<decision>~~ Replaced by <what>: <why>.`. It never deletes an item
+  and never appends shas; the merged PR links the commits. Ticking a box and
+  the trailing `(abc1234)` of older ticks aren't news to it, whoever writes
+  them. Any other edit to the body is.
+- **Dependencies:** an issue blocked by an open issue waits, silently, and
+  starts within the hour after the blocker closes.
 - **Merging:** approve its PR. It squash-merges, using the PR title in the
   repo's commit style, and deletes the `agent/issue-<n>` branch. A newer push
   after your approval blocks the merge.
@@ -132,6 +149,11 @@ of a large Rust repo has to fit in that.
 
 - **Watching a session:** `github-agent-watch [owner/repo#n]` follows the
   latest one live, or replays a finished one. Press q to quit.
+- **Acting as the App yourself:** `valaxor <gh args>` runs gh as
+  `valaxor[bot]` on the current repo (or `GH_REPO`), with a token that only
+  covers issues on that repo (labels, milestones and sub-issues included; no
+  code, PRs or workflows). It decrypts `github-agent.age` with your own age identity
+  (`VALAXOR_IDENTITY`, default `~/.ssh/id_ed25519`).
 - **Logs:** `/var/log/github-agent.{log,err}` and
   `/var/log/github-agent-funnel.log`.
 - **Files:** clones live in `~agent/repos/<owner>/<repo>/`: `.bare`, `main`,

@@ -236,6 +236,54 @@ in
         '';
       };
 
+      # `valaxor <gh args>`: run gh as the App (valaxor[bot]) on the current
+      # repo, or GH_REPO, with an installation token limited to issues on that
+      # repo alone (planning: issues, labels, milestones, sub-issues; no code,
+      # PRs or workflows). The App key is decrypted with the caller's own age identity
+      # (they are a recipient of github-agent.age) and never touches disk.
+      valaxor = pkgs.writeShellApplication {
+        name = "valaxor";
+        runtimeInputs = with pkgs; [
+          age
+          coreutils
+          curl
+          gh
+          git
+          jq
+          openssl
+        ];
+        text = ''
+          repo=''${GH_REPO:-}
+          if [ -z "$repo" ]; then
+            url=$(git remote get-url origin)
+            repo=''${url#*github.com[:/]}
+            repo=''${repo%.git}
+          fi
+          key=$(age -d -i "''${VALAXOR_IDENTITY:-$HOME/.ssh/id_ed25519}" ${secrets.github-agent.file})
+
+          # The same JWT as the dispatcher's app_jwt().
+          b64url() { openssl base64 -A | tr '+/' '-_' | tr -d '='; }
+          now=$(date +%s)
+          header=$(printf '%s' '{"alg":"RS256","typ":"JWT"}' | b64url)
+          claims=$(jq -cn --argjson now "$now" --arg iss ${toString cfg.appId} \
+            '{iat: ($now - 60), exp: ($now + 540), iss: $iss}' | tr -d '\n' | b64url)
+          signing="$header.$claims"
+          sig=$(printf '%s' "$signing" | openssl dgst -sha256 -sign <(printf '%s\n' "$key") | b64url)
+
+          api() {
+            curl -sS --fail-with-body -H "Authorization: Bearer $1" \
+              -H "Accept: application/vnd.github+json" "''${@:2}"
+          }
+          id=$(api "$signing.$sig" "https://api.github.com/repos/$repo/installation" | jq -r .id)
+          token=$(api "$signing.$sig" -X POST \
+            -d "$(jq -cn --arg r "''${repo#*/}" '{repositories: [$r], permissions: {issues: "write"}}')" \
+            "https://api.github.com/app/installations/$id/access_tokens" | jq -r .token)
+
+          export GH_TOKEN=$token GH_REPO=$repo
+          exec gh "$@"
+        '';
+      };
+
       tailscale = lib.getExe config.services.tailscale.package;
     in
     {
@@ -360,7 +408,10 @@ in
               mode = "0400";
             });
 
-        environment.systemPackages = [ watch ];
+        environment.systemPackages = [
+          watch
+          valaxor
+        ];
 
         launchd.daemons.github-agent.serviceConfig = {
           Label = "com.github-agent";

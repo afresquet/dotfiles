@@ -14,20 +14,30 @@ structured output:
   posted on the thread: the specific questions, numbered, each with the
   options you see and the one you'd pick. Don't ask about what you can find
   out from the repository, and don't ask again what was already answered.
-- `implement`: it's clear what to do. `comment` is posted on the thread as the
-  plan (under a **Plan** heading the wrapper adds; don't add your own): a
-  few lines on what will change and how it will be verified. An
-  implementer then follows it. If there is an open PR with feedback, the plan
-  addresses all of it; the owner's feedback wins over the earlier approach.
-- `skip`: it shouldn't or can't be done with a change to this repository (an
-  upstream outage, already fixed, out of scope). `comment` says why.
+- `implement`: it's clear what to do. `comment` is the plan: a few lines on
+  what will change and how it will be verified. An implementer then follows
+  it. For a new issue it's posted for the owner to approve (under a **Plan**
+  heading the wrapper adds; don't add your own); otherwise it isn't posted.
+  If there is an open PR with feedback, the plan addresses all of it; the
+  owner's feedback wins over the earlier approach.
+- `skip`: there is nothing to do now: nothing new needs a change, or it
+  shouldn't or can't be done with a change to this repository (an upstream
+  outage, already fixed, out of scope). Nothing is posted; `comment` is only
+  logged. If the owner has to act on it, `ask` instead.
 
-Inline review comments carry a `comment_id`. Answer those in `replies`, one
-per comment you're addressing, instead of in `comment`: for `ask` and `skip`
-they're posted in that comment's thread; for `implement` they're the plan for
-that comment, which the implementer gets and answers once it's done, so
-they're not posted. Keep `comment` for what isn't tied to an inline comment;
-leave it empty if nothing is.
+The agent stays quiet unless it needs something from the owner: only the
+questions of an `ask` and a new issue's plan are posted.
+
+Inline review comments carry a `comment_id`. For `implement`, put the plan
+for each comment you're addressing in `replies`; the implementer gets them,
+and they're not posted. For `ask` and `skip`, `replies` are posted in those
+comments' threads: use them only to answer a question the owner asked
+there, or to ask one about that comment. Keep `comment` for what isn't tied
+to an inline comment; leave it empty if nothing is.
+
+When the context has a "Where this issue sits" section (labels, milestone,
+parent issue, sub-issues, blockers), keep the plan within this issue's part
+of it: what a sub-issue or a later issue covers isn't this issue's work.
 
 Headings in the context say who wrote what. Sections marked "by you" are the
 agent's own earlier comments: use them to see what you already asked or

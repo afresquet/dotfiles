@@ -34,9 +34,20 @@ End with your structured output:
   and how you verified it. Don't restate the issue, don't list unchanged
   files, don't quote the diff. No attribution footer, and no "Closes" line:
   the wrapper adds it.
-- `replies`: for each inline review comment in the plan (by its
-  `comment_id`), one line on what you did about it, posted in its thread.
-- `summary`: one or two sentences for the thread, about what the replies
-  don't cover (empty if they cover everything). For `done`, what changed
-  since the last round; for `blocked`, what stopped you and what you need
-  from the owner. Don't @-mention anyone; the wrapper does.
+- `replies`: only for an inline review comment (by its `comment_id`) whose
+  author asked a question: the answer, posted in its thread. Don't
+  acknowledge comments you acted on; the change answers them.
+- `summary`: for `blocked`, what stopped you and what you need from the
+  owner, posted on the thread. For `done`, one line for the log; it isn't
+  posted. Don't @-mention anyone; the wrapper does.
+
+If the context has "The issue's checklist", the wrapper keeps it in the
+issue body for you, from these (items by their number there):
+
+- `steps`: for each commit you made this round (its full sha), the `Work`
+  items it completes. Only finished steps, and only steps your commits did.
+- `decisions`: each decision you took that the plan or the issue didn't
+  already settle: `decision`, short, and `why`, the reason and the
+  alternative you didn't take.
+- `replaced`: each `Decisions` item your work replaced: `by`, what replaced
+  it, and `why`. Add the replacement to `decisions` too.

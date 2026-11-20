@@ -45,6 +45,10 @@ BASE_MARKER = re.compile(r"<!-- agent-base: ([\w./-]+) -->")
 # Ends every comment the agent posts.
 MARKER = "\n\n<!-- github-agent -->"
 RUN_LINK = re.compile(r"github\.com/([\w.-]+/[\w.-]+)/actions/runs/(\d+)")
+# A checklist line in an issue body, as plans written as issues use them
+# (`## Work` steps, `## Decisions`): "- [ ] text" or "- [x] text", the
+# latter maybe naming its commits: "(abc1234)", "(abc1234 on <branch>)".
+CHECK = re.compile(r"^(\s*[-*+] \[)([ xX])(\] )(.*?)(\s+\([0-9a-f]{7,40}(?:, [0-9a-f]{7,40})*(?: on [\w./-]+)?\))?\s*$")
 
 
 def log(msg):
@@ -179,6 +183,112 @@ def feedback(repo, number, token, text, replies, thread):
     text = "\n\n".join(t for t in [text.strip(), *rest] if t)
     if text:
         comment(repo, number, token, thread.mention + text + MARKER)
+
+
+def lines_of(body):
+    return (body or "").replace("\r\n", "\n").split("\n")
+
+
+def normalize(body):
+    """An issue body as its key sees it: without checkbox states or commit
+    suffixes, so ticking a step (the agent's, a script's or the owner's)
+    starts no new round."""
+    # Line endings kept: a body without ticks hashes as it always did.
+    out = []
+    for line in (body or "").split("\n"):
+        cr = "\r" if line.endswith("\r") else ""
+        m = CHECK.match(line.removesuffix("\r"))
+        out.append(f"{m[1]} {m[3]}{m[4]}{cr}" if m else line)
+    return "\n".join(out)
+
+
+def checklist(body):
+    """The body's checklist items, in order, with the `##` section each is in."""
+    items, section = [], ""
+    for line in lines_of(body):
+        if line.startswith("## "):
+            section = line[3:].strip()
+        elif m := CHECK.match(line):
+            items.append({"section": section, "done": m[2] != " ", "text": m[4]})
+    return items
+
+
+def sentence(text):
+    return text.strip().rstrip(".") + "."
+
+
+def edit_checklist(body, items, done, decisions, replaced):
+    """`body` with the `done` items (indices into `items`) ticked, the
+    `replaced` decisions struck through and the new `decisions` added at the
+    end of `## Decisions`. Items are found by their text: the body may have
+    been edited since `items` was read from it."""
+    lines = lines_of(body)
+
+    def find(i):
+        for n, line in enumerate(lines):
+            m = CHECK.match(line)
+            if m and m[4] == items[i]["text"]:
+                return n, m
+        return None, None
+
+    for i in done:
+        n, m = find(i)
+        if m and m[2] == " ":
+            lines[n] = f"{m[1]}x{m[3]}{m[4]}"
+    for r in replaced:
+        n, m = find(r["item"])
+        if m and not m[4].startswith("~~"):
+            lines[n] = f"{m[1]} {m[3]}~~{m[4]}~~ Replaced by {r['by'].strip()}: {sentence(r['why'])}"
+    new = [f"- [x] {d['decision'].strip().rstrip('.:')}: {sentence(d['why'])}" for d in decisions]
+    if new:
+        heads = [n for n, line in enumerate(lines) if line.startswith("## ")]
+        start = next((n for n in heads if lines[n][3:].strip() == "Decisions"), None)
+        if start is not None:
+            end = next((n for n in heads if n > start), len(lines))
+            while end > start + 1 and not lines[end - 1].strip():
+                end -= 1
+            lines[end:end] = new
+        else:
+            # Before the work, or else at the end, ahead of any trailing
+            # HTML comments (a plan script's marker).
+            at = next((n for n in heads if lines[n][3:].strip() == "Work"), None)
+            if at is None:
+                at = len(lines)
+                while at and (not lines[at - 1].strip() or lines[at - 1].startswith("<!--")):
+                    at -= 1
+                lines[at:at] = ["", "## Decisions", *new]
+            else:
+                lines[at:at] = ["## Decisions", *new, ""]
+    return "\n".join(lines)
+
+
+def related(repo, number, issue, me, token):
+    """Where the issue sits in a plan: its labels, milestone, parent,
+    sub-issues and blockers, as context, and its blockers' states, which
+    its key hashes (one closing is news). A parent's body is only shown if
+    someone trusted wrote it."""
+    def ref(i):
+        other = i["repository_url"].removeprefix(f"{API}/repos/")
+        return f"{'' if other == repo else other}#{i['number']} {i['title']} ({i['state']})"
+
+    out = []
+    if labels := sorted(labels_of(issue) - {LABEL, NEEDS_INFO, PLAN_APPROVED}):
+        out.append(f"Labels: {', '.join(labels)}")
+    if ms := issue.get("milestone"):
+        out.append(f"Milestone: {ms['title']}" + (f" (due {ms['due_on'][:10]})" if ms.get("due_on") else "") + (f": {ms['description']}" if ms.get("description") else ""))
+    if issue.get("parent_issue_url"):
+        p = get(issue["parent_issue_url"], token)
+        out.append(f"Parent: {ref(p)}")
+        if p["user"]["login"] == me or trusted(p["user"]["login"], p.get("author_association")):
+            out.append(f"\n{p.get('body') or ''}\n")
+    if (issue.get("sub_issues_summary") or {}).get("total"):
+        out.append("Sub-issues:\n" + "\n".join(f"- {ref(s)}" for s in get_all(f"/repos/{repo}/issues/{number}/sub_issues", token)))
+    blockers = []
+    if (issue.get("issue_dependencies_summary") or {}).get("total_blocked_by"):
+        blockers = get_all(f"/repos/{repo}/issues/{number}/dependencies/blocked_by", token)
+        out.append("Blocked by:\n" + "\n".join(f"- {ref(b)}" for b in blockers))
+    text = "\n## Where this issue sits\n\n" + "\n".join(out) + "\n" if out else ""
+    return text, sorted(f"{b['repository_url']}#{b['number']} {b['state']}" for b in blockers)
 
 
 def set_needs_info(repo, number, token, on):
@@ -373,6 +483,31 @@ IMPLEMENTER_SCHEMA = {
         "body": {"type": "string"},
         "summary": {"type": "string"},
         "replies": REPLIES,
+        # The issue's checklist, by the numbers the context gives its items.
+        "steps": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"commit": {"type": "string"}, "items": {"type": "array", "items": {"type": "integer"}}},
+                "required": ["commit", "items"],
+            },
+        },
+        "decisions": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"decision": {"type": "string"}, "why": {"type": "string"}},
+                "required": ["decision", "why"],
+            },
+        },
+        "replaced": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"item": {"type": "integer"}, "by": {"type": "string"}, "why": {"type": "string"}},
+                "required": ["item", "by", "why"],
+            },
+        },
     },
     "required": ["status", "summary"],
 }
@@ -413,6 +548,7 @@ class Thread:
     def __init__(self, repo, token, me):
         self.repo, self.token, self.me = repo, token, me
         self.parts, self.hashed, self.texts = [], [], []
+        self.issue = None
         # The PR's inline comments, which replies can go to.
         self.inline = set()
         # Who the agent answers to: the last person with write access who
@@ -446,13 +582,17 @@ class Thread:
             ref = f" (comment_id {c['id']}" + (f", replying to {c['in_reply_to_id']})" if c.get("in_reply_to_id") else ")")
             self.add(f"Inline comment on {c['path']} line {line}", c["user"]["login"], c["author_association"], c["body"], c["created_at"], ref)
 
+    def set_issue(self, title, body):
+        """The issue's title and body, always the key's first entry."""
+        self.issue = f"{title}\0{normalize(body)}"
+
     @property
     def mention(self):
         return f"@{self.person} " if self.person else ""
 
     @property
     def key(self):
-        return hashlib.sha256("\n\0\n".join(self.hashed).encode()).hexdigest()
+        return hashlib.sha256("\n\0\n".join([self.issue, *self.hashed] if self.issue else self.hashed).encode()).hexdigest()
 
     def text(self):
         return "".join(self.parts)
@@ -515,8 +655,14 @@ def work(repo_full, installation, token, issue, force, rebase=False):
         thread.person = meta["owner"]["login"]
     # Labelling an issue vouches for its body, whoever wrote it.
     thread.parts.append(f"# {'PR' if is_pr else 'Issue'} #{number}: {issue['title']}\n\n{issue.get('body') or ''}\n")
-    thread.hashed.append(f"{issue['title']}\0{issue.get('body') or ''}")
+    thread.set_issue(issue["title"], issue.get("body"))
     thread.texts.append(issue.get("body") or "")
+    # An issue's checklist, which the agent keeps: ticked as its commits are
+    # pushed, decisions added and replaced ones struck through.
+    items = [] if is_pr else checklist(issue.get("body"))
+    where, blockers = ("", []) if is_pr else related(repo_full, number, issue, me, token)
+    if blockers:
+        thread.hashed.append("blocked by\0" + "\n".join(blockers))
 
     agent_pr = None
     if is_pr:
@@ -561,6 +707,9 @@ def work(repo_full, installation, token, issue, force, rebase=False):
     log(f"{repo_full}#{number}: {issue['title']}")
     state["key"] = key  # handled whatever the outcome; a change reruns it
     state_file.write_text(json.dumps(state))
+    if not rebase_only and any(b.endswith(" open") for b in blockers):
+        log(f"{repo_full}#{number}: blocked by an open issue, waiting")
+        return
 
     out = state_dir / time.strftime("%Y%m%d-%H%M%S")
     out.mkdir()
@@ -579,7 +728,7 @@ def work(repo_full, installation, token, issue, force, rebase=False):
     logs = failed_run_logs(repo_full, thread.texts, token)
     context.write_text(
         f"Repository: {repo_full} (default branch {meta['default_branch']})\n"
-        f"Your branch: {branch}, based on {base}\n\n{thread.text()}{logs}"
+        f"Your branch: {branch}, based on {base}\n\n{thread.text()}{where}{checklist_text(items)}{logs}"
     )
 
     try:
@@ -594,7 +743,11 @@ def work(repo_full, installation, token, issue, force, rebase=False):
                 path, out, COORDINATOR_SCHEMA, CFG["coordinatorArgs"],
             )
         if decision["decision"] != "implement":
-            feedback(repo_full, feedback_on, token, decision["comment"], decision.get("replies"), thread)
+            # Only a question is posted; a skip is only logged.
+            text = decision["comment"] if decision["decision"] == "ask" else ""
+            if not text:
+                log(f"{repo_full}#{number}: skipped: {decision['comment']}")
+            feedback(repo_full, feedback_on, token, text, decision.get("replies"), thread)
             set_needs_info(repo_full, number, token, decision["decision"] == "ask")
             return
         set_needs_info(repo_full, number, token, False)
@@ -603,10 +756,8 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             state["plan"] = {"key": key, "decision": decision}
             state_file.write_text(json.dumps(state))
             return
-        # Per-comment plans aren't posted: the implementer answers those
-        # threads once it's done. A resumed plan already was.
-        if decision["comment"].strip() and not (rebase_only or resumed):
-            comment(repo_full, feedback_on, token, "**Plan**\n\n" + decision["comment"] + MARKER)
+        # Only a plan that waits for approval is posted: the work itself
+        # answers the rest.
 
         # Every run starts from the base's tip. A conflict is the
         # implementer's to resolve; it's told so.
@@ -636,7 +787,13 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             # The PR is still about what it was; keep its title and body.
             result.pop("title", None)
             result.pop("body", None)
-        publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread)
+        body = publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread, items)
+        if body is not None:
+            # The agent's own edit to the checklist isn't news; anyone
+            # else's during the run is, and leaves the key to rerun it.
+            thread.set_issue(issue["title"], body)
+            state["key"] = thread.key
+            state_file.write_text(json.dumps(state))
     except Exception as e:
         log(traceback.format_exc())
         try:
@@ -645,7 +802,9 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             log(traceback.format_exc())
 
 
-def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread):
+def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread, items):
+    """Push, open or update the PR, and keep the issue's checklist. Returns
+    the issue body the agent wrote, if it edited one the run started from."""
     repo_full, number = repo.full, issue["number"]
     # A fresh token: the agents may have run for most of the last one's hour.
     token = TOKENS.get(installation)
@@ -658,25 +817,61 @@ def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedba
         # Blocked: the summary says what's needed; always say it.
         feedback(repo_full, feedback_on, token, result["summary"] or "I'm blocked; see the replies.", replies, thread)
         set_needs_info(repo_full, number, token, True)
-        return
+        return None
     if head != remote:
         # The lease refuses to overwrite a push made in the meantime.
         git("push", "--quiet", f"--force-with-lease=refs/heads/{branch}:{remote or ''}", "origin", f"refs/heads/{branch}:refs/heads/{branch}", cwd=repo.bare, token=token)
     if is_pr:
-        feedback(repo_full, number, token, result["summary"], replies, thread)
+        feedback(repo_full, number, token, "", replies, thread)
         review(repo_full, number, token, thread)
-        return
+        return None
+    body = keep_checklist(repo, issue, base, branch, result, items, token)
     title = result.get("title") or issue["title"]
-    body = f"{result.get('body') or result['summary']}\n\nCloses #{number}"
+    pr_body = f"{result.get('body') or result['summary']}\n\nCloses #{number}"
     if feedback_on != number:
         if result.get("title") or result.get("body"):
-            api("PATCH", f"/repos/{repo_full}/pulls/{feedback_on}", token, {"title": title, "body": body})
-        feedback(repo_full, feedback_on, token, result["summary"], replies, thread)
+            api("PATCH", f"/repos/{repo_full}/pulls/{feedback_on}", token, {"title": title, "body": pr_body})
+        feedback(repo_full, feedback_on, token, "", replies, thread)
         review(repo_full, feedback_on, token, thread)
-        return
-    pr, _ = api("POST", f"/repos/{repo_full}/pulls", token, {"title": title, "head": branch, "base": base, "body": body})
+        return body
+    pr, _ = api("POST", f"/repos/{repo_full}/pulls", token, {"title": title, "head": branch, "base": base, "body": pr_body})
     api("POST", f"/repos/{repo_full}/issues/{pr['number']}/labels", token, {"labels": [LABEL]})
     review(repo_full, pr["number"], token, thread)
+    return body
+
+
+def keep_checklist(repo, issue, base, branch, result, items, token):
+    """Tick the Work steps the pushed commits cover and record the decisions
+    the implementer made or replaced, by editing the issue body: no comment.
+    Only commits on the pushed branch count. Returns the new body if the
+    body is still the one the run started from, else None."""
+    if not items:
+        return None
+    done = set()
+    for s in result.get("steps") or []:
+        sha = rev(s["commit"], repo.bare)
+        pushed = sha and not git("merge-base", "--is-ancestor", sha, f"refs/heads/{branch}", cwd=repo.bare, check=False).returncode
+        new = pushed and git("merge-base", "--is-ancestor", sha, f"origin/{base}", cwd=repo.bare, check=False).returncode
+        if new:
+            done |= {i - 1 for i in s["items"] if 0 < i <= len(items) and items[i - 1]["section"] == "Work"}
+    replaced = [r | {"item": r["item"] - 1} for r in result.get("replaced") or [] if 0 < r["item"] <= len(items) and items[r["item"] - 1]["section"] == "Decisions"]
+    decisions = result.get("decisions") or []
+    if not (done or replaced or decisions):
+        return None
+    number = issue["number"]
+    current = get(f"/repos/{repo.full}/issues/{number}", token)
+    body = edit_checklist(current.get("body") or "", items, done, decisions, replaced)
+    if body != "\n".join(lines_of(current.get("body"))):
+        api("PATCH", f"/repos/{repo.full}/issues/{number}", token, {"body": body})
+    same = (current["title"], normalize(current.get("body"))) == (issue["title"], normalize(issue.get("body")))
+    return body if same else None
+
+
+def checklist_text(items):
+    if not items:
+        return ""
+    rows = "\n".join(f"{n}. [{i['section'] or 'no section'}] [{'x' if i['done'] else ' '}] {i['text']}" for n, i in enumerate(items, 1))
+    return f"\n## The issue's checklist\n\nRefer to items by these numbers.\n\n{rows}\n"
 
 
 def review(repo_full, number, token, thread):
