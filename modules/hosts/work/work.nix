@@ -38,7 +38,7 @@
                 herdr-desktop
               ];
 
-              home.username = "alvaro.fresquet";
+              home.username = self.darwinConfigurations.mac-afresquet.config.system.primaryUser;
 
               stylix.opacity.terminal = 0.95;
 

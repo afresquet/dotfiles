@@ -1,3 +1,7 @@
+{ self, ... }:
+let
+  userOf = c: c.config.system.primaryUser;
+in
 {
   flake.modules.nixos.ssh = _: {
     services.openssh = {
@@ -19,19 +23,19 @@
       settings = {
         "pi home-server" = {
           HostName = "home-server";
-          User = "pi";
+          User = userOf self.nixosConfigurations.Home-Server;
         };
         "mac mac-mini" = {
           HostName = "alvaros-mac-mini";
-          User = "afresquet";
+          User = userOf self.darwinConfigurations.Alvaros-Mac-mini;
         };
         desktop = {
           HostName = "alvaro-desktop";
-          User = "afresquet";
+          User = userOf self.nixosConfigurations.Alvaro-Desktop;
         };
         laptop = {
           HostName = "alvaro-laptop";
-          User = "afresquet";
+          User = userOf self.nixosConfigurations.Alvaro-Laptop;
         };
       };
     };

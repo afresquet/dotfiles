@@ -18,6 +18,26 @@ in
       '';
     };
 
+    # The person the machines belong to.
+    user = {
+      name = mkOption {
+        type = types.str;
+        default = "afresquet";
+        description = ''
+          Login name, the default `system.primaryUser` (NixOS, nix-darwin)
+          and `home.username`. A host with another account (the Pi's `pi`,
+          the work MacBook's) sets `system.primaryUser`, and its home config
+          reads it from there.
+        '';
+      };
+
+      description = mkOption {
+        type = types.str;
+        default = "Alvaro Fresquet";
+        description = "Display name (GECOS) of the desktops' user, shown by SDDM.";
+      };
+    };
+
     repo = mkOption {
       type = types.str;
       default = "github:afresquet/dotfiles";

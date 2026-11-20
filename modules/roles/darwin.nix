@@ -2,7 +2,16 @@
 # overlays. The rest of a Mac (Tailscale, auto-upgrade, agenix secrets) is the
 # Mac mini's alone; the work MacBook only gets its home config, updated by
 # hand.
-{ inputs, self, ... }:
+{
+  inputs,
+  self,
+  lib,
+  config,
+  ...
+}:
+let
+  inherit (config) meta;
+in
 {
   flake.modules.darwin.base = {
     imports = [
@@ -34,6 +43,7 @@
     # Used for backwards compatibility, please read the changelog before changing.
     # $ darwin-rebuild changelog
     system.stateVersion = 5;
+    system.primaryUser = lib.mkDefault meta.user.name;
 
     nixpkgs.hostPlatform = "aarch64-darwin";
   };

@@ -309,7 +309,7 @@ in
           auto-upgrade-telegram
         ];
 
-        home.username = "pi";
+        home.username = self.nixosConfigurations.Home-Server.config.system.primaryUser;
         nixosAllowedUnfree = self.nixosConfigurations.Home-Server.config.allowedUnfree;
         autoUpgrade.configuration = "pi@Home-Server";
         agentTelegram.hostName = "Home-Server";

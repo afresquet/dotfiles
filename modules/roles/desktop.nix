@@ -2,7 +2,15 @@
 # desktops (desktop, laptop); `homeManager.desktop` the GUI layer every
 # graphical home gets (Macs included); `homeManager.linux-desktop` the
 # Hyprland session on top of it.
-{ inputs, self, ... }:
+{
+  inputs,
+  self,
+  config,
+  ...
+}:
+let
+  inherit (config) meta;
+in
 {
   flake.modules.nixos.desktop =
     { config, pkgs, ... }:
@@ -70,6 +78,7 @@
 
       users.users.${config.system.primaryUser} = {
         isNormalUser = true;
+        inherit (meta.user) description;
         extraGroups = [
           "networkmanager"
           "wheel"
@@ -78,6 +87,10 @@
           "uinput"
         ];
         shell = pkgs.nushell;
+        # Throwaway first-boot password, so a fresh install can log in at SDDM
+        # (nixos-install only sets root's). Applies only when the user is
+        # created; change it with `passwd` right after.
+        initialHashedPassword = "$y$j9T$E.5Stg4OxQyS.Klz0g3bp.$vo08PBNqEDw8zn7ykhHoUwLEL7CdLHE2PoKXfGgTx88";
       };
 
       # Release the stateful defaults were taken from at first install; leave it.

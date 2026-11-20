@@ -23,8 +23,13 @@ in
           ];
 
           networking.hostName = "Alvaro-Desktop";
-          system.primaryUser = "afresquet";
-          users.users.afresquet.description = "Alvaro";
+          users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys = with keys; [
+            afresquet
+            alvaroLaptop
+            alvarosMacMini
+            alvaroPhone
+            heeler
+          ];
 
           boot.initrd.kernelModules = [ "amdgpu" ];
           services.xserver.videoDrivers = [ "amdgpu" ];
@@ -42,14 +47,6 @@ in
               }
             });
           '';
-
-          users.users.afresquet.openssh.authorizedKeys.keys = with keys; [
-            afresquet
-            alvaroLaptop
-            alvarosMacMini
-            alvaroPhone
-            heeler
-          ];
         }
       )
     ];
@@ -69,7 +66,6 @@ in
                 herdr-waybar
               ];
 
-              home.username = "afresquet";
               nixosAllowedUnfree = self.nixosConfigurations.Alvaro-Desktop.config.allowedUnfree;
               autoUpgrade.configuration = "afresquet@Alvaro-Desktop";
 

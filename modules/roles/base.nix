@@ -1,7 +1,10 @@
 # What every machine of the user's runs. `nixos.base` is every NixOS host
 # (desktops and the Pi); `homeManager.base` every home config, headless Pi
 # included, so it holds terminal tooling only.
-{ self, ... }:
+{ self, config, ... }:
+let
+  inherit (config) meta;
+in
 {
   flake.modules.nixos.base = {
     imports = with self.modules.nixos; [
@@ -72,6 +75,7 @@
         dotfiles-sync
       ];
 
+      home.username = lib.mkDefault meta.user.name;
       home.homeDirectory = lib.mkDefault (
         if pkgs.stdenv.hostPlatform.isDarwin then
           "/Users/${config.home.username}"

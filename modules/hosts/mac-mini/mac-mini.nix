@@ -30,7 +30,6 @@ in
           ];
 
           networking.hostName = "Alvaros-Mac-mini";
-          system.primaryUser = "afresquet";
           users.users.${config.system.primaryUser}.openssh.authorizedKeys.keys = with keys; [
             afresquet
             alvaroDesktop
@@ -127,7 +126,6 @@ in
               auto-upgrade-telegram
             ];
 
-            home.username = "afresquet";
             autoUpgrade.configuration = "afresquet@Alvaros-Mac-mini";
             agentTelegram.hostName = "Alvaros-Mac-mini";
 
