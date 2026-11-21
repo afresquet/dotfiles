@@ -151,11 +151,12 @@ in
           boot.kernelParams = [
             "cgroup_enable=memory"
             "cgroup_memory=1"
-            # Experiment: silent full-system freezes (journal just stops) started
-            # with the 6.18.59 kernel, three in three days. Pi 5 + NVMe reports with
-            # the same symptom point at NVMe/PCIe power saving
-            # (home-assistant/operating-system#5098), so keep the drive and link
-            # out of low-power states. The assertion below fires on a kernel bump.
+            # Silent full-system freezes (journal just stops) started with the
+            # 6.18.59 kernel, three in three days. Pi 5 + NVMe reports with the
+            # same symptom point at NVMe/PCIe power saving
+            # (home-assistant/operating-system#5098), so the drive and link stay
+            # out of low-power states. The Pi has been stable with this, so it
+            # stays on for good rather than being retested on each kernel bump.
             "nvme_core.default_ps_max_latency_us=0"
             "pcie_aspm=off"
             # The USB hard drive (Toshiba Canvio, 0480:0900) resets its link
@@ -164,12 +165,6 @@ in
             # instead: a bit slower, plenty for streaming. Check with
             # `ls /sys/bus/usb/drivers/usb-storage/` (should list 2-1:1.0).
             "usb-storage.quirks=0480:0900:u"
-          ];
-          assertions = [
-            {
-              assertion = config.boot.kernelPackages.kernel.modDirVersion == "6.18.59";
-              message = "Home-Server kernel is now ${config.boot.kernelPackages.kernel.modDirVersion}: the NVMe/PCIe power-saving workaround in modules/hosts/home-server/home-server.nix was for silent freezes on 6.18.59. Check raspberrypi/linux for a fix, then drop `nvme_core.default_ps_max_latency_us=0` and `pcie_aspm=off` (watch for unclean shutdowns afterwards) along with this assertion.";
-            }
           ];
 
           # Turn partial hangs into a reboot as well: the kernel panics on a soft
