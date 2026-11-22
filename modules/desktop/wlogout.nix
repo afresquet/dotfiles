@@ -11,27 +11,42 @@
       wlogout = config.programs.wlogout.package;
       icons = "${wlogout}/share/wlogout/icons";
 
-      # wlogout sizes buttons from pixel margins, so center two rows of three
-      # 200px squares (20px apart) on the focused monitor. The CSS keeps each
-      # button exactly that size: no padding, border counted in.
+      # wlogout sizes buttons from pixel margins, so when the compositor can
+      # tell the focused monitor's size, center two rows of three 200px
+      # squares (20px apart) on it; otherwise keep wlogout's default margins.
+      # The CSS keeps each button exactly that size: no padding, border
+      # counted in.
+      args = "-b 3 -c 20 -r 20";
+      size = config.wlogout.focusedOutputSize;
       launcher = pkgs.writeShellApplication {
         name = "power-menu";
-        text = ''
-          read -r w h < <(${lib.getExe' config.wayland.windowManager.hyprland.finalPackage "hyprctl"} monitors -j |
-            ${lib.getExe pkgs.jq} -r '.[] | select(.focused) | "\((.width / .scale) | floor) \((.height / .scale) | floor)"')
-          x=$(( (w - (3 * 200 + 2 * 20)) / 2 ))
-          y=$(( (h - (2 * 200 + 20)) / 2 ))
-          exec ${lib.getExe wlogout} -b 3 -c 20 -r 20 -L "$x" -R "$x" -T "$y" -B "$y" -n "$@"
-        '';
+        text =
+          if size == null then
+            ''
+              exec ${lib.getExe wlogout} ${args} -n "$@"
+            ''
+          else
+            ''
+              read -r w h < <(${size})
+              x=$(( (w - (3 * 200 + 2 * 20)) / 2 ))
+              y=$(( (h - (2 * 200 + 20)) / 2 ))
+              exec ${lib.getExe wlogout} ${args} -L "$x" -R "$x" -T "$y" -B "$y" -n "$@"
+            '';
       };
     in
     {
-      options = {
-        wlogout.launcher = lib.mkOption {
+      options.wlogout = {
+        launcher = lib.mkOption {
           type = lib.types.package;
           default = launcher;
           readOnly = true;
           internal = true;
+        };
+        focusedOutputSize = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          internal = true;
+          description = "Shell command printing the focused output's logical width and height, for centering the menu; set by the compositor's integration (wlogout-hyprland).";
         };
       };
 

@@ -62,8 +62,6 @@ in
             {
               imports = with self.modules.homeManager; [
                 linux-desktop
-                herdr-desktop
-                herdr-waybar
               ];
 
               nixosAllowedUnfree = self.nixosConfigurations.Alvaro-Desktop.config.allowedUnfree;

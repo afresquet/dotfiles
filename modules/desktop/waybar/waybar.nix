@@ -15,9 +15,10 @@
       naturalScroll = lib.optionalAttrs cfg.laptop { reverse-scrolling = true; };
     in
     {
-      imports = [
-        self.modules.homeManager.ghostty
-        self.modules.homeManager.swaync
+      imports = with self.modules.homeManager; [
+        ghostty
+        swaync
+        wlogout
       ];
 
       options.waybar = {
@@ -46,20 +47,16 @@
             # center the right side is capped at half the width and squeezes the
             # language label to "…" on the laptop.
             fixed-center = false;
-            modules-left = [
-              "hyprland/workspaces"
-              "hyprland/submap"
-            ];
             modules-right = [
               "group/status"
               "group/session"
             ];
 
-            # Machine status; the stats drawer at the end opens to the left.
+            # Machine status, after the compositor's keyboard layout; the stats
+            # drawer at the end opens to the left.
             "group/status" = {
               orientation = "horizontal";
               modules = [
-                "hyprland/language"
                 "pulseaudio"
                 "pulseaudio#mic"
                 "network"
@@ -86,25 +83,6 @@
               ];
             };
 
-            "hyprland/workspaces" = {
-              disable-scroll = true;
-              warp-on-scroll = false;
-              sort-by = "id";
-              format = "{icon}";
-              format-icons = lib.mapAttrs (_: ws: ws.icon) config.hyprland.workspaces;
-            };
-            # Shown only while a submap (SUPER + O "open") is active.
-            "hyprland/submap" = {
-              format = "󰘳 {}";
-              tooltip = false;
-            };
-            "hyprland/language" = {
-              # Shows US or UA; hover for the full layout name. Alt+Shift switches
-              # layouts, and clicking this indicator provides a mouse alternative.
-              format = "󰌌 {short}";
-              tooltip-format = "{long}\nAlt+Shift to switch";
-              on-click = "hyprctl switchxkblayout current next";
-            };
             tray = {
               spacing = 10;
               icon-size = 16;

@@ -105,8 +105,10 @@ modules/
                         dotfiles-sync, nh, agenix, allowed-unfree
   system/               OS plumbing: boot, locale, network, audio, bluetooth,
                         printing, fonts, ssh, tailscale, primary-user, ...
-  desktop/              the graphical session: Hyprland, Stylix, SDDM,
-                        Waybar, rofi, swaync, hyprlock, ...
+  desktop/              the graphical session: Stylix, SDDM, Waybar, rofi,
+                        swaync, hyprlock, ...
+    hyprland/           the compositor and its integrations with the
+                        session's tools (<tool>-hyprland)
   terminal/             terminal emulators, shells, prompt, multiplexer
   cli/                  command-line tools
   dev/                  development: git, editors, containers, VMs
@@ -161,12 +163,21 @@ which publishes a module for each platform it touches through flake-parts'
   evaluates an aspect once however many roles, aspects and hosts import it.
   Aspect files never set a `key`.
 - **Dependencies**: an aspect imports what it needs or is always used with.
-  `hyprland` imports the terminal, browser, lock screen, OSD, notification
-  centre and clipboard history its keybinds drive; `waybar` imports `swaync`,
-  `swaync` imports `wlogout`; `bash` and `zsh` import `nushell`, which they
-  hand off to; Pi services import `caddy` and `dashboard` to contribute to
-  them; qbittorrent, slskd, arr and explo import `vpn` (they only ever run
-  confined), explo imports `slskd` and arr imports `qbittorrent`.
+  `hyprland` imports the terminal, browser, Herdr, lock screen, OSD,
+  notification centre and clipboard history its keybinds drive; `waybar`
+  imports `swaync` and `wlogout`, `swaync` imports `wlogout`; `bash` and
+  `zsh` import `nushell`, which they hand off to; Pi services import `caddy`
+  and `dashboard` to contribute to them; qbittorrent, slskd, arr and explo
+  import `vpn` (they only ever run confined), explo imports `slskd` and arr
+  imports `qbittorrent`.
+- **Compositor-specific parts** of a desktop tool are an integration (below)
+  in `modules/desktop/hyprland/`, `<tool>-hyprland.nix`, so the tool works
+  under any compositor and `hyprland` knows only what its keybinds launch.
+  `swaync-hyprland` (night light, screenshot), `wlogout-hyprland` (centering
+  on the focused output), `waybar-hyprland` (workspaces, submap, layout) and
+  `herdr-hyprland` (the herdr workspace's highlight) each import their tool
+  and `hyprland`; the `linux-desktop` role imports them. Nothing imports an
+  integration back: an import cycle never finishes evaluating.
 - **Optional integrations** are their own small aspect that imports both
   sides and wires them together, and a host includes it. No aspect checks
   whether another is present (no `options ? x`, no
@@ -297,7 +308,7 @@ aspect; `dashboards/` holds the JSON that services point at.
 ### Workspaces
 
 Hyprland named workspaces are declared once in `hyprland.workspaces` (icon +
-`extraRules`) in `modules/desktop/hyprland.nix`; Waybar icons and workspace
+`extraRules`) in `modules/desktop/hyprland/hyprland.nix`; Waybar icons and workspace
 rules derive from it. Hosts set `hyprland.monitors` and per-monitor rules
 through `hyprland.workspaces.<name>.extraRules`. Keybinds and launch commands
 live in the `bind` section of the same file.

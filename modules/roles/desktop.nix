@@ -162,6 +162,11 @@ in
         wlogout
         zen-browser
         hyprland
+        # Hyprland integrations (modules/desktop/hyprland/).
+        swaync-hyprland
+        wlogout-hyprland
+        waybar-hyprland
+        herdr-hyprland
         auto-upgrade
       ];
 

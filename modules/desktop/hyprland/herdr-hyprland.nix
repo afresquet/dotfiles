@@ -4,7 +4,7 @@
   # window urgent. Instead this service rewrites a stylesheet Waybar imports
   # (and live-reloads) to paint the herdr workspace like an urgent one while an
   # agent in the Herdr window is done or blocked.
-  flake.modules.homeManager.herdr-waybar =
+  flake.modules.homeManager.herdr-hyprland =
     {
       lib,
       config,
@@ -39,7 +39,7 @@
     in
     {
       imports = with self.modules.homeManager; [
-        waybar
+        waybar-hyprland
         herdr-desktop
       ];
 

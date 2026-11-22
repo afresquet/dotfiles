@@ -21,6 +21,7 @@ in
         self.modules.homeManager.swayosd
         self.modules.homeManager.zen-browser
         self.modules.homeManager.ghostty
+        self.modules.homeManager.herdr-desktop
       ];
 
       options.hyprland = {
