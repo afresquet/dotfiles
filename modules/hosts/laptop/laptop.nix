@@ -16,6 +16,7 @@ in
         {
           imports = with self.modules.nixos; [
             desktop
+            framework-speakers
             openlogi
             inputs.nixos-hardware.nixosModules.framework-13-7040-amd
             ./hardware-configuration.nix
