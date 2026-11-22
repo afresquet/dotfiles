@@ -44,6 +44,28 @@ in
       description = "Flake reference of this repository on GitHub.";
     };
 
+    # Read by SDDM (through services.xserver.xkb) and by Hyprland, whose
+    # home-manager config cannot see the NixOS options.
+    keyboard = {
+      layout = mkOption {
+        type = types.str;
+        default = "us,ua";
+        description = "XKB layouts, switched with Alt+Shift.";
+      };
+
+      variant = mkOption {
+        type = types.str;
+        default = "altgr-intl,";
+        description = "XKB variants, one per layout: international on the US one only.";
+      };
+
+      options = mkOption {
+        type = types.str;
+        default = "lv3:ralt_switch,grp:alt_shift_toggle";
+        description = "XKB options.";
+      };
+    };
+
     wallpaper = mkOption {
       type = types.path;
       default = ../assets/wallpaper.png;

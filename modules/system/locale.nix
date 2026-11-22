@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.meta) keyboard;
+in
 {
   flake.modules.nixos.locale = {
     # Set your time zone.
@@ -10,9 +14,7 @@
     services.xserver = {
       enable = true;
       xkb = {
-        layout = "us,ua";
-        variant = "altgr-intl,";
-        options = "ctrl:nocaps,lv3:ralt_switch,grp:alt_shift_toggle";
+        inherit (keyboard) layout variant options;
       };
     };
   };
