@@ -55,11 +55,15 @@ GitHub.
   them. Any other edit to the body is.
 - **Dependencies:** an issue blocked by an open issue waits, silently, and
   starts within the hour after the blocker closes.
-- **Merging:** approve its PR. It squash-merges, using the PR title in the
-  repo's commit style, and deletes the `agent/issue-<n>` branch. A newer push
-  after your approval blocks the merge.
+- **Merging:** approve its PR. Once every Actions run on the approved commit
+  has passed (waiting for them, including a build that waits on an
+  environment approval, for up to a day), it squash-merges, using the PR
+  title in the repo's commit style, and deletes the `agent/issue-<n>` branch.
+  A failed run or a newer push after your approval blocks the merge.
 - **Base branch:** a comment containing `<!-- agent-base: <branch> -->` makes
-  the work start from that branch instead of the default one.
+  the work start from that branch instead of the default one. The PR still
+  goes into the default branch, carrying that branch's commits with the
+  fix: for a failed flake update, merging it lands the update.
 - **Main moves:** after every push to a branch, open labelled PRs that target
   it and no longer merge are rebased. The implementer resolves any conflicts.
 - **CI failures:** links to failed Actions runs in the thread are fetched,

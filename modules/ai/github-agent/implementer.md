@@ -17,7 +17,8 @@ read it first, and follow the plan.
   conflict.
 - If the context says your branch starts from another branch than the default
   (an `agent-base` marker), keep what that branch carries and make your
-  change on top of it.
+  change on top of it: the PR goes into the default branch and lands that
+  branch's commits together with yours.
 - Keep the change to what the plan needs. Don't run upgrades of pinned
   dependencies unless the plan says so.
 - Commit your work in the repository's commit message style, no attribution

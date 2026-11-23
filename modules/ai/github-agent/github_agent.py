@@ -674,10 +674,16 @@ def work(repo_full, installation, token, issue, force, rebase=False):
                 state_file.write_text(json.dumps(state))
             return
         branch, base = pr["head"]["ref"], pr["base"]["ref"]
+        start = base
         thread.add_pr(number)
         feedback_on = number
     else:
+        # `base` is what the PR goes into, `start` what the branch starts
+        # from: an `agent-base` branch (the flake update's failed
+        # candidate) is built on but not merged into, so its commits land
+        # on the default branch together with the fix.
         branch, base = f"{BRANCH_PREFIX}{number}", meta["default_branch"]
+        start = base
         thread.add_issue(number, "Comment")
         owner = repo_full.split("/")[0]
         prs = get(f"/repos/{repo_full}/pulls?state=open&head={owner}:{urllib.parse.quote(branch)}", token)
@@ -688,7 +694,7 @@ def work(repo_full, installation, token, issue, force, rebase=False):
         feedback_on = agent_pr["number"] if agent_pr else number
         markers = BASE_MARKER.findall("\n".join(thread.texts))
         if markers:
-            base = markers[-1]
+            start = markers[-1]
 
     key = thread.key
     # A new issue's plan waits for the owner's approval; feedback on the
@@ -721,14 +727,17 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             return
         if not rev(f"origin/{base}", repo.bare):
             base = meta["default_branch"]
+        if not rev(f"origin/{start}", repo.bare):
+            start = base
         repo.remove(path)
         remote = rev(f"origin/{branch}", repo.bare)
-        git("worktree", "add", "--quiet", "--force", "-B", branch, str(path), f"origin/{branch}" if remote else f"origin/{base}", cwd=repo.bare)
+        git("worktree", "add", "--quiet", "--force", "-B", branch, str(path), f"origin/{branch}" if remote else f"origin/{start}", cwd=repo.bare)
 
     logs = failed_run_logs(repo_full, thread.texts, token)
+    started = "" if start == base else f", started from {start} (its commits go into the PR too)"
     context.write_text(
         f"Repository: {repo_full} (default branch {meta['default_branch']})\n"
-        f"Your branch: {branch}, based on {base}\n\n{thread.text()}{where}{checklist_text(items)}{logs}"
+        f"Your branch: {branch}, for a PR into {base}{started}\n\n{thread.text()}{where}{checklist_text(items)}{logs}"
     )
 
     try:
@@ -787,7 +796,7 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             # The PR is still about what it was; keep its title and body.
             result.pop("title", None)
             result.pop("body", None)
-        body = publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread, items)
+        body = publish(repo, path, installation, issue, is_pr, branch, base, start, remote, feedback_on, result, thread, items)
         if body is not None:
             # The agent's own edit to the checklist isn't news; anyone
             # else's during the run is, and leaves the key to rerun it.
@@ -802,7 +811,7 @@ def work(repo_full, installation, token, issue, force, rebase=False):
             log(traceback.format_exc())
 
 
-def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedback_on, result, thread, items):
+def publish(repo, path, installation, issue, is_pr, branch, base, start, remote, feedback_on, result, thread, items):
     """Push, open or update the PR, and keep the issue's checklist. Returns
     the issue body the agent wrote, if it edited one the run started from."""
     repo_full, number = repo.full, issue["number"]
@@ -811,7 +820,9 @@ def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedba
     # From the clone, by branch name: the worktree's .git file is the
     # implementer's to rewrite and could point git at a config of its own.
     head = rev(f"refs/heads/{branch}", repo.bare)
-    ahead = int(git("rev-list", "--count", f"origin/{base}..refs/heads/{branch}", cwd=repo.bare).stdout.strip())
+    # The agent's own commits: past what it started from, even once a
+    # rebase onto `base` has rewritten the start branch's commits.
+    ahead = int(git("rev-list", "--count", "--cherry-pick", "--right-only", f"origin/{start}...refs/heads/{branch}", cwd=repo.bare).stdout.strip())
     replies = result.get("replies")
     if result["status"] != "done" or ahead == 0:
         # Blocked: the summary says what's needed; always say it.
@@ -825,7 +836,7 @@ def publish(repo, path, installation, issue, is_pr, branch, base, remote, feedba
         feedback(repo_full, number, token, "", replies, thread)
         review(repo_full, number, token, thread)
         return None
-    body = keep_checklist(repo, issue, base, branch, result, items, token)
+    body = keep_checklist(repo, issue, start, branch, result, items, token)
     title = result.get("title") or issue["title"]
     pr_body = f"{result.get('body') or result['summary']}\n\nCloses #{number}"
     if feedback_on != number:
@@ -912,18 +923,52 @@ def approved_head(repo_full, pr, approved_sha, approved_at, token):
     raise RuntimeError("it changed after the approval; approve the latest commit")
 
 
+RUN_PASSED = {"success", "skipped", "neutral"}
+
+
+def runs_passed(repo_full, installation, sha, hours=24):
+    """Wait for every Actions run on `sha` to finish, the latest of each
+    workflow and event counting; None if they all passed, else what didn't.
+    A run waiting on an environment's approval (Build on a PR) waits for
+    it."""
+    deadline = time.time() + hours * 3600
+    while True:
+        runs = get_all(f"/repos/{repo_full}/actions/runs?head_sha={sha}", TOKENS.get(installation), key="workflow_runs")
+        latest = {}
+        for r in runs:
+            k = (r["workflow_id"], r["event"])
+            if k not in latest or r["id"] > latest[k]["id"]:
+                latest[k] = r
+        if all(r["status"] == "completed" for r in latest.values()):
+            failed = [f"{r['name']} ({r['conclusion']}): {r['html_url']}" for r in latest.values() if r["conclusion"] not in RUN_PASSED]
+            return "\n".join(failed) or None
+        if time.time() > deadline:
+            return f"its checks didn't finish within {hours} hours"
+        time.sleep(60)
+
+
 def merge(repo_full, installation, number, approved_sha, approved_at, reviewer):
-    """A trusted approval squash-merges the PR as it was when approved."""
+    """A trusted approval squash-merges the PR as it was when approved, once
+    its checks and builds pass."""
     token = TOKENS.get(installation)
     pr = get(f"/repos/{repo_full}/pulls/{number}", token)
     issue = agent_branch_issue(pr, repo_full)
+    try:
+        sha = approved_head(repo_full, pr, approved_sha, approved_at, token)
+        # Outside the item's lock: this can take hours, and a job pushing
+        # meanwhile makes the merge below refuse the moved head.
+        if failed := runs_passed(repo_full, installation, sha):
+            raise RuntimeError(f"not everything passed:\n\n{failed}")
+    except RuntimeError as e:
+        comment(repo_full, number, TOKENS.get(installation), f"@{reviewer} I couldn't merge this: {e}{MARKER}")
+        return
+    token = TOKENS.get(installation)
     # Not while a job is pushing to it.
     with item_lock(repo_full, issue if issue is not None else number):
         pr = get(f"/repos/{repo_full}/pulls/{number}", token)
         if pr["state"] != "open":
             return
         try:
-            sha = approved_head(repo_full, pr, approved_sha, approved_at, token)
             # sha: GitHub refuses if the head moves under us.
             api("PUT", f"/repos/{repo_full}/pulls/{number}/merge", token, {
                 "merge_method": "squash",
