@@ -1,4 +1,4 @@
-# Two fixes to LibrePods 0.2.5; the build fails on another version so each gets
+# Three changes to LibrePods 0.2.5; the build fails on another version so each gets
 # rechecked against upstream.
 #
 # No scanning: LibrePods runs a BLE discovery whenever the AirPods aren't
@@ -14,12 +14,16 @@
 # "off", and a long-running instance (across a suspend) doesn't always turn
 # A2DP back on when they reconnect, leaving them connected with no sink. Never
 # switch the profile off; ear detection still pauses playback.
+#
+# Tray icon only while connected: it has nothing to show otherwise and there
+# is no setting to hide it. The battery status is set once the AirPods report
+# it and cleared when they disconnect, so follow that.
 _final: prev: {
   librepods = prev.librepods.overrideAttrs (old: {
     postPatch =
       (
         if old.version != "0.2.5" then
-          throw "librepods ${old.version}: check whether it still scans whenever the AirPods are disconnected and still turns the card profile off out of ear, then update or drop overlays/librepods.nix"
+          throw "librepods ${old.version}: check whether it still scans whenever the AirPods are disconnected and still turns the card profile off out of ear and still has no option to hide its tray icon, then update or drop overlays/librepods.nix"
         else
           ""
       )
@@ -30,6 +34,11 @@ _final: prev: {
         substituteInPlace media/mediacontroller.cpp --replace-fail \
           '    removeAudioOutputDevice();' \
           '    // removeAudioOutputDevice();'
+        substituteInPlace trayiconmanager.cpp \
+          --replace-fail '    trayIcon->show();' '    // trayIcon->show();' \
+          --replace-fail \
+            '    trayIcon->setToolTip(tr("Battery Status: ") + status);' \
+            '    trayIcon->setToolTip(tr("Battery Status: ") + status); trayIcon->setVisible(!status.isEmpty());'
       ''
       + (old.postPatch or "");
   });
