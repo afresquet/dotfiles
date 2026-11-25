@@ -34,6 +34,7 @@ in
     {
       imports = with self.modules.homeManager; [
         agenix
+        antigravity-cli
         bat
         btop
         carapace
