@@ -89,6 +89,11 @@
 
             frontend.port = cfg.port;
             advanced = {
+              # The default, 11, overlaps Wi-Fi channel 1, where the TP-Link
+              # networks run; 25 sits above Wi-Fi channel 11. On a change, Z2M
+              # broadcasts the new channel to the network it keeps; sleeping end
+              # devices (the Aqara sensors) can miss it and need re-pairing.
+              channel = 25;
               log_level = "info";
               # Without these, a sensor that dropped off the network keeps
               # showing its last LQI and state forever. last_seen adds a
