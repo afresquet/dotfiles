@@ -7,7 +7,7 @@
 let
   inherit (pkgs.haskellPackages) cachix;
 in
-if cachix.version != "1.12.1" then
+if cachix.version != "1.15.0" then
   throw "cachix is ${cachix.version}: rebase pkgs/cachix-omit-deps/omit-deps.patch onto it, or drop the package if upstream has learnt to push without dependencies"
 else
   lib.getBin (pkgs.haskell.lib.compose.appendPatch ./omit-deps.patch cachix)

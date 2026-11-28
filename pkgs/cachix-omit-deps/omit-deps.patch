@@ -9,8 +9,8 @@ diff -ru a/src/Cachix/Client/Command/Push.hs b/src/Cachix/Client/Command/Push.hs
 +import Cachix.Client.Retry (retryAll, retryClientM)
  import Cachix.Client.Secrets
  import Cachix.Client.Servant
- import Cachix.Types.BinaryCache (BinaryCacheName)
-@@ -61,15 +61,30 @@
+ import Cachix.Client.Terminal (useInteractiveProgress)
+@@ -62,15 +62,30 @@
      (errors, validPaths) <- liftIO $ resolveStorePaths (pushParamsStore pushParams) (map toS inputStorePaths)
      liftIO $ forM_ errors $ uncurry logStorePathWarning
      pushedPaths <-
@@ -48,7 +48,7 @@ diff -ru a/src/Cachix/Client/Command/Push.hs b/src/Cachix/Client/Command/Push.hs
 diff -ru a/src/Cachix/Client/OptionsParser.hs b/src/Cachix/Client/OptionsParser.hs
 --- a/src/Cachix/Client/OptionsParser.hs
 +++ b/src/Cachix/Client/OptionsParser.hs
-@@ -130,7 +130,9 @@
+@@ -143,7 +143,9 @@
      -- | The number of store paths to process concurrently.
      numJobs :: Int,
      -- | Omit the derivation from the store path metadata.
@@ -59,7 +59,7 @@ diff -ru a/src/Cachix/Client/OptionsParser.hs b/src/Cachix/Client/OptionsParser.
    }
    deriving (Show)
  
-@@ -172,7 +174,8 @@
+@@ -185,7 +187,8 @@
        chunkSize = defaultChunkSize,
        numConcurrentChunks = defaultNumConcurrentChunks,
        numJobs = defaultNumJobs,
@@ -69,7 +69,7 @@ diff -ru a/src/Cachix/Client/OptionsParser.hs b/src/Cachix/Client/OptionsParser.
      }
  
  data DaemonCommand
-@@ -355,6 +358,7 @@
+@@ -375,6 +378,7 @@
      <*> numConcurrentChunks
      <*> numJobs
      <*> omitDeriver
@@ -77,7 +77,7 @@ diff -ru a/src/Cachix/Client/OptionsParser.hs b/src/Cachix/Client/OptionsParser.
    where
      compressionLevel =
        option (auto >>= validateCompressionLevel) $
-@@ -429,6 +433,11 @@
+@@ -449,6 +453,11 @@
          long "omit-deriver"
            <> help "Do not publish which derivations built the store paths."
  
