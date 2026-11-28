@@ -928,11 +928,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1795462239,
-        "narHash": "sha256-7cnkV4zpe+UjsFF1D/RQ6tz+6FSzeyCKShQaMbJymiE=",
+        "lastModified": 1795868415,
+        "narHash": "sha256-qG3JKlWn5cZXPZx5do+OgvtgmSV3+AYn3BlqTk4tjwM=",
         "owner": "nvmd",
         "repo": "nixos-raspberrypi",
-        "rev": "3168358dfabaa7059d6cccd1f460f30f03af41f5",
+        "rev": "b3a01090ce97b2029ea2af8669fe36261ddaef51",
         "type": "github"
       },
       "original": {
